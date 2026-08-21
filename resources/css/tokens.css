@@ -1,0 +1,177 @@
+/*
+ * byagain design tokens
+ *
+ * One source of truth for colour, type and spacing. Blade components read
+ * these; nothing hard-codes a hex value or a pixel size.
+ *
+ * The two rules that shaped every number here:
+ *   - Body text is at least 17px, because the product is read on a phone at
+ *     arm's length and 16px is where long-form reading starts to strain.
+ *   - Anything tappable is at least 44x44px, so the thumb never misses.
+ */
+
+@theme {
+    /* ---------------------------------------------------------------- *
+     * Typography — system stack only. No webfont request, no layout
+     * shift, nothing to wait for on 4G (SC-006).
+     * ---------------------------------------------------------------- */
+
+    --font-sans:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-mono:
+        ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+    /* Reading scale. `base` is the highlight body — everything else is
+     * measured against it. */
+    --text-xs: 0.8125rem; /* 13px — timestamps, metadata */
+    --text-sm: 0.9375rem; /* 15px — secondary labels */
+    --text-base: 1.0625rem; /* 17px — body, the floor for anything readable */
+    --text-lg: 1.1875rem; /* 19px — highlight text on the review card */
+    --text-xl: 1.375rem; /* 22px — section headings */
+    --text-2xl: 1.75rem; /* 28px — page titles */
+    --text-3xl: 2.125rem; /* 34px — the streak number, and little else */
+
+    --leading-tight: 1.25;
+    --leading-snug: 1.4;
+    --leading-normal: 1.6;
+    --leading-relaxed: 1.75; /* long highlights, where the eye needs room */
+
+    /* Measure: prose wider than this is tiring even on a desktop. */
+    --container-prose: 34rem;
+
+    /* ---------------------------------------------------------------- *
+     * Spacing — a 4px grid.
+     * ---------------------------------------------------------------- */
+
+    --spacing: 0.25rem;
+
+    /* ---------------------------------------------------------------- *
+     * Touch targets — WCAG 2.5.5 asks for 44x44px; the bottom nav gets a
+     * little more because it is used one-handed while walking.
+     * ---------------------------------------------------------------- */
+
+    --size-touch: 2.75rem; /* 44px — the minimum for any control */
+    --size-touch-lg: 3.25rem; /* 52px — primary review actions */
+    --size-bottom-nav: 3.5rem; /* 56px — height of the thumb-reach bar */
+
+    /* ---------------------------------------------------------------- *
+     * Colour — light theme. Every foreground/background pair below is at
+     * or above 4.5:1 (FR-084).
+     * ---------------------------------------------------------------- */
+
+    --color-canvas: #fbfaf8; /* page background — warm, not clinical white */
+    --color-surface: #ffffff; /* cards */
+    --color-surface-sunken: #f2f0ec; /* code blocks, inset areas */
+    --color-border: #e3dfd8;
+    --color-border-strong: #cfc9bf;
+
+    --color-ink: #1c1a17; /* body text — 15.8:1 on canvas */
+    --color-ink-muted: #5f5a52; /* metadata — 6.9:1 on canvas */
+    --color-ink-subtle: #837c72; /* placeholders — 4.6:1 on canvas */
+
+    --color-accent: #8a5a2b; /* the single brand colour: worn leather */
+    --color-accent-hover: #6f4721;
+    --color-accent-ink: #ffffff; /* text on top of accent */
+    --color-accent-wash: #f4ece2; /* accent-tinted background */
+
+    --color-positive: #2f6b4f;
+    --color-caution: #8a6a1f;
+    --color-critical: #a33a2c;
+
+    --color-focus: #1f5fa8; /* focus ring — deliberately not the accent, so
+                             * "where am I" never reads as "what is this" */
+
+    /* ---------------------------------------------------------------- *
+     * Radius, elevation, motion.
+     * ---------------------------------------------------------------- */
+
+    --radius-sm: 0.375rem;
+    --radius-md: 0.625rem;
+    --radius-lg: 1rem;
+    --radius-full: 9999px;
+
+    --shadow-card: 0 1px 2px rgb(28 26 23 / 0.06), 0 4px 12px rgb(28 26 23 / 0.05);
+    --shadow-raised: 0 2px 4px rgb(28 26 23 / 0.08), 0 12px 28px rgb(28 26 23 / 0.10);
+
+    /* Card transitions stay under 200ms: long enough to read as movement,
+     * short enough that the next card feels instant (SC-005). */
+    --duration-fast: 120ms;
+    --duration-card: 180ms;
+    --ease-out: cubic-bezier(0.2, 0, 0, 1);
+
+    /* Z-scale, so no component invents its own number. */
+    --z-bottom-nav: 40;
+    --z-sticky: 50;
+    --z-overlay: 60;
+    --z-toast: 70;
+}
+
+/*
+ * Dark theme. Follows the system by default; `data-theme` on <html> lets the
+ * user override it either way and must win in both directions (FR-083).
+ */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        --color-canvas: #161513;
+        --color-surface: #1f1e1b;
+        --color-surface-sunken: #131211;
+        --color-border: #34322d;
+        --color-border-strong: #47443d;
+
+        --color-ink: #ece8e1;
+        --color-ink-muted: #a8a299;
+        --color-ink-subtle: #837d74;
+
+        --color-accent: #d2a06a;
+        --color-accent-hover: #e0b183;
+        --color-accent-ink: #1c1a17;
+        --color-accent-wash: #2b2419;
+
+        --color-positive: #7db99a;
+        --color-caution: #d4b45f;
+        --color-critical: #e08a7c;
+
+        --color-focus: #7fb2ea;
+
+        --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.3);
+        --shadow-raised: 0 2px 4px rgb(0 0 0 / 0.45), 0 12px 28px rgb(0 0 0 / 0.4);
+    }
+}
+
+:root[data-theme='dark'] {
+    --color-canvas: #161513;
+    --color-surface: #1f1e1b;
+    --color-surface-sunken: #131211;
+    --color-border: #34322d;
+    --color-border-strong: #47443d;
+
+    --color-ink: #ece8e1;
+    --color-ink-muted: #a8a299;
+    --color-ink-subtle: #837d74;
+
+    --color-accent: #d2a06a;
+    --color-accent-hover: #e0b183;
+    --color-accent-ink: #1c1a17;
+    --color-accent-wash: #2b2419;
+
+    --color-positive: #7db99a;
+    --color-caution: #d4b45f;
+    --color-critical: #e08a7c;
+
+    --color-focus: #7fb2ea;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.3);
+    --shadow-raised: 0 2px 4px rgb(0 0 0 / 0.45), 0 12px 28px rgb(0 0 0 / 0.4);
+}
+
+/*
+ * Respect the OS setting. Motion is decoration here — nothing in the review
+ * flow depends on an animation finishing (FR-085).
+ */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --duration-fast: 1ms;
+        --duration-card: 1ms;
+    }
+}

@@ -1,5 +1,12 @@
 <!--
 Sync Impact Report
+- Version change: 1.0.0 → 1.0.1
+- Bump rationale: PATCH — arayüz dili kararı (spec.md, 2026-08-22: İngilizce arayüz ve
+  rotalar) ile çelişen `lang/tr/` ifadeleri `lang/en/` yapıldı ve Blade örneği
+  İngilizceye çevrildi. İlke eklenmedi/kaldırılmadı, anlam değişmedi.
+- Modified sections: "Ek Kısıtlar ve Kod Standartları" (lang yolu + yasaklı desen örneği),
+  "Bitmiş sayılma ölçütü" (lang yolu)
+- Önceki sürüm (1.0.0) notları aşağıdadır:
 - Version change: (placeholder scaffold) → 1.0.0
 - Bump rationale: İlk onaylı sürüm. Şablon yer tutucuları gerçek yönetişim kurallarıyla
   değiştirildi; tüm ilkeler yeni tanımlandı.
@@ -150,8 +157,9 @@ satırı atmak, bir soru sormaktan pahalıdır.
 - Servis metodu tek iş yapar ve adı ne yaptığını söyler.
 - Yorum "ne" değil "neden" anlatır ve SPEC'e atıf yapar: `// SPEC 4.1 — cooldown`.
 - Sihirli sayı yok: eşikler `config/byagain.php` içindedir.
-- Arayüzde görünen hiçbir Türkçe metin Blade'e gömülmez; anahtar `lang/tr/` altındadır.
-  Kod, değişken, fonksiyon, tablo ve kolon adları İngilizcedir.
+- Arayüz dili İngilizcedir. Arayüzde görünen hiçbir metin Blade'e gömülmez; anahtar
+  `lang/en/` altındadır. Kod, değişken, fonksiyon, tablo, kolon ve rota adları da
+  İngilizcedir.
 
 Yasaklı desenler:
 
@@ -165,7 +173,7 @@ Yasaklı desenler:
 | `->orderByRaw("... {$userInput}")` | Beyaz listeden eşleşen sabit |
 | Controller'da 40 satır iş mantığı | `app/Services/` altında sınıf |
 | `if ($halfLife > 365)` | `config('byagain.mastery.max_half_life')` |
-| Blade'de `Kaydet` | `{{ __('actions.save') }}` |
+| Blade'de `Save` | `{{ __('actions.save') }}` |
 | `migrate:fresh` ile şema düzeltme | Yeni migration |
 | Testi `markTestSkipped` ile susturma | Testi düzelt veya sor |
 
@@ -229,7 +237,7 @@ Bitmiş sayılma ölçütü — hepsi doğru olmadan iş bitmez:
 - [ ] Yeni `{!! !!}` yok (izinli tek yer hariç)
 - [ ] Yeni sihirli sayı yok
 - [ ] Migration'ın `down()`'ı çalışıyor
-- [ ] Kullanıcıya görünen metin `lang/tr/` içinde
+- [ ] Kullanıcıya görünen metin `lang/en/` içinde
 - [ ] SPEC değiştiyse `docs/SPEC.md` aynı PR'da güncellendi
 - [ ] Kurulum/yapılandırma etkilendiyse README ve `.env.example` güncellendi
 - [ ] Kullanıcı tarafına yeni JS eklendiyse varlık bütçesi (150KB) hâlâ tutuyor
@@ -253,4 +261,4 @@ PATCH — açıklama, ifade düzeltmesi, anlam değiştirmeyen incelikler.
 geliştirme rehberliği için `docs/SPEC.md` ve ajan rehber dosyaları kullanılır; bunlar bu
 belgeye tabidir ve onu geçersiz kılamaz.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-22 | **Last Amended**: 2026-08-22
+**Version**: 1.0.1 | **Ratified**: 2026-08-22 | **Last Amended**: 2026-08-22

@@ -1,0 +1,25 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+
+    paths:
+        - app
+        - config
+        - database
+        - routes
+        - tests
+
+    # Constitution art. IV: no baseline file. New code produces no warnings;
+    # nothing is ever added to a suppression list.
+    excludePaths:
+        - bootstrap/cache
+        - storage
+        - vendor
+
+    # `checkModelProperties` is deliberately off: it demands Larastan's
+    # `array<model property of Model, mixed>` pseudo-type, which the current
+    # phpDoc parser rejects outright. Level 6 is the bar the constitution sets.
+    checkOctaneCompatibility: false
+    reportUnmatchedIgnoredErrors: true

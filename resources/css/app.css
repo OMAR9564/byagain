@@ -1,0 +1,46 @@
+/*
+ * User-facing stylesheet. This bundle must never reference Filament, Livewire
+ * or Alpine assets — those live in admin.css and load only under /admin
+ * (SC-018).
+ */
+
+@import 'tailwindcss';
+@import './tokens.css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@layer base {
+    html {
+        background-color: var(--color-canvas);
+        color: var(--color-ink);
+        /* Stop iOS from inflating text in landscape, which breaks the
+         * one-card-per-screen rhythm of the review. */
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+        font-family: var(--font-sans);
+        font-size: var(--text-base);
+        line-height: var(--leading-normal);
+        /* The bottom nav is fixed; keep the last item reachable above it. */
+        padding-bottom: calc(var(--size-bottom-nav) + env(safe-area-inset-bottom));
+    }
+
+    /* One visible, consistent focus ring everywhere. Never removed — it is
+     * the only way a keyboard user knows where they are (FR-084). */
+    :focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+        border-radius: var(--radius-sm);
+    }
+
+    /* Form controls under 16px make iOS Safari zoom on focus, which yanks the
+     * layout sideways mid-typing (FR-080). */
+    input,
+    textarea,
+    select {
+        font-size: max(1rem, var(--text-base));
+        font-family: inherit;
+    }
+}

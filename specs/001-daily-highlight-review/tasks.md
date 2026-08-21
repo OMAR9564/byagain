@@ -34,10 +34,10 @@ Tek Laravel monoliti (plan.md "Structure Decision"): `app/`, `resources/`, `rout
 
 **Purpose**: Ana Yasa m. V "Dur ve Sor" kalemleri. Bunlar kapanmadan kod yazılmaz.
 
-- [ ] T001 Kaynak sıklık ağırlıklarının sayısal değerlerini insana onaylat (öneri: never=filtre, rare=0.25, low=0.5, normal=1.0, often=2.0, very_often=4.0) ve onaylanan değerleri `specs/001-daily-highlight-review/research.md` R-02 bölümüne "ONAYLANDI" olarak işle
-- [ ] T002 Yenilik çarpanı penceresini insana onaylat (öneri: 14 gün) ve `specs/001-daily-highlight-review/research.md` R-03 bölümüne işle
-- [ ] T003 E-posta sağlayıcısını insana sorup karara bağla (lisans + SPF/DKIM/DMARC planıyla), sonucu `specs/001-daily-highlight-review/research.md` R-11 bölümüne yaz
-- [ ] T004 Dil kararı çelişkisini kapat: ayrı bir PR ile `.specify/memory/constitution.md` içindeki `lang/tr/` ifadelerini `lang/en/` yap, `Blade'de Kaydet` örneğini İngilizceye çevir, sürümü 1.0.1'e yükselt (spec.md "Uygulama Öncesi Bekleyen Belge Güncellemeleri")
+- [X] T001 Kaynak sıklık ağırlıklarının sayısal değerlerini insana onaylat (öneri: never=filtre, rare=0.25, low=0.5, normal=1.0, often=2.0, very_often=4.0) ve onaylanan değerleri `specs/001-daily-highlight-review/research.md` R-02 bölümüne "ONAYLANDI" olarak işle
+- [X] T002 Yenilik çarpanı penceresini insana onaylat (öneri: 14 gün) ve `specs/001-daily-highlight-review/research.md` R-03 bölümüne işle
+- [X] T003 E-posta sağlayıcısını insana sorup karara bağla (lisans + SPF/DKIM/DMARC planıyla), sonucu `specs/001-daily-highlight-review/research.md` R-11 bölümüne yaz
+- [X] T004 Dil kararı çelişkisini kapat: ayrı bir PR ile `.specify/memory/constitution.md` içindeki `lang/tr/` ifadelerini `lang/en/` yap, `Blade'de Kaydet` örneğini İngilizceye çevir, sürümü 1.0.1'e yükselt (spec.md "Uygulama Öncesi Bekleyen Belge Güncellemeleri")
 
 **Checkpoint**: Dört kalem kapandı — uygulama başlayabilir.
 
@@ -47,15 +47,15 @@ Tek Laravel monoliti (plan.md "Structure Decision"): `app/`, `resources/`, `rout
 
 **Purpose**: Boş depoya Laravel iskeletini kurmak ve kalite kapılarını çalışır hâle getirmek.
 
-- [ ] T005 Depo kökünde Laravel 13.x iskeletini oluştur (PHP 8.3+), `composer.json` ve `package.json` işlenmiş hâlde
-- [ ] T006 `.env.example` içine MySQL 8, `QUEUE_CONNECTION=database`, `SESSION_DRIVER=database`, `MAIL_MAILER` anahtarlarını ve açıklamalarını ekle (gerçek `.env` dosyasına dokunma — Ana Yasa m. III)
-- [ ] T007 [P] `pint.json` dosyasını Laravel preset ile ekle ve `composer lint` betiğini `composer.json` içine yaz
-- [ ] T008 [P] Larastan'ı level 6 ile kur: `phpstan.neon` + `composer analyse` betiği (baseline dosyası oluşturma)
-- [ ] T009 [P] `vite.config.js` içinde iki ayrı giriş noktası tanımla: kullanıcı (`resources/css/app.css`, `resources/js/app.js`) ve admin (`resources/css/admin.css`) — SC-018
-- [ ] T010 [P] `resources/css/tokens.css` dosyasını renk, tipografi ve boşluk token'larıyla oluştur (≥17px gövde, 44px dokunma hedefi ölçeği) ve `resources/css/app.css` içinden içe aktar
-- [ ] T011 [P] `config/byagain.php` dosyasını oluştur: `sampling.source_weights`, `sampling.cooldown_tau=21`, `sampling.novelty_multiplier=1.5`, `sampling.novelty_window_days`, `sampling.block_days=3`, `sampling.quality_min_chars=25`, `mastery.initial_half_lives=[7,14,28]`, `mastery.multipliers=[0.5,2.0,3.0]`, `mastery.min_half_life=1`, `mastery.max_half_life=365`, `mastery.struggle_threshold=6`, `review.default_size=8`, `review.source_quota_divisor=3`, `day.boundary_hour=4` (değerler T001/T002 onayından gelir)
-- [ ] T012 [P] `lang/en/` altında `actions.php`, `review.php`, `library.php`, `editor.php`, `mastery.php`, `streak.php`, `settings.php`, `mail.php`, `errors.php` dosyalarını iskelet olarak oluştur (FR-088)
-- [ ] T013 `app/Providers/AppServiceProvider.php` içinde yerel ortamda `Model::preventLazyLoading()` ve `Model::shouldBeStrict()` etkinleştir (Ana Yasa m. IV)
+- [X] T005 Depo kökünde Laravel 13.x iskeletini oluştur (PHP 8.3+), `composer.json` ve `package.json` işlenmiş hâlde
+- [X] T006 `.env.example` içine MySQL 8, `QUEUE_CONNECTION=database`, `SESSION_DRIVER=database`, `MAIL_MAILER` anahtarlarını ve açıklamalarını ekle (gerçek `.env` dosyasına dokunma — Ana Yasa m. III)
+- [X] T007 [P] `pint.json` dosyasını Laravel preset ile ekle ve `composer lint` betiğini `composer.json` içine yaz
+- [X] T008 [P] Larastan'ı level 6 ile kur: `phpstan.neon` + `composer analyse` betiği (baseline dosyası oluşturma)
+- [X] T009 [P] `vite.config.js` içinde iki ayrı giriş noktası tanımla: kullanıcı (`resources/css/app.css`, `resources/js/app.js`) ve admin (`resources/css/admin.css`) — SC-018
+- [X] T010 [P] `resources/css/tokens.css` dosyasını renk, tipografi ve boşluk token'larıyla oluştur (≥17px gövde, 44px dokunma hedefi ölçeği) ve `resources/css/app.css` içinden içe aktar
+- [X] T011 [P] `config/byagain.php` dosyasını oluştur: `sampling.source_weights`, `sampling.cooldown_tau=21`, `sampling.novelty_multiplier=1.5`, `sampling.novelty_window_days`, `sampling.block_days=3`, `sampling.quality_min_chars=25`, `mastery.initial_half_lives=[7,14,28]`, `mastery.multipliers=[0.5,2.0,3.0]`, `mastery.min_half_life=1`, `mastery.max_half_life=365`, `mastery.struggle_threshold=6`, `review.default_size=8`, `review.source_quota_divisor=3`, `day.boundary_hour=4` (değerler T001/T002 onayından gelir)
+- [X] T012 [P] `lang/en/` altında `actions.php`, `review.php`, `library.php`, `editor.php`, `mastery.php`, `streak.php`, `settings.php`, `mail.php`, `errors.php` dosyalarını iskelet olarak oluştur (FR-088)
+- [X] T013 `app/Providers/AppServiceProvider.php` içinde yerel ortamda `Model::preventLazyLoading()` ve `Model::shouldBeStrict()` etkinleştir (Ana Yasa m. IV)
 
 ---
 

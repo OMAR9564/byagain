@@ -1,0 +1,11 @@
+/*
+ * Admin-only stylesheet, loaded exclusively by the Filament panel layout under
+ * /admin. Kept in its own Vite entry point so nothing here can leak into a
+ * user-facing page (SC-018, Constitution art. II).
+ */
+
+@import 'tailwindcss';
+
+@source '../../app/Filament/**/*.php';
+@source '../../resources/views/filament/**/*.blade.php';
+@source '../../vendor/filament/**/*.blade.php';

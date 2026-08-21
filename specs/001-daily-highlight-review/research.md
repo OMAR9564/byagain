@@ -26,9 +26,9 @@ tarafında `CONVERT_TZ` (MySQL tz tablolarının yüklü olmasına bağımlılı
 
 ---
 
-## R-02 — Kaynak sıklık basamakları → sayısal ağırlık ⚠️ İNSAN ONAYI GEREKLİ
+## R-02 — Kaynak sıklık basamakları → sayısal ağırlık ✅ ONAYLANDI (2026-08-22)
 
-**Karar (öneri)**: `config('byagain.sampling.source_weights')` altında altı basamak:
+**Karar**: `config('byagain.sampling.source_weights')` altında altı basamak:
 
 | Basamak | Anahtar | Önerilen değer |
 |---|---|---|
@@ -43,25 +43,26 @@ tarafında `CONVERT_TZ` (MySQL tz tablolarının yüklü olmasına bağımlılı
 ve SC-010'un "belirgin biçimde daha sık" ölçütünü karşılar. `never` ayrı bir çarpan değil,
 sorgu düzeyinde `WHERE` filtresidir (FR-030) — 0 ile çarpmak sıralamada belirsizlik bırakır.
 
-**Durum**: Sayısal değerler algoritma sabitidir (Ana Yasa m. V). Yukarıdaki tablo
-**önerdir**; insan onayı alınmadan `config/byagain.php` içine yazılmaz.
+**Durum**: ✅ **ONAYLANDI** (2026-08-22, depo sahibi). Yukarıdaki katlanan ölçek
+(`0.25 / 0.5 / 1.0 / 2.0 / 4.0`, `never` = `WHERE` filtresi) `config/byagain.php`
+içine bu değerlerle yazılır (T001, T011).
 
 **Elenenler**: Doğrusal ölçek (1..6 → normalize) — uçlar arası fark yetersiz; kullanıcı
 "çok sık" dediğinde farkı hissetmiyor.
 
 ---
 
-## R-03 — Yenilik çarpanının penceresi ⚠️ İNSAN ONAYI GEREKLİ
+## R-03 — Yenilik çarpanının penceresi ✅ ONAYLANDI (2026-08-22)
 
-**Karar (öneri)**: Yenilik çarpanı `1.5` (spec'te sabit). Uygulanma koşulu: pasaj **hiç
+**Karar**: Yenilik çarpanı `1.5` (spec'te sabit). Uygulanma koşulu: pasaj **hiç
 gösterilmemişse** (`last_shown_at IS NULL`) VEYA `created_at` son `14` gün içindeyse.
 
 **Gerekçe**: Spec çarpanın değerini veriyor ama penceresini vermiyor. "Hiç
 gösterilmemiş" koşulu tek başına yeni eklenen ama bir kez gösterilmiş pasajın hemen
 sıradanlaşmasına yol açar; 14 gün, iki haftalık okuma seansının havuza yerleşme süresi.
 
-**Durum**: `14` gün algoritma sabitidir — insan onayı bekler
-(`config('byagain.sampling.novelty_window_days')`).
+**Durum**: ✅ **ONAYLANDI** (2026-08-22, depo sahibi).
+`config('byagain.sampling.novelty_window_days') = 14` (T002, T011).
 
 **Elenenler**: Yalnızca `last_shown_at IS NULL` koşulu (fazla keskin); yaşla sürekli
 sönümlenen novelty (ikinci bir üstel terim, açıklanabilirliği düşürür).
