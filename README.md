@@ -101,6 +101,7 @@ are product decisions and live in `config/byagain.php`.
 | `MAIL_MAILER` | `log` | `resend` in staging and production. |
 | `RESEND_API_KEY` | — | Required when `MAIL_MAILER=resend`. |
 | `RESEND_WEBHOOK_SECRET` | — | Verifies the open-tracking webhook. Empty rejects every call. |
+| `TRUSTED_PROXIES` | `127.0.0.1,::1` | Proxies whose `X-Forwarded-*` headers are believed. Required behind nginx or signed links break. |
 | `BYAGAIN_SOURCE_URL` | this repository | Shown in the footer to satisfy the AGPL. |
 | `BYAGAIN_DEMO_HIGHLIGHTS` | `400` | Set to `20000` to build the performance fixture. |
 | `BYAGAIN_SEED_EMAIL` | — | Which account the seeders fill. Empty means the first existing one. |
@@ -207,6 +208,7 @@ with `php -S 127.0.0.1:8000 -t public public/index.php` and open `/login`.
 
 ## Documentation
 
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — putting it on a server, and the three things that fail silently if you skip them
 - [`docs/SPEC.md`](docs/SPEC.md) — routes, algorithms, the reasoning behind them
 - [`.specify/memory/constitution.md`](.specify/memory/constitution.md) — the rules this codebase is held to
 - [`specs/001-daily-highlight-review/`](specs/001-daily-highlight-review/) — the specification this was built from
