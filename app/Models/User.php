@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -56,7 +58,7 @@ use Illuminate\Support\Carbon;
     'reminder_email_at',
 ])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -157,6 +159,18 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isActive(): bool
     {
         return $this->status === self::STATUS_ACTIVE;
+    }
+
+    /**
+     * Filament's own gate on the panel, alongside the EnsureUserIsAdmin
+     * middleware. Two locks on one door, deliberately: outside `local`
+     * Filament refuses everyone unless this says otherwise, and relying on
+     * the middleware alone would mean one edit could open the panel to every
+     * signed-in reader (FR-069).
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->isAdmin() && $this->isActive();
     }
 
     /**

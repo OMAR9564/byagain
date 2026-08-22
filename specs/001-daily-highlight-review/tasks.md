@@ -271,20 +271,20 @@ gönder; normal rolle erişimin reddedildiğini doğrula.
 
 ### Tests for User Story 6
 
-- [ ] T105 [P] [US6] `tests/Feature/Admin/AdminAccessTest.php` — `user` rolü `/admin` → 403; `admin` rolü erişir (FR-069)
-- [ ] T106 [P] [US6] `tests/Feature/Admin/AdminActionLogTest.php` — askıya alma ve yeniden gönderme kaydedilir; kayıt güncellenemez/silinemez (FR-076)
-- [ ] T107 [P] [US6] `tests/Feature/Admin/SchedulerHealthTest.php` — zamanlayıcı iki turdur çalışmamışsa uyarı görünür (FR-074, SC-017)
+- [X] T105 [P] [US6] `tests/Feature/Admin/AdminAccessTest.php` — `user` rolü `/admin` → 403; `admin` rolü erişir (FR-069)
+- [X] T106 [P] [US6] `tests/Feature/Admin/AdminActionLogTest.php` — askıya alma ve yeniden gönderme kaydedilir; kayıt güncellenemez/silinemez (FR-076)
+- [X] T107 [P] [US6] `tests/Feature/Admin/SchedulerHealthTest.php` — zamanlayıcı iki turdur çalışmamışsa uyarı görünür (FR-074, SC-017)
 
 ### Implementation for User Story 6
 
-- [ ] T108 [US6] Filament v5 panelini `/admin` prefix'i ve `EnsureUserIsAdmin` middleware ile kur (`app/Providers/Filament/AdminPanelProvider.php`)
-- [ ] T109 [P] [US6] `app/Filament/Resources/UserResource.php` yaz: listele, ara, askıya al, doğrulama e-postası yeniden gönder; kimliğe bürünme yok (FR-070)
-- [ ] T110 [P] [US6] `app/Filament/Resources/SourceResource.php` ve `HighlightResource.php` yaz: salt okunur, pasajda 120 karakterlik `content_text` önizlemesi (FR-071)
-- [ ] T111 [P] [US6] `app/Filament/Resources/EmailDeliveryResource.php` yaz: tür/durum süzme, hata detayı, elle yeniden gönderme aksiyonu (FR-072)
-- [ ] T112 [US6] `app/Filament/Widgets/` altında gösterge widget'ları: kayıt, aktif kullanıcı, tamamlanma oranı, ortalama seri, gönderilen/başarısız e-posta, bekleyen iş, zamanlayıcı yaşı + gecikme uyarısı (FR-073, FR-074)
-- [ ] T113 [P] [US6] `app/Filament/Pages/MaintenanceSettings.php` yaz: bakım modu, kayıt kapatma, varsayılan tekrar boyutu (FR-075)
-- [ ] T114 [US6] `app/Services/Admin/AdminActionLogger.php` yaz ve tüm Filament aksiyonlarına bağla (FR-076)
-- [ ] T115 [US6] Panelde `withoutGlobalScope()` kullanımının yalnızca `app/Filament/` altında kaldığını doğrula ve kullanıcı layout'unun hiçbir Filament/Livewire/Alpine varlığı yüklemediğini kontrol et (SC-018, Ana Yasa m. II)
+- [X] T108 [US6] Filament v5 panelini `/admin` prefix'i ve `EnsureUserIsAdmin` middleware ile kur (`app/Providers/Filament/AdminPanelProvider.php`)
+- [X] T109 [P] [US6] `app/Filament/Resources/UserResource.php` yaz: listele, ara, askıya al, doğrulama e-postası yeniden gönder; kimliğe bürünme yok (FR-070)
+- [X] T110 [P] [US6] `app/Filament/Resources/SourceResource.php` ve `HighlightResource.php` yaz: salt okunur, pasajda 120 karakterlik `content_text` önizlemesi (FR-071)
+- [X] T111 [P] [US6] `app/Filament/Resources/EmailDeliveryResource.php` yaz: tür/durum süzme, hata detayı, elle yeniden gönderme aksiyonu (FR-072)
+- [X] T112 [US6] `app/Filament/Widgets/` altında gösterge widget'ları: kayıt, aktif kullanıcı, tamamlanma oranı, ortalama seri, gönderilen/başarısız e-posta, bekleyen iş, zamanlayıcı yaşı + gecikme uyarısı (FR-073, FR-074)
+- [X] T113 [P] [US6] `app/Filament/Pages/MaintenanceSettings.php` yaz: bakım modu, kayıt kapatma, varsayılan tekrar boyutu (FR-075)
+- [X] T114 [US6] `app/Services/Admin/AdminActionLogger.php` yaz ve tüm Filament aksiyonlarına bağla (FR-076)
+- [X] T115 [US6] Panelde `withoutGlobalScope()` kullanımının yalnızca `app/Filament/` altında kaldığını doğrula ve kullanıcı layout'unun hiçbir Filament/Livewire/Alpine varlığı yüklemediğini kontrol et (SC-018, Ana Yasa m. II)
 
 ---
 
