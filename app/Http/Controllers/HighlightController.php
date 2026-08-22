@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\PreviewHighlightRequest;
 use App\Http\Requests\StoreHighlightRequest;
 use App\Http\Requests\UpdateHighlightRequest;
 use App\Models\Highlight;
 use App\Models\Source;
 use App\Services\Content\HighlightWriter;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -35,6 +37,23 @@ final class HighlightController extends Controller
         return redirect()
             ->route('sources.show', $highlight->source_id)
             ->with('status', __('settings.saved'));
+    }
+
+    /**
+     * The editor's preview tab.
+     *
+     * Rendered on the server on purpose. A markdown renderer in the bundle
+     * would be a second path to the page that skips the purifier, and it would
+     * drift from this one the first time either changed — the reader would be
+     * shown one thing and sent another.
+     */
+    public function preview(PreviewHighlightRequest $request): JsonResponse
+    {
+        return response()->json([
+            // Empty in, empty out: the editor asks for a preview of whatever
+            // is in the field, including nothing.
+            'html' => $this->writer->preview((string) $request->input('content_md', '')),
+        ]);
     }
 
     public function edit(Highlight $highlight): View

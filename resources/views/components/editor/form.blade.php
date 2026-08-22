@@ -15,6 +15,10 @@
     class="flex flex-col gap-5"
     data-editor
     data-draft-key="{{ $highlight?->id ?? 'new' }}"
+    data-preview-url="{{ route('highlights.preview') }}"
+    data-preview-pending="{{ __('editor.preview.pending') }}"
+    data-preview-failed="{{ __('editor.preview.failed') }}"
+    data-preview-empty="{{ __('editor.preview.empty') }}"
 >
     @csrf
     @if ($method !== 'POST')
@@ -71,15 +75,20 @@
             style="background-color: var(--color-surface); color: var(--color-ink); border: 1px solid var(--color-border-strong); line-height: var(--leading-relaxed);"
         >{{ old('content_md', $highlight?->content_md) }}</textarea>
 
-        {{-- Preview renders the *markdown source* as plain text, not HTML. It
-             is a shape check for the writer, and it must never become a second
-             path by which unpurified markup reaches the page. --}}
-        <pre
+        {{-- The preview shows the passage exactly as a review card will: same
+             renderer, same purifier, same styles. The HTML is produced by the
+             server at /highlights/preview and is the very value that would be
+             stored in `content_html` — there is no markdown renderer in the
+             browser, deliberately, because a second one would be a second way
+             for unpurified markup to reach the page. --}}
+        <div
             data-editor-preview
             hidden
-            class="w-full whitespace-pre-wrap rounded-lg p-3.5"
-            style="background-color: var(--color-surface-sunken); color: var(--color-ink); font-family: var(--font-sans); line-height: var(--leading-relaxed);"
-        ></pre>
+            class="highlight-content w-full rounded-lg p-3.5"
+            style="background-color: var(--color-surface-sunken); border: 1px solid var(--color-border);"
+        >
+            <div class="highlight-body" data-editor-preview-body></div>
+        </div>
 
         @error('content_md')
             <p class="text-sm" style="color: var(--color-critical);">{{ $message }}</p>

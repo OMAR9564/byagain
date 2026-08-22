@@ -68,6 +68,25 @@ final class HighlightWriter
     }
 
     /**
+     * What this passage would look like if it were saved right now.
+     *
+     * Deliberately the same two steps `applyContent` performs — clean, then
+     * render — rather than a second, lighter path. A preview that renders
+     * differently from the thing it previews is worse than no preview: it
+     * tells the writer their table is fine when the saved version will not
+     * have one, and the PDF line breaks it repairs are exactly what someone
+     * is checking for.
+     *
+     * The returned HTML has been through MarkdownRenderer's purifier, so it is
+     * the same value that would land in `content_html`. Nothing else may be
+     * put on the page unescaped.
+     */
+    public function preview(string $markdown): string
+    {
+        return $this->renderer->toHtml($this->cleaner->clean($markdown));
+    }
+
+    /**
      * Hide a highlight from future reviews without deleting it, and without
      * disturbing any review it already appears in (FR-011, FR-013).
      */

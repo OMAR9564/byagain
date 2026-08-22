@@ -71,6 +71,14 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::patch('/library/sources/{source}', [SourceController::class, 'update'])->name('sources.update');
 
     Route::get('/add', [HighlightController::class, 'create'])->name('highlights.create');
+
+    // The preview tab. Rendered here rather than in the browser so there is
+    // one renderer and one purifier; throttled because it is called while
+    // someone is typing.
+    Route::post('/highlights/preview', [HighlightController::class, 'preview'])
+        ->middleware('throttle:60,1')
+        ->name('highlights.preview');
+
     Route::post('/highlights', [HighlightController::class, 'store'])->name('highlights.store');
     Route::get('/highlights/{highlight}/edit', [HighlightController::class, 'edit'])->name('highlights.edit');
     Route::patch('/highlights/{highlight}', [HighlightController::class, 'update'])->name('highlights.update');

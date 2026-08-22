@@ -15,6 +15,16 @@ return [
         'preview' => 'Preview',
     ],
 
+    'preview' => [
+        'pending' => 'Rendering…',
+        'empty' => 'Nothing to preview yet.',
+
+        // The preview is rendered on the server, so it is the one part of the
+        // editor that needs a connection. Say that plainly — what was typed is
+        // safe either way.
+        'failed' => 'Could not render the preview. Your text is still here.',
+    ],
+
     'format' => [
         'bold' => 'Bold',
         'italic' => 'Italic',

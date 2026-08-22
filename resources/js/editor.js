@@ -105,13 +105,25 @@ function applyToken(input, token) {
 /**
  * Write/preview toggle.
  *
- * The preview shows the markdown source as plain text via textContent. It is
- * a shape check for the writer, not a renderer — rendering it here would
- * create a second path to the page that skips MarkdownRenderer's purifier,
- * and there is only ever meant to be one.
+ * The preview is rendered by the server and arrives as HTML that has already
+ * been through MarkdownRenderer and its purifier — the same value that would
+ * be stored in content_html. That is the whole reason it is a request rather
+ * than a library in this bundle: a markdown renderer here would be a second
+ * path to the page that skips the purifier, and it would drift from the
+ * server's the first time either changed. What the writer sees has to be what
+ * gets saved, down to the repaired line breaks of a PDF paste.
  */
 function bindTabs(form, input, preview) {
     const tabs = form.querySelectorAll('[data-editor-tab]');
+    const body = preview?.querySelector('[data-editor-preview-body]');
+
+    if (preview === null || body === null || body === undefined) {
+        return;
+    }
+
+    // Only the newest request may write into the preview. Switching tabs
+    // twice quickly used to be enough to see the older of two answers.
+    let generation = 0;
 
     tabs.forEach((tab) => {
         tab.addEventListener('click', () => {
@@ -120,13 +132,58 @@ function bindTabs(form, input, preview) {
             input.hidden = showPreview;
             preview.hidden = !showPreview;
 
-            if (showPreview) {
-                preview.textContent = input.value;
-            }
-
             tabs.forEach((other) => {
                 other.setAttribute('aria-selected', String(other === tab));
             });
+
+            if (showPreview) {
+                render(form, input, body, ++generation, () => generation);
+            }
         });
     });
+}
+
+async function render(form, input, body, ticket, current) {
+    const markdown = input.value;
+
+    if (markdown.trim() === '') {
+        body.textContent = form.dataset.previewEmpty ?? '';
+
+        return;
+    }
+
+    body.textContent = form.dataset.previewPending ?? '';
+
+    try {
+        const response = await fetch(form.dataset.previewUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ content_md: markdown }),
+        });
+
+        if (!response.ok) {
+            throw new Error(String(response.status));
+        }
+
+        const payload = await response.json();
+
+        if (ticket !== current()) {
+            return;
+        }
+
+        // Safe to set as HTML: this string was produced by MarkdownRenderer,
+        // which escapes raw HTML at the CommonMark stage and then purifies
+        // against an explicit whitelist. It is the same value the review card
+        // echoes. Nothing else may be written this way.
+        body.innerHTML = payload.html;
+    } catch {
+        if (ticket === current()) {
+            body.textContent = form.dataset.previewFailed ?? '';
+        }
+    }
 }
