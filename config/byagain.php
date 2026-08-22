@@ -135,6 +135,23 @@ return [
         // Percentage of the review reserved for due mastery cards (FR-034).
         // Users can override this in settings; 0..100.
         'default_mastery_ratio' => 50,
+
+        // How many reviews a day is offered by default. One, because the
+        // product's promise is that finishing is possible — a screen that
+        // refills itself is a feed, and this is deliberately not one.
+        'default_daily_limit' => 1,
+
+        // The most a reader may ask for in settings.
+        'max_daily_limit' => 5,
+
+        // A reader who insists can go past their own limit, but not without
+        // end: this is where "one more" stops being answered.
+        'max_rounds_per_day' => 10,
+
+        // How long an action can be taken back before it is sent (FR-042).
+        // Long enough to notice a mis-swipe, short enough that the next card
+        // does not feel withheld.
+        'undo_window_seconds' => 5,
     ],
 
     /*
@@ -201,8 +218,57 @@ return [
 
     'streak' => [
 
-        // Days rendered on the streak calendar (FR-056).
+        // The calendar shows a week, and earns another week at a time.
+        //
+        // Ninety cells on day one is ninety cells of nothing, which reads as a
+        // report card rather than as a record. Starting at one row and adding
+        // a row per week means the grid grows with the habit — the reader is
+        // shown what they have done, never the size of what they have not
+        // (FR-056, FR-058).
+        'calendar_first_window' => 7,
+        'calendar_window_step' => 7,
+
+        // The ceiling. Past this the grid stops being readable on a phone.
         'calendar_days' => 90,
+    ],
+
+    /*
+    |------------------------------------------------------------------------
+    | Endearment
+    |------------------------------------------------------------------------
+    |
+    | One reader gets a different word for their name each day. It is not a
+    | feature and it is not configurable from the interface — it is a note
+    | left in the code for one person, which is the only place a note like
+    | this belongs.
+    |
+    | The line is chosen by local day, so it is the same all day and different
+    | tomorrow. Order is the rotation; add to the end.
+    |
+    */
+
+    'endearment' => [
+
+        // Matched against the first word of the account name, folded to
+        // lowercase. Empty disables the whole thing.
+        'name' => env('BYAGAIN_ENDEARMENT_NAME', 'mila'),
+
+        'lines' => [
+            "Omar's love",
+            'Sweetie',
+            'Princess',
+            "Omar's, still and always",
+            'The fairest of them all',
+            'I love you so much',
+            "Omar's favourite person",
+            'You look beautiful today, my princess',
+            'My whole heart',
+            "Omar's girl",
+            'Sweetheart',
+            'Loved, every single day',
+            'The best part of my day',
+            'Omar loves you',
+        ],
     ],
 
     /*

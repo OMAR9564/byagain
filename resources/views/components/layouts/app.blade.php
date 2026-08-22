@@ -1,3 +1,5 @@
+@props(['mastheadAs' => 'p'])
+
 {{-- The signed-in shell.
 
      Built for a 375px phone held in one hand: content scrolls in a single
@@ -45,7 +47,9 @@
         {{ __('actions.next') }}
     </a>
 
-    <main id="main" class="mx-auto w-full max-w-md px-4 pt-4">
+    <main id="main" class="mx-auto w-full max-w-md px-4 pt-3">
+        <x-masthead :as="$mastheadAs" />
+
         @isset($header)
             <header class="mb-4 flex min-h-11 items-center justify-between gap-3">
                 <h1 class="text-xl font-semibold tracking-tight" style="color: var(--color-ink);">

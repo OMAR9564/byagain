@@ -7,9 +7,34 @@
  *
  * The server treats a repeated action on the same card as a no-op that returns
  * current state, which is what makes replaying the queue safe.
+ *
+ * Two things are deliberate about the way a decision is taken here:
+ *
+ *   - It is held, not sent. For a few seconds the action lives only in this
+ *     file, and Undo makes it as if it never happened. A swipe is a gesture
+ *     the thumb can make by accident, and the server keeps the first answer
+ *     forever, so the moment to change your mind has to exist before the
+ *     request rather than after it.
+ *   - Once it is sent it is final, and the interface says so instead of
+ *     offering an edit it cannot honour. Stepping back onto a decided card
+ *     shows what was chosen; it does not pretend to be a form.
  */
 
 const QUEUE_KEY = 'byagain.review.queue';
+
+/** A gesture has to be this decisive to count, in pixels. */
+const SWIPE_DISTANCE = 60;
+
+/** ...and this much more horizontal than vertical, or it is a scroll. */
+const SWIPE_DOMINANCE = 1.5;
+
+/** Where the keep/discard hint starts fading in, in pixels of travel. */
+const HINT_FROM = 20;
+
+const HINT_TO = 80;
+
+/** Degrees of tilt at full travel. Small: the card is being pushed, not thrown. */
+const TILT_AT_FULL = 6;
 
 const root = document.querySelector('[data-review]');
 
@@ -22,18 +47,31 @@ function start(root) {
     const completion = root.querySelector('[data-review-complete]');
     const progress = root.querySelector('[data-review-progress]');
     const streakLine = root.querySelector('[data-review-streak]');
+    const back = root.querySelector('[data-review-back]');
+    const undoBar = root.querySelector('[data-review-undo]');
+    const undoLabel = root.querySelector('[data-review-undo-label]');
+    const undoButton = root.querySelector('[data-review-undo-action]');
+    const copy = readCopy(root);
     const csrf = root.dataset.csrf;
+    const undoMs = (Number(root.dataset.undoSeconds) || 5) * 1000;
 
-    let index = Number(root.dataset.startIndex) || 0;
+    // `frontier` is the card being decided; `viewing` is the card on screen.
+    // They are the same until the reader steps back to look at one they have
+    // already dealt with. Both may equal cards.length, which means the
+    // completion screen.
+    let frontier = Number(root.dataset.startIndex) || 0;
+    let viewing = frontier;
 
-    show(index);
+    // The decision waiting out its undo window. At most one: taking another
+    // action commits whatever was already held.
+    let pending = null;
+
+    showCard(frontier);
     flushQueue(csrf);
 
-    cards.forEach((card) => {
+    cards.forEach((card, position) => {
         card.querySelectorAll('[data-review-action]').forEach((button) => {
-            button.addEventListener('click', () => {
-                act(card, button.dataset.reviewAction);
-            });
+            button.addEventListener('click', () => act(card, button.dataset.reviewAction));
         });
 
         const favorite = card.querySelector('[data-review-favorite]');
@@ -45,6 +83,8 @@ function start(root) {
             });
         }
 
+        card.querySelector('[data-review-resume]')?.addEventListener('click', () => showCard(frontier));
+
         bindExpand(card);
 
         if (card.dataset.itemType === 'mastery') {
@@ -53,75 +93,205 @@ function start(root) {
             // Swiping is for highlights only. A mastery card is a question,
             // and answering it by accident with a stray thumb would be worse
             // than making the reader tap.
-            bindSwipe(card);
+            bindSwipe(card, position);
         }
     });
 
-    // Arrow keys on a desktop, where there is no thumb to swipe with.
-    document.addEventListener('keydown', (event) => {
-        const card = cards[index];
+    back?.addEventListener('click', () => showCard(viewing - 1));
+    undoButton?.addEventListener('click', undoPending);
 
-        if (card === undefined || completion.hidden === false) {
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && pending !== null) {
+            undoPending();
+
+            return;
+        }
+
+        if (event.key === 'ArrowUp') {
+            showCard(viewing - 1);
+
+            return;
+        }
+
+        // Deciding is only possible on the card being decided. Arrow keys on
+        // a card you stepped back to look at would silently act on a
+        // different one.
+        if (viewing !== frontier || frontier >= cards.length) {
             return;
         }
 
         if (event.key === 'ArrowRight') {
-            act(card, 'keep');
+            act(cards[frontier], 'keep');
         } else if (event.key === 'ArrowLeft') {
-            act(card, 'discard');
+            act(cards[frontier], 'discard');
+        }
+    });
+
+    // A held action must not be lost because the reader closed the tab or
+    // switched app. `pagehide` is the one event iOS reliably fires.
+    window.addEventListener('pagehide', () => commitPending());
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            commitPending();
         }
     });
 
     function act(card, action, masteryFeedback = null) {
-        if (card.dataset.acted === 'true') {
+        if (card.dataset.acted === 'true' || pending?.card === card) {
             return;
         }
 
-        card.dataset.acted = 'true';
+        // One at a time: deciding the next card ends the previous card's
+        // window rather than queueing a second undo nobody could aim at.
+        commitPending();
 
-        // The interface moves first. Whether the request succeeds is the
-        // network's problem, not the reader's.
+        pending = {
+            card,
+            action,
+            masteryFeedback,
+            index: cards.indexOf(card),
+            favorite: card.querySelector('[data-review-favorite]')?.getAttribute('aria-pressed') === 'true',
+            frequency: frequencyChange(card),
+            actedAt: new Date().toISOString(),
+            timer: window.setTimeout(() => commitPending(), undoMs),
+        };
+
+        card.dataset.verdict = action;
+
+        showUndo(action);
         advance();
+    }
 
-        const favorite = card.querySelector('[data-review-favorite]');
-        const frequency = card.querySelector('[data-review-frequency]');
+    /**
+     * Send the held decision. From here it is the server's, and the interface
+     * stops offering to take it back.
+     */
+    function commitPending() {
+        if (pending === null) {
+            return;
+        }
 
-        send(
-            card.dataset.actionUrl,
+        const held = pending;
+        pending = null;
+
+        window.clearTimeout(held.timer);
+        hideUndo();
+
+        held.card.dataset.acted = 'true';
+
+        const sent = send(
+            held.card.dataset.actionUrl,
             {
-                action,
-                mastery_feedback: masteryFeedback,
-                favorite: favorite !== null && favorite.getAttribute('aria-pressed') === 'true',
+                action: held.action,
+                mastery_feedback: held.masteryFeedback,
+                favorite: held.favorite,
                 // Only sent when the reader actually moved the dial, so a
                 // plain keep does not rewrite the source every time.
-                source_frequency:
-                    frequency !== null && frequency.value !== frequency.dataset.initial
-                        ? frequency.value
-                        : null,
-                client_acted_at: new Date().toISOString(),
+                source_frequency: held.frequency,
+                client_acted_at: held.actedAt,
             },
             csrf,
         );
+
+        // The card that finishes the review completes it server-side by
+        // itself; this call is what tells the reader, and what covers the
+        // case where the action was queued offline.
+        if (held.index === cards.length - 1) {
+            sent.then((payload) => completeReview(payload));
+        }
     }
 
-    function advance() {
-        index += 1;
-        updateProgress();
-
-        if (index >= cards.length) {
-            finish();
+    function undoPending() {
+        if (pending === null) {
             return;
         }
 
-        show(index);
+        const held = pending;
+        pending = null;
+
+        window.clearTimeout(held.timer);
+        hideUndo();
+
+        held.card.dataset.verdict = '';
+        frontier = held.index;
+
+        showCard(frontier);
     }
 
-    function show(target) {
+    function advance() {
+        frontier += 1;
+
+        showCard(frontier);
+    }
+
+    /**
+     * Put a card on screen. `target` may be cards.length, which is the
+     * completion screen, and is clamped at both ends.
+     */
+    function showCard(target) {
+        viewing = Math.max(0, Math.min(target, cards.length));
+
         cards.forEach((card, i) => {
-            card.hidden = i !== target;
+            card.hidden = i !== viewing;
+
+            if (i === viewing) {
+                resetSwipe(card);
+            }
         });
 
+        completion.hidden = viewing !== cards.length;
+
+        updateChrome();
+    }
+
+    /**
+     * The controls around the card: which of them belong to the card being
+     * looked at right now.
+     */
+    function updateChrome() {
+        if (back !== null) {
+            back.hidden = viewing === 0;
+        }
+
+        const card = cards[viewing];
+
+        if (card !== undefined) {
+            // Decided cards — including the one whose window is still open —
+            // show their verdict rather than their buttons.
+            const decided = card.dataset.acted === 'true' || card.dataset.verdict !== '';
+
+            const actions = card.querySelector('[data-review-actions]');
+            const verdict = card.querySelector('[data-review-verdict]');
+            const masteryChoices = card.querySelector('[data-mastery-feedback]');
+
+            if (actions !== null) {
+                actions.hidden = decided;
+            }
+
+            if (masteryChoices !== null && decided) {
+                masteryChoices.hidden = true;
+            }
+
+            if (verdict !== null) {
+                verdict.hidden = ! decided;
+
+                const label = verdict.querySelector('[data-review-verdict-label]');
+
+                if (label !== null) {
+                    label.textContent = verdictText(card);
+                }
+            }
+        }
+
         updateProgress();
+    }
+
+    function verdictText(card) {
+        if (card.dataset.itemType === 'mastery') {
+            return copy.answered;
+        }
+
+        return card.dataset.verdict === 'discard' ? copy.discarded : copy.kept;
     }
 
     function updateProgress() {
@@ -129,7 +299,7 @@ function start(root) {
             return;
         }
 
-        const done = Math.min(index, cards.length);
+        const done = Math.min(frontier, cards.length);
         progress.setAttribute('aria-valuenow', String(done));
 
         const fill = progress.firstElementChild;
@@ -139,13 +309,37 @@ function start(root) {
         }
     }
 
-    async function finish() {
-        cards.forEach((card) => {
-            card.hidden = true;
-        });
+    function showUndo(action) {
+        if (undoBar === null) {
+            return;
+        }
 
-        completion.hidden = false;
+        undoLabel.textContent = action === 'discard' ? copy.undoDiscarded : copy.undoKept;
 
+        undoBar.hidden = false;
+        undoBar.dataset.entering = '';
+
+        // Two frames: the first paints the bar in its offset state, the
+        // second removes it so the transition has somewhere to travel from.
+        requestAnimationFrame(() => requestAnimationFrame(() => delete undoBar.dataset.entering));
+    }
+
+    function hideUndo() {
+        if (undoBar !== null) {
+            undoBar.hidden = true;
+        }
+    }
+
+    async function completeReview(payload) {
+        const streak = payload?.streak ?? (await postCompletion())?.streak;
+
+        if (streak && streakLine !== null) {
+            streakLine.textContent = streak.current;
+            streakLine.hidden = false;
+        }
+    }
+
+    async function postCompletion() {
         try {
             const response = await fetch(root.dataset.completeUrl, {
                 method: 'POST',
@@ -153,21 +347,163 @@ function start(root) {
                 body: '{}',
             });
 
-            if (!response.ok) {
-                return;
-            }
-
-            const payload = await response.json();
-
-            if (payload.streak && streakLine !== null) {
-                streakLine.textContent = payload.streak.current;
-                streakLine.hidden = false;
-            }
+            return response.ok ? await response.json() : null;
         } catch {
             // Offline. The queued card actions will complete the review on
             // the server as soon as they land.
+            return null;
         }
     }
+
+    /**
+     * Horizontal swipe: right keeps, left discards. The card tracks the thumb
+     * and leaves in the direction it was pushed; vertical movement is left
+     * alone so the passage can still be scrolled.
+     */
+    function bindSwipe(card, position) {
+        const surface = card.querySelector('[data-swipe-surface]');
+
+        if (surface === null) {
+            return;
+        }
+
+        const hints = {
+            keep: surface.querySelector('[data-swipe-hint="keep"]'),
+            discard: surface.querySelector('[data-swipe-hint="discard"]'),
+        };
+
+        let startX = null;
+        let startY = null;
+        let dragging = false;
+
+        const decidable = () => card.dataset.acted !== 'true'
+            && card.dataset.verdict === ''
+            && position === frontier;
+
+        surface.addEventListener(
+            'touchstart',
+            (event) => {
+                if (! decidable()) {
+                    return;
+                }
+
+                startX = event.changedTouches[0].clientX;
+                startY = event.changedTouches[0].clientY;
+                dragging = false;
+                surface.classList.remove('is-settling');
+            },
+            { passive: true },
+        );
+
+        surface.addEventListener(
+            'touchmove',
+            (event) => {
+                if (startX === null) {
+                    return;
+                }
+
+                const dx = event.changedTouches[0].clientX - startX;
+                const dy = event.changedTouches[0].clientY - startY;
+
+                if (! dragging && Math.abs(dx) < Math.abs(dy)) {
+                    // A scroll. Let go of the gesture entirely rather than
+                    // fighting the page for it.
+                    startX = null;
+
+                    return;
+                }
+
+                dragging = true;
+
+                surface.style.transform = `translateX(${dx}px) rotate(${(dx / window.innerWidth) * TILT_AT_FULL * 2}deg)`;
+
+                const strength = Math.min(1, Math.max(0, (Math.abs(dx) - HINT_FROM) / (HINT_TO - HINT_FROM)));
+
+                hints.keep?.style.setProperty('opacity', dx > 0 ? String(strength) : '0');
+                hints.discard?.style.setProperty('opacity', dx < 0 ? String(strength) : '0');
+            },
+            { passive: true },
+        );
+
+        surface.addEventListener(
+            'touchend',
+            (event) => {
+                if (startX === null) {
+                    return;
+                }
+
+                const dx = event.changedTouches[0].clientX - startX;
+                const dy = event.changedTouches[0].clientY - startY;
+
+                startX = null;
+                startY = null;
+                dragging = false;
+
+                surface.classList.add('is-settling');
+
+                // Needs to be a decisive, mostly-horizontal gesture. Anything
+                // else is someone scrolling, and the card goes back to rest.
+                if (Math.abs(dx) < SWIPE_DISTANCE || Math.abs(dx) < Math.abs(dy) * SWIPE_DOMINANCE) {
+                    resetSwipe(card);
+
+                    return;
+                }
+
+                const direction = dx > 0 ? 1 : -1;
+
+                surface.style.transform = `translateX(${direction * window.innerWidth}px) rotate(${direction * TILT_AT_FULL}deg)`;
+                surface.style.opacity = '0';
+
+                act(card, direction > 0 ? 'keep' : 'discard');
+            },
+            { passive: true },
+        );
+    }
+}
+
+/**
+ * Put a card back at rest. Called when it is shown as well as when a gesture
+ * is abandoned, so a card that left the screen and was undone comes back
+ * square.
+ */
+function resetSwipe(card) {
+    const surface = card.querySelector('[data-swipe-surface]');
+
+    if (surface === null) {
+        return;
+    }
+
+    surface.style.transform = '';
+    surface.style.opacity = '';
+
+    surface.querySelectorAll('[data-swipe-hint]').forEach((hint) => {
+        hint.style.opacity = '0';
+    });
+}
+
+/**
+ * Copy for the strings this file puts on screen. Rendered by the translator
+ * into the page rather than written here, so there is one place user-facing
+ * words live.
+ */
+function readCopy(root) {
+    const source = root.querySelector('[data-review-copy]');
+
+    try {
+        return JSON.parse(source?.textContent ?? '{}');
+    } catch {
+        return {};
+    }
+}
+
+function frequencyChange(card) {
+    const select = card.querySelector('[data-review-frequency]');
+
+    if (select === null || select.value === select.dataset.initial) {
+        return null;
+    }
+
+    return select.value;
 }
 
 /**
@@ -215,49 +551,6 @@ function bindExpand(card) {
     });
 }
 
-/**
- * Horizontal swipe: right keeps, left discards. Vertical movement is left
- * alone so the passage can still be scrolled.
- */
-function bindSwipe(card) {
-    let startX = null;
-    let startY = null;
-
-    card.addEventListener(
-        'touchstart',
-        (event) => {
-            startX = event.changedTouches[0].clientX;
-            startY = event.changedTouches[0].clientY;
-        },
-        { passive: true },
-    );
-
-    card.addEventListener(
-        'touchend',
-        (event) => {
-            if (startX === null) {
-                return;
-            }
-
-            const dx = event.changedTouches[0].clientX - startX;
-            const dy = event.changedTouches[0].clientY - startY;
-
-            startX = null;
-            startY = null;
-
-            // Needs to be a decisive, mostly-horizontal gesture. Anything
-            // else is someone scrolling.
-            if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) {
-                return;
-            }
-
-            const action = dx > 0 ? 'keep' : 'discard';
-            card.querySelector(`[data-review-action="${action}"]`)?.click();
-        },
-        { passive: true },
-    );
-}
-
 function jsonHeaders(csrf) {
     return {
         'Content-Type': 'application/json',
@@ -278,14 +571,20 @@ async function send(url, body, csrf) {
         // 4xx other than 409 means the payload is wrong and retrying will not
         // help; drop it rather than poisoning the queue forever.
         if (!response.ok && response.status !== 409 && response.status < 500) {
-            return;
+            return null;
         }
 
         if (!response.ok) {
             enqueue({ url, body });
+
+            return null;
         }
+
+        return await response.json();
     } catch {
         enqueue({ url, body });
+
+        return null;
     }
 }
 

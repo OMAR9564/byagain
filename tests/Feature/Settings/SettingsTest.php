@@ -83,6 +83,29 @@ final class SettingsTest extends TestCase
     }
 
     #[Test]
+    public function the_daily_review_limit_is_held_inside_its_configured_bounds(): void
+    {
+        $max = (int) config('byagain.review.max_daily_limit');
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->patch('/settings', $this->payload(['daily_review_limit' => 0]))
+            ->assertSessionHasErrors('daily_review_limit');
+
+        $this->actingAs($user)
+            ->patch('/settings', $this->payload(['daily_review_limit' => $max + 1]))
+            ->assertSessionHasErrors('daily_review_limit');
+
+        $this->assertSame(1, $user->refresh()->daily_review_limit);
+
+        $this->actingAs($user)
+            ->patch('/settings', $this->payload(['daily_review_limit' => $max]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($max, $user->refresh()->daily_review_limit);
+    }
+
+    #[Test]
     public function a_made_up_timezone_is_rejected(): void
     {
         $user = User::factory()->create(['timezone' => 'UTC']);
@@ -114,6 +137,7 @@ final class SettingsTest extends TestCase
     {
         return array_merge([
             'review_size' => 8,
+            'daily_review_limit' => 1,
             'mastery_ratio' => 50,
             'timezone' => 'UTC',
             'daily_email_at' => '08:00',

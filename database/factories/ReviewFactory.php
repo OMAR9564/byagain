@@ -24,6 +24,7 @@ final class ReviewFactory extends Factory
         return [
             'user_id' => User::factory(),
             'review_date' => Carbon::now()->toDateString(),
+            'round' => Review::FIRST_ROUND,
             'size' => (int) config('byagain.review.default_size'),
             'status' => Review::STATUS_PENDING,
             'started_at' => null,
@@ -36,6 +37,14 @@ final class ReviewFactory extends Factory
         return $this->state(fn (): array => [
             'review_date' => $day instanceof Carbon ? $day->toDateString() : $day,
         ]);
+    }
+
+    /**
+     * A round beyond the day's own review — practice the reader asked for.
+     */
+    public function round(int $round): self
+    {
+        return $this->state(fn (): array => ['round' => $round]);
     }
 
     public function completed(): self

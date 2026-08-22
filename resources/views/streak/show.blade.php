@@ -27,18 +27,35 @@
             {{ __('streak.calendar.title', ['count' => count($calendar)]) }}
         </h2>
 
+        {{-- Seven to a row, so a row is a week and the grid gains one as the
+             streak does. No weekday letters: the window rolls, so the columns
+             are not weekdays and pretending otherwise would be a lie the eye
+             notices. --}}
         <ul class="grid grid-cols-7 gap-1.5" role="list">
-            @foreach ($calendar as $day)
+            @foreach ($calendar as $index => $day)
+                @php $isToday = $index === count($calendar) - 1; @endphp
+
                 <li
                     class="aspect-square rounded-md"
-                    style="background-color: {{ $day['done'] ? 'var(--color-accent)' : 'var(--color-border)' }};"
+                    style="
+                        background-color: {{ $day['done'] ? 'var(--color-accent)' : 'var(--color-surface-sunken)' }};
+                        border: 1px solid {{ $day['done'] ? 'transparent' : 'var(--color-border)' }};
+                        @if ($isToday) outline: 2px solid var(--color-accent); outline-offset: 2px; @endif
+                    "
                     title="{{ $day['date'] }} — {{ $day['done'] ? __('streak.calendar.done') : __('streak.calendar.missed') }}"
                 >
                     <span class="sr-only">
-                        {{ $day['date'] }}: {{ $day['done'] ? __('streak.calendar.done') : __('streak.calendar.missed') }}
+                        {{ $isToday ? __('streak.calendar.today') . ', ' : '' }}{{ $day['date'] }}:
+                        {{ $day['done'] ? __('streak.calendar.done') : __('streak.calendar.missed') }}
                     </span>
                 </li>
             @endforeach
         </ul>
+
+        @if ($growsAt !== null)
+            <p class="mt-3 text-xs" style="color: var(--color-ink-subtle);">
+                {{ __('streak.calendar.grows', ['count' => $growsAt]) }}
+            </p>
+        @endif
     </section>
 </x-layouts.app>

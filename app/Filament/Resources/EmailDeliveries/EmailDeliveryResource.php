@@ -101,6 +101,9 @@ final class EmailDeliveryResource extends Resource
                     ->withoutGlobalScope('owned_by_user')
                     ->where('user_id', $record->user_id)
                     ->where('review_date', $days->localDayFor($record->user)->toDateString())
+                    // The day's own review, never an extra round the reader
+                    // asked for afterwards: the email is round one.
+                    ->where('round', Review::FIRST_ROUND)
                     ->first();
 
                 if ($review === null) {

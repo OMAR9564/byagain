@@ -1,9 +1,13 @@
-<x-layouts.app>
-    <x-slot:header>{{ config('app.name') }}</x-slot:header>
-
-    <x-slot:headerAction>
-        <x-streak-badge :count="$streak" />
-    </x-slot:headerAction>
+<x-layouts.app masthead-as="h1">
+    {{-- No page heading here on purpose: the masthead already says who this
+         is and the screen answers one question — what now? A brand name
+         repeated under a greeting would be the only thing on the page that
+         is not an answer. --}}
+    @if ($streak > 0)
+        <div class="mb-4 flex justify-end">
+            <x-streak-badge :count="$streak" />
+        </div>
+    @endif
 
     @if (! $hasSources)
         {{-- The first thing a new account sees. Not an apology for being
@@ -21,13 +25,13 @@
             </p>
 
             <x-button :href="route('review.show')" class="mt-4 w-full">
-                {{ __('review.title') }}
+                {{ $review->started_at === null ? __('review.title') : __('review.resume') }}
             </x-button>
         </x-card>
     @elseif ($review !== null)
         <x-empty-state
             :title="__('review.complete.title')"
-            :body="__('review.complete.body')"
+            :body="__('review.done.body')"
         />
     @else
         <x-empty-state

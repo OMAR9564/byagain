@@ -46,6 +46,64 @@
 }
 
 /*
+ * The review card and the few seconds after a decision.
+ *
+ * One authored moment: the card follows the thumb and leaves in the direction
+ * it was pushed, and the undo bar rises to meet it. Nothing else on this
+ * screen moves.
+ */
+@layer components {
+    /* pan-y so the passage still scrolls under a vertical drag; only the
+     * horizontal axis belongs to the gesture. */
+    [data-swipe-surface] {
+        touch-action: pan-y;
+    }
+
+    /* Applied while the card returns to rest or leaves. Absent during the
+     * drag itself, so the card tracks the thumb exactly. */
+    [data-swipe-surface].is-settling {
+        transition:
+            transform var(--duration-card) var(--ease-out),
+            opacity var(--duration-card) var(--ease-out);
+    }
+
+    [data-swipe-hint] {
+        transition: opacity var(--duration-fast) var(--ease-out);
+    }
+
+    /* The favourite mark fills rather than changing colour alone — colour on
+     * its own is not a state anyone notices at 14px. */
+    [data-review-favorite][aria-pressed='true'] {
+        color: var(--color-accent);
+    }
+
+    [data-review-favorite][aria-pressed='true'] [data-favorite-mark] {
+        fill: currentColor;
+    }
+
+    /*
+     * The undo bar sits above the thumb bar, and above the offline banner
+     * when that is showing — the two are the only things that live down
+     * there, and they must never cover each other.
+     */
+    [data-review-undo] {
+        bottom: calc(var(--size-bottom-nav) + env(safe-area-inset-bottom) + 0.75rem);
+        transition:
+            transform var(--duration-card) var(--ease-out),
+            opacity var(--duration-card) var(--ease-out);
+    }
+
+    body:has(#offline-banner:not([hidden])) [data-review-undo] {
+        bottom: calc(var(--size-bottom-nav) + env(safe-area-inset-bottom) + 3.5rem);
+    }
+
+    [data-review-undo][data-entering] {
+        transform: translateY(0.75rem);
+        opacity: 0;
+    }
+}
+
+/*
  * Rendered highlight bodies. These styles target markup produced by
  * MarkdownRenderer, so there are no classes to hang them on — element
  * selectors scoped to the container are the honest way to do it.

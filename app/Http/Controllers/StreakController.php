@@ -23,6 +23,9 @@ final class StreakController extends Controller
             'current' => $this->streaks->currentStreakFor($user),
             'longest' => $user->longest_streak,
             'calendar' => $this->streaks->calendar($user),
+            // The streak at which the grid gains a row — null once it has
+            // grown as far as a phone can show, so the page stops promising.
+            'growsAt' => $this->streaks->nextGrowthAt($user),
         ]);
     }
 }

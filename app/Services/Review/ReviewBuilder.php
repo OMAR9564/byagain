@@ -24,12 +24,13 @@ use Illuminate\Support\Facades\DB;
  * mean the email and the screen disagree about what today is, which is the
  * one thing this product cannot get wrong (FR-025, SC-015).
  *
- * The guarantee is the UNIQUE (user_id, review_date) index, not a lock and not
- * a check-then-insert: whichever writer loses the race catches the constraint
- * violation and reads back the row that won.
+ * The guarantee is the UNIQUE (user_id, review_date, round) index, not a lock
+ * and not a check-then-insert: whichever writer loses the race catches the
+ * constraint violation and reads back the row that won.
  *
- * This is the first version. Weighted sampling (US2) and mastery cards (US3)
- * arrive by replacing the candidate query, not by changing this contract.
+ * A day may hold further rounds if the reader asks for them, but only round 1
+ * is "the day": `buildFor` and `find` mean round 1 and nothing else, so the
+ * pipeline, the email and the reminder are untouched by any of it.
  */
 final class ReviewBuilder
 {
@@ -56,6 +57,61 @@ final class ReviewBuilder
             return $existing;
         }
 
+        return $this->generate($user, $day, Review::FIRST_ROUND);
+    }
+
+    /**
+     * Build the next round of a day that already has one.
+     *
+     * Returns null when there is nothing left to draw on — a reader who has
+     * seen everything eligible gets told so, rather than handed the same cards
+     * again with a different heading.
+     */
+    public function buildNextRound(User $user, ?CarbonImmutable $localDay = null): ?Review
+    {
+        $day = $localDay ?? $this->days->localDayFor($user);
+        $latest = $this->latestFor($user, $day);
+
+        if ($latest === null) {
+            return $this->buildFor($user, $day);
+        }
+
+        if (! $latest->isCompleted()) {
+            // Nothing to add to: the round they are in is still open.
+            return $latest;
+        }
+
+        if ($latest->round >= (int) config('byagain.review.max_rounds_per_day')) {
+            return null;
+        }
+
+        return $this->generate($user, $day, $latest->round + 1);
+    }
+
+    /**
+     * The most recent round of a local day — what the screen shows.
+     */
+    public function latestFor(User $user, CarbonImmutable $localDay): ?Review
+    {
+        return $user->reviews()
+            ->with($this->relations())
+            ->where('review_date', $localDay->toDateString())
+            ->orderByDesc('round')
+            ->first();
+    }
+
+    /**
+     * How many rounds this local day has produced so far.
+     */
+    public function roundsToday(User $user, CarbonImmutable $localDay): int
+    {
+        return $user->reviews()
+            ->where('review_date', $localDay->toDateString())
+            ->count();
+    }
+
+    private function generate(User $user, CarbonImmutable $day, int $round): ?Review
+    {
         // Mastery cards take their share first, but only as many as are
         // actually due. Whatever the ratio does not claim — or claims but
         // cannot fill — goes back to ordinary highlights, so a reader with no
@@ -72,19 +128,29 @@ final class ReviewBuilder
         }
 
         try {
-            return DB::transaction(fn (): Review => $this->create($user, $day, $highlights, $cards));
+            return DB::transaction(fn (): Review => $this->create($user, $day, $round, $highlights, $cards));
         } catch (UniqueConstraintViolationException) {
             // Someone else built it between the check and the insert. Their
             // review is as valid as ours would have been; use it.
-            return $this->find($user, $day);
+            return $this->findRound($user, $day, $round);
         }
     }
 
+    /**
+     * The day's own review: round 1, the one everything outside the screen
+     * means when it says "today's review".
+     */
     public function find(User $user, CarbonImmutable $localDay): ?Review
+    {
+        return $this->findRound($user, $localDay, Review::FIRST_ROUND);
+    }
+
+    private function findRound(User $user, CarbonImmutable $localDay, int $round): ?Review
     {
         return $user->reviews()
             ->with($this->relations())
             ->where('review_date', $localDay->toDateString())
+            ->where('round', $round)
             ->first();
     }
 
@@ -92,11 +158,12 @@ final class ReviewBuilder
      * @param  array<int, Highlight>  $highlights
      * @param  array<int, MasteryCard>  $cards
      */
-    private function create(User $user, CarbonImmutable $localDay, array $highlights, array $cards): Review
+    private function create(User $user, CarbonImmutable $localDay, int $round, array $highlights, array $cards): Review
     {
         $review = new Review;
         $review->user_id = $user->id;
         $review->review_date = Carbon::parse($localDay->toDateString());
+        $review->round = $round;
 
         // The size recorded is what was actually built, not what was asked
         // for. A user with four eligible highlights and a size of eight gets

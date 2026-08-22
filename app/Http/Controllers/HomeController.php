@@ -27,11 +27,14 @@ final class HomeController extends Controller
     {
         $user = $request->user();
 
-        // Deliberately `find` rather than `buildFor`: opening the home screen
-        // should not spend a sampling query building a review the reader may
-        // not be about to start. /review builds it when they actually go
-        // there, and the pipeline usually got there first anyway.
-        $review = $this->builder->find($user, $this->days->localDayFor($user));
+        // Deliberately a lookup rather than `buildFor`: opening the home
+        // screen should not spend a sampling query building a review the
+        // reader may not be about to start. /review builds it when they
+        // actually go there, and the pipeline usually got there first anyway.
+        //
+        // The latest round, not the first: after an extra round the question
+        // "what now?" is about the one they are in.
+        $review = $this->builder->latestFor($user, $this->days->localDayFor($user));
 
         return view('home', [
             'hasSources' => Source::query()->exists(),

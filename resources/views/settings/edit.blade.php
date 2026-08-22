@@ -22,6 +22,17 @@
             />
 
             <x-field
+                name="daily_review_limit"
+                type="number"
+                :label="__('settings.review.daily_limit')"
+                :value="$user->daily_review_limit"
+                :help="__('settings.review.daily_limit_help', ['max' => config('byagain.review.max_daily_limit')])"
+                min="1"
+                :max="config('byagain.review.max_daily_limit')"
+                required
+            />
+
+            <x-field
                 name="mastery_ratio"
                 type="number"
                 :label="__('settings.review.mastery_ratio')"

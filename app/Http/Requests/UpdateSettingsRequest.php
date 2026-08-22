@@ -32,6 +32,13 @@ final class UpdateSettingsRequest extends FormRequest
                 'max:'.config('byagain.review.max_size'),
             ],
 
+            'daily_review_limit' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:'.config('byagain.review.max_daily_limit'),
+            ],
+
             'mastery_ratio' => ['required', 'integer', 'min:0', 'max:100'],
 
             'quality_filter_enabled' => ['boolean'],

@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property string $status
  * @property string $timezone
  * @property int $review_size
+ * @property int $daily_review_limit
  * @property int $mastery_ratio
  * @property bool $quality_filter_enabled
  * @property bool $equal_source_weighting
@@ -49,6 +50,7 @@ use Illuminate\Support\Carbon;
     'password',
     'timezone',
     'review_size',
+    'daily_review_limit',
     'mastery_ratio',
     'quality_filter_enabled',
     'equal_source_weighting',
@@ -88,6 +90,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'role' => self::ROLE_USER,
         'status' => self::STATUS_ACTIVE,
         'timezone' => 'UTC',
+        'daily_review_limit' => 1,
         'quality_filter_enabled' => true,
         'equal_source_weighting' => false,
         'daily_email_enabled' => true,
@@ -193,6 +196,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'review_size' => 'integer',
+            'daily_review_limit' => 'integer',
             'mastery_ratio' => 'integer',
             'quality_filter_enabled' => 'boolean',
             'equal_source_weighting' => 'boolean',

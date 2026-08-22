@@ -51,6 +51,12 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::get('/review', [ReviewController::class, 'show'])->name('review.show');
     Route::post('/review/complete', [ReviewController::class, 'complete'])->name('review.complete');
 
+    // Another round, on top of a day that is already finished. Throttled
+    // because it is the one route here that mints work on demand.
+    Route::post('/review/again', [ReviewController::class, 'again'])
+        ->middleware('throttle:20,1')
+        ->name('review.again');
+
     // The ritual's hot path. Rate limited per user rather than per IP: a
     // household behind one address must not throttle each other.
     Route::post('/review/items/{item}/action', ReviewItemActionController::class)

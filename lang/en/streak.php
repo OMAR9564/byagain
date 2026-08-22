@@ -14,6 +14,11 @@ return [
         'title' => 'Last :count days',
         'done' => 'Reviewed',
         'missed' => 'No review',
+        'today' => 'Today',
+
+        // The grid starts at one week and earns another. Said once, quietly,
+        // so the growth reads as a reward rather than as a target.
+        'grows' => 'Another week appears at :count days.',
     ],
 
     'broken' => 'Your streak reset. Today is day one again.',

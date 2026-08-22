@@ -78,13 +78,49 @@ final class StreakService
     }
 
     /**
+     * How many days the calendar should show for this reader.
+     *
+     * A week to begin with, and another week each time the streak outgrows
+     * the grid. Ninety empty cells on day one is a picture of what you have
+     * not done; one row that becomes two is a picture of what you have
+     * (FR-056, FR-058).
+     */
+    public function calendarWindow(User $user, ?CarbonImmutable $today = null): int
+    {
+        $first = (int) config('byagain.streak.calendar_first_window');
+        $step = (int) config('byagain.streak.calendar_window_step');
+        $max = (int) config('byagain.streak.calendar_days');
+
+        $streak = $this->currentStreakFor($user, $today);
+
+        // Grown against the streak, not the longest one ever: after a break
+        // the grid comes back to a single week along with the reader.
+        $window = max($first, (int) ceil($streak / $step) * $step);
+
+        return min($window, $max);
+    }
+
+    /**
+     * The streak at which the calendar gains another row, or null once it has
+     * reached the largest grid a phone can show.
+     */
+    public function nextGrowthAt(User $user, ?CarbonImmutable $today = null): ?int
+    {
+        $window = $this->calendarWindow($user, $today);
+
+        return $window >= (int) config('byagain.streak.calendar_days')
+            ? null
+            : $window + 1;
+    }
+
+    /**
      * The last N local days, each marked done or not (FR-056).
      *
      * @return array<int, array{date: string, done: bool}>
      */
     public function calendar(User $user, ?int $days = null): array
     {
-        $days ??= (int) config('byagain.streak.calendar_days');
+        $days ??= $this->calendarWindow($user);
         $today = $this->days->localDayFor($user);
         $from = $today->subDays($days - 1);
 

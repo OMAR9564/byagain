@@ -9,6 +9,8 @@ return [
         'title' => 'Review',
         'size' => 'Cards per review',
         'size_help' => 'Between :min and :max. Changes apply to your next review.',
+        'daily_limit' => 'Reviews per day',
+        'daily_limit_help' => 'Up to :max. One is enough for most days; the rest is there when you want it.',
         'mastery_ratio' => 'Share reserved for cards',
         'quality_filter' => 'Skip very short highlights',
         'quality_filter_help' => 'Hides highlights under :count characters.',

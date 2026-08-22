@@ -105,6 +105,7 @@ are product decisions and live in `config/byagain.php`.
 | `BYAGAIN_SOURCE_URL` | this repository | Shown in the footer to satisfy the AGPL. |
 | `BYAGAIN_DEMO_HIGHLIGHTS` | `400` | Set to `20000` to build the performance fixture. |
 | `BYAGAIN_SEED_EMAIL` | — | Which account the seeders fill. Empty means the first existing one. |
+| `BYAGAIN_ENDEARMENT_NAME` | `mila` | The first name greeted with a different line each day. Empty turns it off. |
 
 Before going live you also need SPF, DKIM and DMARC records for whatever
 domain `MAIL_FROM_ADDRESS` uses. Without them the morning email lands in spam,
