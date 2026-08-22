@@ -95,6 +95,8 @@ final class MasteryCard extends Model
     protected function casts(): array
     {
         return [
+            'user_id' => 'integer',
+            'highlight_id' => 'integer',
             'half_life_days' => 'float',
             'last_reviewed_at' => 'datetime',
             'due_at' => 'datetime',

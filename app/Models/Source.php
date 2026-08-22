@@ -61,6 +61,7 @@ final class Source extends Model
     protected function casts(): array
     {
         return [
+            'user_id' => 'integer',
             'is_archived' => 'boolean',
             'highlights_count' => 'integer',
         ];

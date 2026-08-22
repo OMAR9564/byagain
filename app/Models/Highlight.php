@@ -81,6 +81,17 @@ final class Highlight extends Model
     protected function casts(): array
     {
         return [
+            // Foreign keys are cast because a form posts them as strings and
+            // a validation rule of `integer` checks the type, it does not
+            // change it. Under strict_types that string reaches the first
+            // `int` parameter it is passed to and throws.
+            // Foreign keys are cast because a form posts them as strings and
+            // a validation rule of `integer` checks the type, it does not
+            // change it. Under strict_types that string reaches the first
+            // `int` parameter it is passed to and throws.
+            'user_id' => 'integer',
+            'source_id' => 'integer',
+
             'is_favorite' => 'boolean',
             'is_discarded' => 'boolean',
             'contains_code' => 'boolean',

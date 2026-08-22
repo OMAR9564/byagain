@@ -86,6 +86,10 @@ final class ReviewItem extends Model
     protected function casts(): array
     {
         return [
+            'user_id' => 'integer',
+            'review_id' => 'integer',
+            'highlight_id' => 'integer',
+            'mastery_card_id' => 'integer',
             'position' => 'integer',
             'acted_at' => 'datetime',
         ];

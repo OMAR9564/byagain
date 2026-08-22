@@ -34,6 +34,7 @@ final class StreakDay extends Model
     protected function casts(): array
     {
         return [
+            'user_id' => 'integer',
             'day' => 'date',
         ];
     }

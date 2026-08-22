@@ -85,6 +85,7 @@ final class Review extends Model
     protected function casts(): array
     {
         return [
+            'user_id' => 'integer',
             'review_date' => 'date',
             'round' => 'integer',
             'size' => 'integer',

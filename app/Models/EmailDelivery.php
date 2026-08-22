@@ -66,6 +66,8 @@ final class EmailDelivery extends Model
     protected function casts(): array
     {
         return [
+            'user_id' => 'integer',
+            'review_id' => 'integer',
             'sent_at' => 'datetime',
             'opened_at' => 'datetime',
         ];
