@@ -207,6 +207,19 @@ return [
 
     /*
     |------------------------------------------------------------------------
+    | Source
+    |------------------------------------------------------------------------
+    |
+    | byagain is AGPL-3.0-only. Running it over a network obliges you to offer
+    | its source to the people using it, which the footer link satisfies
+    | (FR-093). Point this at your fork if you publish one.
+    |
+    */
+
+    'source_url' => env('BYAGAIN_SOURCE_URL', 'https://github.com/byagain/byagain'),
+
+    /*
+    |------------------------------------------------------------------------
     | Development fixtures
     |------------------------------------------------------------------------
     |

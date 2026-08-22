@@ -290,19 +290,19 @@ gönder; normal rolle erişimin reddedildiğini doğrula.
 
 ## Phase 9: Polish & Cross-Cutting Concerns
 
-- [ ] T116 [P] `public/manifest.json` ve `public/sw.js` yaz: ana ekrana eklenebilirlik, uygulama kabuğu önbelleği, API için network-first (FR-086, FR-087)
-- [ ] T117 [P] `resources/js/app.js` içine çevrimdışı durum bandı ve `localStorage` istek kuyruğunun yeniden denemesini ekle (FR-087, SC-016)
-- [ ] T118 [P] `app/Console/Commands/PruneEphemeralRecords.php` yaz ve günlük zamanla: süresi geçmiş token'lar, 30 günden eski `email_deliveries`, eski `failed_jobs` — kullanıcı içeriğine dokunmaz (FR-091)
-- [ ] T119 [P] `app/Console/Commands/RerenderHighlights.php` yaz: `content_md` → `content_html`/`content_text` toplu yeniden üretim, chunk'lı, `--dry-run` (FR-092)
-- [ ] T120 [P] `app/Console/Commands/PromoteAdmin.php` yaz: kurulumda ilk yöneticiyi elle yetkilendirme (Assumptions)
-- [ ] T121 [P] `resources/views/components/footer.blade.php` içine kaynak koda bağlantı ekle (AGPL-3.0 gereği, FR-093)
-- [ ] T122 Erişilebilirlik geçişi: odak görünürlüğü, kontrast ≥4.5:1, ikon düğmelerinde `aria-label`, form alanlarında 16px+ yazı tipi, `prefers-reduced-motion` (FR-084, FR-085, FR-080)
-- [ ] T123 Varlık bütçesi denetimi: kullanıcı tarafı ilk yükleme ≤150KB (yazı tipleri hariç), sistem font yığını kullanımı (SC-006)
+- [X] T116 [P] `public/manifest.json` ve `public/sw.js` yaz: ana ekrana eklenebilirlik, uygulama kabuğu önbelleği, API için network-first (FR-086, FR-087)
+- [X] T117 [P] `resources/js/app.js` içine çevrimdışı durum bandı ve `localStorage` istek kuyruğunun yeniden denemesini ekle (FR-087, SC-016)
+- [X] T118 [P] `app/Console/Commands/PruneEphemeralRecords.php` yaz ve günlük zamanla: süresi geçmiş token'lar, 30 günden eski `email_deliveries`, eski `failed_jobs` — kullanıcı içeriğine dokunmaz (FR-091)
+- [X] T119 [P] `app/Console/Commands/RerenderHighlights.php` yaz: `content_md` → `content_html`/`content_text` toplu yeniden üretim, chunk'lı, `--dry-run` (FR-092)
+- [X] T120 [P] `app/Console/Commands/PromoteAdmin.php` yaz: kurulumda ilk yöneticiyi elle yetkilendirme (Assumptions)
+- [X] T121 [P] `resources/views/components/footer.blade.php` içine kaynak koda bağlantı ekle (AGPL-3.0 gereği, FR-093)
+- [X] T122 Erişilebilirlik geçişi: odak görünürlüğü, kontrast ≥4.5:1, ikon düğmelerinde `aria-label`, form alanlarında 16px+ yazı tipi, `prefers-reduced-motion` (FR-084, FR-085, FR-080)
+- [X] T123 Varlık bütçesi denetimi: kullanıcı tarafı ilk yükleme ≤150KB (yazı tipleri hariç), sistem font yığını kullanımı (SC-006)
 - [ ] T124 Lighthouse mobil denetimi: performans ≥90, erişilebilirlik ≥95 — bulguları düzelt (SC-007)
-- [ ] T125 [P] `README.md` yaz: kurulum adımları quickstart.md ile birebir aynı, `.env.example` yapılandırma tablosu (SC-019)
-- [ ] T126 [P] `docs/SPEC.md` yaz: rota listesi İngilizce adlarla, algoritma bölümleri (SPEC 4.1/4.2/6) koddaki yorum atıflarıyla eşleşecek şekilde
-- [ ] T127 Depo geçmişinde gizli anahtar/ortam dosyası olmadığını doğrula ve `.gitignore` kapsamını kontrol et (SC-020)
-- [ ] T128 `quickstart.md` V1–V7 doğrulama senaryolarını uçtan uca çalıştır; kalite kapılarını geçir (`pint --test`, `phpstan analyse`, `php artisan test`, `composer audit`)
+- [X] T125 [P] `README.md` yaz: kurulum adımları quickstart.md ile birebir aynı, `.env.example` yapılandırma tablosu (SC-019)
+- [X] T126 [P] `docs/SPEC.md` yaz: rota listesi İngilizce adlarla, algoritma bölümleri (SPEC 4.1/4.2/6) koddaki yorum atıflarıyla eşleşecek şekilde
+- [X] T127 Depo geçmişinde gizli anahtar/ortam dosyası olmadığını doğrula ve `.gitignore` kapsamını kontrol et (SC-020)
+- [X] T128 `quickstart.md` V1–V7 doğrulama senaryolarını uçtan uca çalıştır; kalite kapılarını geçir (`pint --test`, `phpstan analyse`, `php artisan test`, `composer audit`)
 
 ---
 

@@ -30,3 +30,12 @@ Schedule::command('byagain:dispatch-daily')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+/*
+ * Housekeeping for operational records only — expired tokens, old delivery
+ * rows, stale failed jobs. It never touches a source, highlight, card, review
+ * or streak day (FR-091).
+ */
+Schedule::command('byagain:prune')
+    ->dailyAt('03:30')
+    ->withoutOverlapping();

@@ -58,6 +58,8 @@
         @endif
 
         {{ $slot }}
+
+        <x-footer />
     </main>
 
     {{-- Offline banner. Hidden until app.js has something to say (SC-016). --}}
