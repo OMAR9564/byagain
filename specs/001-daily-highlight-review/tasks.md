@@ -251,14 +251,14 @@ yazdığını doğrula.
 
 ### Tests for User Story 5
 
-- [ ] T100 [P] [US5] `tests/Feature/Streak/StreakTest.php` — dün+bugün → +1; 01:30 önceki güne; atlanan gün → 1'den başlar ve `longest_streak` korunur; iki gün yapılmadıysa 0 görünür (FR-054..FR-057)
-- [ ] T101 [P] [US5] `tests/Feature/Streak/TimezoneChangeTest.php` — zaman dilimi değişimi geçmiş seri günlerini değiştirmez (Edge Case)
+- [X] T100 [P] [US5] `tests/Feature/Streak/StreakTest.php` — dün+bugün → +1; 01:30 önceki güne; atlanan gün → 1'den başlar ve `longest_streak` korunur; iki gün yapılmadıysa 0 görünür (FR-054..FR-057)
+- [X] T101 [P] [US5] `tests/Feature/Streak/TimezoneChangeTest.php` — zaman dilimi değişimi geçmiş seri günlerini değiştirmez (Edge Case)
 
 ### Implementation for User Story 5
 
-- [ ] T102 [US5] `app/Services/Streak/StreakService.php` dosyasını tamamla: `recordCompletion()`, `currentStreakFor()` (arka plan işi olmadan, son tamamlanan günden hesap), `calendar(90)` (FR-056, FR-057)
-- [ ] T103 [US5] `app/Http/Controllers/StreakController.php` + `resources/views/streak/show.blade.php` yaz: sayaç, en uzun seri, 90 günlük takvim (FR-056, US5-5)
-- [ ] T104 [P] [US5] `resources/views/components/streak-badge.blade.php` yaz ve ana ekrana bağla; seri kırıldığında suçlayıcı olmayan metin `lang/en/streak.php` içinden gelir (FR-058)
+- [X] T102 [US5] `app/Services/Streak/StreakService.php` dosyasını tamamla: `recordCompletion()`, `currentStreakFor()` (arka plan işi olmadan, son tamamlanan günden hesap), `calendar(90)` (FR-056, FR-057)
+- [X] T103 [US5] `app/Http/Controllers/StreakController.php` + `resources/views/streak/show.blade.php` yaz: sayaç, en uzun seri, 90 günlük takvim (FR-056, US5-5)
+- [X] T104 [P] [US5] `resources/views/components/streak-badge.blade.php` yaz ve ana ekrana bağla; seri kırıldığında suçlayıcı olmayan metin `lang/en/streak.php` içinden gelir (FR-058)
 
 ---
 

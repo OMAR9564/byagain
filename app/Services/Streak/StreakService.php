@@ -51,6 +51,64 @@ final class StreakService
     }
 
     /**
+     * The streak as it stands right now.
+     *
+     * Computed rather than read straight off the user, because a streak dies
+     * of neglect: nothing happens when someone stops, so there is no event to
+     * hang an update on. Without this, a counter last written in March would
+     * still proudly claim 40 days in June (FR-057).
+     *
+     * A streak survives today being unfinished — the day is not over yet — but
+     * not yesterday being missed.
+     */
+    public function currentStreakFor(User $user, ?CarbonImmutable $today = null): int
+    {
+        $last = $user->last_streak_day;
+
+        if ($last === null) {
+            return 0;
+        }
+
+        $today ??= $this->days->localDayFor($user);
+        $lastDay = CarbonImmutable::parse($last->toDateString());
+
+        $daysSince = (int) $lastDay->diffInDays($today);
+
+        return $daysSince <= 1 ? $user->current_streak : 0;
+    }
+
+    /**
+     * The last N local days, each marked done or not (FR-056).
+     *
+     * @return array<int, array{date: string, done: bool}>
+     */
+    public function calendar(User $user, ?int $days = null): array
+    {
+        $days ??= (int) config('byagain.streak.calendar_days');
+        $today = $this->days->localDayFor($user);
+        $from = $today->subDays($days - 1);
+
+        $done = $user->streakDays()
+            ->where('day', '>=', $from->toDateString())
+            ->pluck('day')
+            ->map(fn ($day): string => CarbonImmutable::parse($day)->toDateString())
+            ->flip();
+
+        $calendar = [];
+
+        for ($offset = 0; $offset < $days; $offset++) {
+            $date = $from->addDays($offset)->toDateString();
+
+            $calendar[] = [
+                'date' => $date,
+                'done' => $done->has($date),
+            ];
+        }
+
+        return $calendar;
+    }
+
+    /**
      * Move the cached counters on for a newly recorded day.
      */
     private function advanceCounters(User $user, CarbonImmutable $day): void
