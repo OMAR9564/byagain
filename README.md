@@ -208,7 +208,8 @@ with `php -S 127.0.0.1:8000 -t public public/index.php` and open `/login`.
 
 ## Documentation
 
-- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — putting it on a server, and the three things that fail silently if you skip them
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — shared hosting, and the three things that fail silently if you skip them
+- [`docs/DEPLOYMENT-VPS.md`](docs/DEPLOYMENT-VPS.md) — the nginx, PHP-FPM and supervisor version
 - [`docs/SPEC.md`](docs/SPEC.md) — routes, algorithms, the reasoning behind them
 - [`.specify/memory/constitution.md`](.specify/memory/constitution.md) — the rules this codebase is held to
 - [`specs/001-daily-highlight-review/`](specs/001-daily-highlight-review/) — the specification this was built from

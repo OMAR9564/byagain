@@ -1,112 +1,100 @@
-# byagain — deployment
+# byagain — deployment on shared hosting
 
-Target: **https://byagain.omaralfarouk.com**
+Target: **https://byagain.omaralfarouk.com** on Hostinger shared hosting.
 
-Written for Ubuntu 24.04 with nginx and PHP-FPM. Adapt paths if you run
-something else; the parts that matter are the same everywhere.
+Written against the actual account: PHP 8.4.19 CLI, Composer and git present,
+**no Node**, no root, no supervisor. If you later move to a VPS, use
+[`DEPLOYMENT-VPS.md`](DEPLOYMENT-VPS.md) instead.
 
-Three things in this document are not optional. Skip any of them and the
-application will look completely healthy while doing nothing:
+Three constraints shape everything below:
 
-1. The **scheduler cron entry**. Every review and every email comes from one
-   sweep that runs every five minutes. Without cron, nothing throws, no page
-   breaks, and nobody ever receives anything.
-2. A **queue worker**. Mail is queued, not sent inline. Without a worker the
-   jobs pile up in the `jobs` table forever.
-3. A correct **`APP_URL`**. Emails are rendered in a worker with no incoming
-   request, so URLs come from config. Get it wrong and every unsubscribe link
-   is signed for the wrong host and returns 403.
+1. **Only `public_html` is web-readable.** The application must live outside
+   it. Put the repository in `public_html` and anyone can fetch your `.env`,
+   which contains the database password and `APP_KEY`.
+2. **No supervisor**, so the queue worker cannot be a long-lived process. It
+   runs from cron in short bursts instead.
+3. **No Node on the server**, so assets are built on your machine and uploaded.
 
----
-
-## 1. Server packages
-
-```bash
-sudo apt update
-sudo apt install -y nginx mysql-server supervisor certbot python3-certbot-nginx \
-    php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml \
-    php8.3-curl php8.3-zip php8.3-intl php8.3-gd php8.3-bcmath php8.3-opcache
-```
-
-Confirm the extensions actually loaded — on some builds they ship disabled:
-
-```bash
-php -m | grep -E '^(pdo_mysql|mbstring|intl|curl|zip|gd|bcmath|openssl)$'
-```
-
-Install Composer and Node (Node is only needed to build assets; you can build
-elsewhere and ship `public/build` instead):
-
-```bash
-curl -sS https://getcomposer.org/installer | php
-sudo mv composer.phar /usr/local/bin/composer
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-```
-
-### OPcache
-
-Leave OPcache **on** in production — it is a large, free performance win.
-
-One caveat worth knowing: PHP 8.5.9 has a bug where OPcache breaks an internal
-type check and takes down every database connection with
-`Cannot assign Random\Engine\Secure to property Random\Randomizer::$engine`.
-It does not affect 8.3 or 8.4. If you ever move this host to 8.5, test a real
-HTTP request before trusting a green test suite — CLI is unaffected, so the
-tests pass either way. See the troubleshooting section in the README.
+And the usual warning, which matters more here than anywhere: without the
+**cron entries** in step 8, byagain looks perfectly healthy and silently never
+produces a review or sends an email.
 
 ---
 
-## 2. Database
+## 1. Create the database (hPanel)
+
+CLI has no privileges to create databases here. In hPanel:
+
+**Databases → Management → Create a New Database**
+
+Hostinger prefixes everything with your account id, so you will get something
+like:
+
+| Field | Example |
+| --- | --- |
+| Database | `u179024548_byagain` |
+| User | `u179024548_byagain` |
+| Password | generate a long one |
+
+Write all three down; they go into `.env` in step 4. Verify from SSH:
 
 ```bash
-sudo mysql
+mysql -u u179024548_byagain -p u179024548_byagain -e 'select 1'
 ```
-
-```sql
-CREATE DATABASE byagain CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'byagain'@'localhost' IDENTIFIED BY 'a-long-random-password';
-GRANT ALL PRIVILEGES ON byagain.* TO 'byagain'@'localhost';
-FLUSH PRIVILEGES;
-```
-
-Sessions, cache and the queue all live here too, so MySQL is the only
-infrastructure this application needs. There is no Redis to run.
 
 ---
 
-## 3. Application
+## 2. Clone the application outside the document root
 
 ```bash
-sudo mkdir -p /var/www/byagain
-sudo chown -R $USER:www-data /var/www/byagain
-git clone <your-repo-url> /var/www/byagain
-cd /var/www/byagain
+cd ~
+git clone https://github.com/OMAR9564/byagain.git byagain
+cd ~/byagain
+```
 
+`~/byagain` is not reachable from the web. That is the point — do not move it
+into `public_html`, and do not put it in
+`~/domains/byagain.omaralfarouk.com/` either, since that directory carries
+Hostinger's `DO_NOT_UPLOAD_HERE` marker.
+
+---
+
+## 3. Install dependencies
+
+```bash
+cd ~/byagain
 composer install --no-dev --optimize-autoloader
-npm ci && npm run build
+composer check-platform-reqs
+```
 
+`check-platform-reqs` must print `success` on every line. This account already
+has everything the application needs — `pdo_mysql`, `mbstring`, `intl`, `gd`,
+`bcmath`, `zip`, `openssl`, `tokenizer` — but check anyway, because the CLI
+and the web PHP can be different builds.
+
+---
+
+## 4. Configure
+
+```bash
 cp .env.example .env
 php artisan key:generate
+nano .env
 ```
-
-### `.env`
 
 ```ini
 APP_NAME=byagain
 APP_ENV=production
 APP_DEBUG=false
-APP_KEY=            # php artisan key:generate wrote this
+APP_KEY=                       # key:generate wrote this — do not lose it
 
-# Must match the real host exactly, https included. Signed unsubscribe links
-# and every URL inside an email are built from this.
+# Must match exactly, https included. Emails are rendered by a cron process
+# with no incoming request, so every URL in them comes from here.
 APP_URL=https://byagain.omaralfarouk.com
 
-# Leave this in UTC. Every timestamp is stored in UTC and converted per user
-# from users.timezone. Changing it here does not "fix" anything and will
-# quietly shift the 04:00 day boundary.
+# Leave in UTC. Everything is stored in UTC and converted per user from
+# users.timezone. Changing this shifts the 04:00 day boundary for everyone.
 APP_TIMEZONE=UTC
-
 APP_LOCALE=en
 
 LOG_CHANNEL=stack
@@ -115,14 +103,14 @@ LOG_LEVEL=warning
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=byagain
-DB_USERNAME=byagain
-DB_PASSWORD=a-long-random-password
+DB_DATABASE=u179024548_byagain
+DB_USERNAME=u179024548_byagain
+DB_PASSWORD=the-password-from-step-1
 
-# nginx runs on this host, so loopback is the proxy. Without this, TLS
-# terminating at nginx means PHP sees http://, every signed unsubscribe link
-# fails its signature check, and every visitor looks like 127.0.0.1.
-TRUSTED_PROXIES=127.0.0.1,::1
+# Shared hosting sits behind Hostinger's own front end, and the application is
+# not reachable except through it. Without this, TLS terminating out front
+# makes PHP see http://, and every signed unsubscribe link returns 403.
+TRUSTED_PROXIES=*
 
 SESSION_DRIVER=database
 SESSION_SECURE_COOKIE=true
@@ -133,259 +121,263 @@ MAIL_MAILER=resend
 MAIL_FROM_ADDRESS="hello@omaralfarouk.com"
 MAIL_FROM_NAME="byagain"
 RESEND_API_KEY=re_...
-RESEND_WEBHOOK_SECRET=...
+RESEND_WEBHOOK_SECRET=
 
-BYAGAIN_SOURCE_URL=https://github.com/<you>/byagain
+BYAGAIN_SOURCE_URL=https://github.com/OMAR9564/byagain
 ```
 
-`APP_DEBUG=false` is not a style preference. With it on, any error page prints
-your environment — database password included — to whoever triggered it.
-
-### Permissions
+`APP_DEBUG=false` is not cosmetic. Left on, any error page prints your
+environment — database password included — to whoever triggered it.
 
 ```bash
-sudo chown -R www-data:www-data /var/www/byagain/storage /var/www/byagain/bootstrap/cache
-sudo chmod -R 775 /var/www/byagain/storage /var/www/byagain/bootstrap/cache
+chmod -R 775 storage bootstrap/cache
 ```
 
-### Migrate and cache
+---
+
+## 5. Point the document root at `public/`
+
+The document root is fixed at `public_html`, so make it *be* Laravel's
+`public/`:
 
 ```bash
-php artisan migrate --force
+cd ~/domains/byagain.omaralfarouk.com
+mv public_html public_html.bak
+ln -s ~/byagain/public public_html
+ls -l | grep public_html
+```
+
+You should see `public_html -> /home/u179024548/byagain/public`.
+
+With this, deploying is just `git pull` — nothing to copy into place.
+
+**If symlinks are refused**, fall back to copying and repointing:
+
+```bash
+cd ~/domains/byagain.omaralfarouk.com
+rm -rf public_html && mkdir public_html
+cp -r ~/byagain/public/* ~/byagain/public/.htaccess public_html/ 2>/dev/null
+nano public_html/index.php
+```
+
+and change the two require paths:
+
+```php
+require __DIR__.'/../../../byagain/vendor/autoload.php';
+$app = require_once __DIR__.'/../../../byagain/bootstrap/app.php';
+```
+
+The copy route means you must re-copy `public/` on every deploy. Prefer the
+symlink.
+
+---
+
+## 6. Upload the built assets
+
+There is no Node on the server, so build on your Windows machine:
+
+```powershell
+cd C:\Users\BYA\Documents\github\byagain
+npm run build
+scp -r public\build u179024548@fr-int-web1271:~/byagain/public/
+```
+
+`public/build` is gitignored on purpose — build output does not belong in
+source history. The cost is this one extra step per deploy, and it is only
+needed when CSS or JS actually changed.
+
+Filament ships its own assets and republishes them on the server:
+
+```bash
+cd ~/byagain
 php artisan filament:assets
-php artisan optimize          # config + routes + views
 ```
 
-`optimize` caches the config, which means `env()` outside `config/` returns
-null from then on. This codebase never calls it outside config, so caching is
-safe — but remember to re-run `php artisan optimize` after every `.env` change,
-or your edit will appear to do nothing.
+**If every page loads but looks unstyled**, check for a stray `public/hot`:
 
-### First administrator
+```bash
+ls ~/byagain/public/hot && rm ~/byagain/public/hot
+```
+
+That file is left behind by `npm run dev`. While it exists, Laravel points
+every asset tag at a Vite dev server on localhost instead of the built files —
+so pages still return 200 and simply arrive naked. It is gitignored and should
+never reach the server, but it is the first thing to check if styling vanishes.
+
+---
+
+## 7. Migrate and cache
+
+```bash
+cd ~/byagain
+php artisan migrate --force
+php artisan optimize
+```
+
+`optimize` caches the config, after which `env()` outside `config/` returns
+null. This codebase never calls it there, so caching is safe — but **re-run
+`php artisan optimize` after every `.env` change**, or your edit appears to do
+nothing.
+
+Register through the web form, then grant yourself the admin role:
 
 ```bash
 php artisan byagain:promote-admin you@example.com
 ```
 
-Register through the web form first. There is no way to grant this role from
-the interface, by design.
+There is deliberately no way to do this from the interface.
 
----
-
-## 4. nginx
-
-`/etc/nginx/sites-available/byagain`:
-
-```nginx
-server {
-    listen 80;
-    listen [::]:80;
-    server_name byagain.omaralfarouk.com;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name byagain.omaralfarouk.com;
-
-    root /var/www/byagain/public;
-    index index.php;
-    charset utf-8;
-
-    # certbot fills these in
-    # ssl_certificate     /etc/letsencrypt/live/byagain.omaralfarouk.com/fullchain.pem;
-    # ssl_certificate_key /etc/letsencrypt/live/byagain.omaralfarouk.com/privkey.pem;
-
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-
-    client_max_body_size 8m;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
-
-    # Build output is content-hashed, so it can be cached indefinitely.
-    location /build/ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # The service worker must never be cached, or a stale one keeps serving an
-    # old shell after you deploy.
-    location = /sw.js {
-        add_header Cache-Control "no-cache";
-    }
-
-    location ~ /\.(?!well-known).* { deny all; }
-    location = /favicon.ico { access_log off; log_not_found off; }
-    location = /robots.txt  { access_log off; log_not_found off; }
-}
-```
+Optionally seed a library to read:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/byagain /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d byagain.omaralfarouk.com
+BYAGAIN_SEED_EMAIL=you@example.com php artisan db:seed --class=EngineeringLibrarySeeder
 ```
 
 ---
 
-## 5. The scheduler — required
-
-One cron entry drives the entire product.
+## 8. Cron — the part that must not be skipped
 
 ```bash
-sudo crontab -u www-data -e
+which php     # note the full path; cron does not inherit your PATH
+crontab -e
 ```
 
 ```cron
-* * * * * cd /var/www/byagain && php artisan schedule:run >> /dev/null 2>&1
+# The whole product. Finds whoever's local clock has reached their send time,
+# builds their review, queues their mail. Also prunes nightly.
+* * * * * cd /home/u179024548/byagain && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
+
+# The queue, in one-minute bursts. There is no supervisor here, so the worker
+# cannot be long-lived: it drains what is waiting and exits before the next
+# minute starts.
+* * * * * cd /home/u179024548/byagain && /usr/bin/php artisan queue:work --stop-when-empty --max-time=55 --tries=5 >> /dev/null 2>&1
 ```
 
-That fires `byagain:dispatch-daily` every five minutes, which finds whoever's
-local clock has reached their send time, builds their review and queues their
-mail. It also runs `byagain:prune` nightly.
+Replace `/usr/bin/php` with whatever `which php` printed. Cron runs with a
+minimal environment, and `php` alone very often is not on its PATH — this is
+the single most common reason a scheduler "silently does nothing".
 
-**Verify it is alive.** The admin dashboard shows a scheduler heartbeat and
-turns red after two missed ticks. Check it once after deploying — this is the
-one failure that produces no error anywhere.
+Check it took:
 
 ```bash
-cd /var/www/byagain && php artisan byagain:dispatch-daily --dry-run
+crontab -l
+cd ~/byagain && php artisan byagain:dispatch-daily --dry-run
 ```
+
+Then wait five minutes and confirm the admin dashboard heartbeat reads
+**Healthy** rather than "Never run". That heartbeat exists precisely because
+this failure is invisible everywhere else.
 
 ---
 
-## 6. Queue worker — required
+## 9. Email — before you rely on it
 
-`/etc/supervisor/conf.d/byagain-worker.conf`:
-
-```ini
-[program:byagain-worker]
-process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/byagain/artisan queue:work --sleep=3 --tries=5 --max-time=3600
-directory=/var/www/byagain
-autostart=true
-autorestart=true
-user=www-data
-numprocs=2
-redirect_stderr=true
-stdout_logfile=/var/www/byagain/storage/logs/worker.log
-stopwaitsecs=3600
-```
-
-```bash
-sudo supervisorctl reread
-sudo supervisorctl update
-sudo supervisorctl start byagain-worker:*
-sudo supervisorctl status
-```
-
-`--max-time=3600` recycles each worker hourly. Long-lived PHP processes hold
-their code in memory, which is also why a worker must be restarted on every
-deploy — see below.
-
----
-
-## 7. Email — before go-live
-
-The provider is Resend. Add these DNS records for whichever domain
-`MAIL_FROM_ADDRESS` uses, then verify them in the Resend dashboard:
+The provider is Resend. Add DNS records for the domain in
+`MAIL_FROM_ADDRESS`, then verify them in the Resend dashboard:
 
 | Type | Purpose |
 | --- | --- |
 | TXT | SPF |
-| TXT | DKIM (Resend gives you the exact record) |
-| TXT | DMARC — start at `p=none`, tighten once you see reports |
+| TXT | DKIM — Resend gives you the exact record |
+| TXT | DMARC — start at `p=none` |
 
-Without these the morning email lands in spam, which is indistinguishable from
-not sending it at all.
+Without these the morning email lands in spam, which is the same as not
+sending it.
 
-Then point Resend's webhook at:
+Point Resend's webhook at:
 
 ```
 https://byagain.omaralfarouk.com/webhooks/mail
 ```
 
-and put its signing secret in `RESEND_WEBHOOK_SECRET`. That endpoint feeds open
-tracking, which is what makes byagain get quieter for someone who has stopped
-reading. Left empty, the endpoint rejects every call — a closed default, on
-purpose.
+and put its signing secret in `RESEND_WEBHOOK_SECRET`. Left empty, that
+endpoint rejects every call — a closed default, deliberately. It feeds open
+tracking, which is what makes byagain get quieter for somebody who has stopped
+reading.
 
-Send yourself a real one before trusting it:
+Send yourself a real one:
 
 ```bash
-php artisan byagain:dispatch-daily --user=<your-id>
+php artisan byagain:dispatch-daily --user=1
 php artisan queue:work --stop-when-empty
 ```
 
 ---
 
-## 8. Deploying a change
+## 10. Verify
 
 ```bash
-cd /var/www/byagain
-php artisan down --render="errors::503"
+curl -I https://byagain.omaralfarouk.com/up       # 200
+curl -I https://byagain.omaralfarouk.com/login    # 200
+```
+
+Confirm the web PHP matches the CLI one — hPanel sets them separately:
+
+```bash
+echo '<?php echo PHP_VERSION, " ", (extension_loaded("pdo_mysql") ? "pdo_mysql ok" : "NO pdo_mysql");' > ~/byagain/public/__v.php
+curl -s https://byagain.omaralfarouk.com/__v.php && echo
+rm ~/byagain/public/__v.php
+```
+
+Then sign in, open `/admin` and check:
+
+- scheduler heartbeat reads **Healthy**
+- no failed jobs
+- email deliveries show `sent`
+
+Finally open it on your phone and add it to the home screen. This is built for
+a 375px screen held in one hand; a desktop browser will not tell you whether
+that part works.
+
+---
+
+## 11. Deploying a change
+
+```bash
+cd ~/byagain
+php artisan down
 
 git pull
 composer install --no-dev --optimize-autoloader
-npm ci && npm run build
-
 php artisan migrate --force
 php artisan filament:assets
 php artisan optimize
 
-sudo supervisorctl restart byagain-worker:*
 php artisan up
 ```
 
-Restarting the worker is not housekeeping. A running worker holds the old code
-in memory and will happily keep executing it against your new database schema.
+Plus, from Windows, only when CSS or JS changed:
+
+```powershell
+npm run build
+scp -r public\build u179024548@fr-int-web1271:~/byagain/public/
+```
+
+There is no worker to restart — cron starts a fresh one every minute, which is
+the one genuine advantage of this arrangement.
 
 ---
 
-## 9. After deploying — check these
+## 12. Backups
+
+The database is the whole product.
 
 ```bash
-curl -I https://byagain.omaralfarouk.com/up          # 200
-curl -I https://byagain.omaralfarouk.com/login       # 200
-sudo supervisorctl status                            # workers RUNNING
+mkdir -p ~/backups
+mysqldump --single-transaction u179024548_byagain | gzip > ~/backups/byagain-$(date +%F).sql.gz
 ```
 
-Then sign in as the administrator and open `/admin`. Confirm:
+Nightly, keeping two weeks:
 
-- the scheduler heartbeat reads **Healthy**, not "Never run"
-- the queue stat shows no failed jobs
-- email deliveries show `sent`, not `failed`
-
-Finally, open the site on a phone and add it to the home screen. This app is
-built for a 375px screen held in one hand; a desktop browser will not tell you
-whether that part works.
-
----
-
-## 10. Backups
-
-The database is the whole product. Nothing else on the server is irreplaceable.
-
-```bash
-mysqldump --single-transaction --routines byagain | gzip > byagain-$(date +%F).sql.gz
+```cron
+30 3 * * * mysqldump --single-transaction -u u179024548_byagain -p'PASSWORD' u179024548_byagain | gzip > /home/u179024548/backups/byagain-$(date +\%F).sql.gz && find /home/u179024548/backups -name '*.sql.gz' -mtime +14 -delete
 ```
 
-Put that on a nightly cron to somewhere off this machine, and **restore it once
-onto a scratch database** before you believe it works. An untested backup is a
-hope, not a backup.
+Note the escaped `\%` — cron treats a bare `%` as a newline and the command
+will fail without it.
 
-`.env` is not in the repository and is not in the database dump. Store
-`APP_KEY` somewhere safe — lose it and every encrypted value and signed URL
-becomes unverifiable.
+Download one and **restore it onto a scratch database once** before trusting
+it. An untested backup is a hope.
+
+Keep `APP_KEY` somewhere outside the server. Lose it and every signed URL and
+encrypted value becomes unverifiable.
