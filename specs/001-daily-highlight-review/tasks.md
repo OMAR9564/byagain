@@ -160,22 +160,22 @@ kaynak dağılımı ve ağırlık tercihlerinin etkisini karşılaştır.
 
 ### Tests for User Story 2
 
-- [ ] T061 [P] [US2] `tests/Unit/Review/HighlightSamplerTest.php` — cooldown, novelty ve kaynak ağırlığı çarpanlarının bileşimi (FR-027)
-- [ ] T062 [P] [US2] `tests/Feature/Review/ThirtyDaySimulationTest.php` — 30 gün simülasyonu: hiçbir pasaj 3 gün içinde iki kez çıkmaz, tek kaynağın payı `ceil(n/3)`'ü geçmez (SC-009, FR-029, FR-033)
-- [ ] T063 [P] [US2] `tests/Feature/Review/SourceFrequencyTest.php` — `never` hiç çıkmaz (%100), `very_often` belirgin daha sık, değişiklik bir sonraki tekrardan itibaren etkili (SC-010, FR-028)
-- [ ] T064 [P] [US2] `tests/Feature/Review/EqualSourceWeightingTest.php` — tercih açıkken pasaj sayısı seçilme şansını artırmaz (FR-032)
-- [ ] T065 [P] [US2] `tests/Feature/Review/ReviewImmutabilityTest.php` — tekrar üretildikten sonra boyut/oran değişimi bugünü etkilemez (FR-026, US2-6)
-- [ ] T066 [P] [US2] `tests/Feature/Review/SamplingPerformanceTest.php` — 20.000 pasajlı hesapta seçki üretimi <300ms (SC-004)
+- [X] T061 [P] [US2] `tests/Unit/Review/HighlightSamplerTest.php` — cooldown, novelty ve kaynak ağırlığı çarpanlarının bileşimi (FR-027)
+- [X] T062 [P] [US2] `tests/Feature/Review/ThirtyDaySimulationTest.php` — 30 gün simülasyonu: hiçbir pasaj 3 gün içinde iki kez çıkmaz, tek kaynağın payı `ceil(n/3)`'ü geçmez (SC-009, FR-029, FR-033)
+- [X] T063 [P] [US2] `tests/Feature/Review/SourceFrequencyTest.php` — `never` hiç çıkmaz (%100), `very_often` belirgin daha sık, değişiklik bir sonraki tekrardan itibaren etkili (SC-010, FR-028)
+- [X] T064 [P] [US2] `tests/Feature/Review/EqualSourceWeightingTest.php` — tercih açıkken pasaj sayısı seçilme şansını artırmaz (FR-032)
+- [X] T065 [P] [US2] `tests/Feature/Review/ReviewImmutabilityTest.php` — tekrar üretildikten sonra boyut/oran değişimi bugünü etkilemez (FR-026, US2-6)
+- [X] T066 [P] [US2] `tests/Feature/Review/SamplingPerformanceTest.php` — 20.000 pasajlı hesapta seçki üretimi <300ms (SC-004)
 
 ### Implementation for User Story 2
 
-- [ ] T067 [US2] `app/Services/Review/HighlightSampler.php` yaz: aday filtresi (`is_discarded`, arşiv, `never`, 3 gün bloğu, kalite filtresi) + ağırlık ifadesi + `ORDER BY -LOG(RAND())/weight` ile aşırı örnekleme (research.md R-04, R-05) — tüm sabitler `config('byagain.sampling.*')`
-- [ ] T068 [US2] `app/Services/Review/SourceQuota.php` yaz veya `ReviewBuilder` içine kota uygulamasını ekle: kaynak başına `ceil(n/3)` sınırı (FR-033)
-- [ ] T069 [US2] `app/Services/Review/ReviewBuilder.php` dosyasını `HighlightSampler` kullanacak biçimde güncelle; kısmi havuzda daha kısa tekrar üret, hata verme (FR-036, Edge Case)
-- [ ] T070 [P] [US2] `app/Http/Requests/UpdateSettingsRequest.php` içine tekrar boyutu (5–15), kalite filtresi ve eşit kaynak ağırlığı alanlarını ekle (FR-024, FR-031, FR-032)
-- [ ] T071 [P] [US2] `resources/views/settings/edit.blade.php` içine tekrar boyutu, kalite filtresi ve eşit kaynak ağırlığı denetimlerini ekle
-- [ ] T072 [US2] Kaynak sıklığı denetimini iki yerde bağla: `resources/views/library/sources/edit.blade.php` ve tekrar kartı aksiyon menüsü (`source_frequency` alanı — contracts/review-actions.md, FR-038)
-- [ ] T073 [P] [US2] `database/seeders/DemoSeeder.php` yaz: çok kaynaklı, 20.000 pasajlı performans senaryosu üretebilen seeder
+- [X] T067 [US2] `app/Services/Review/HighlightSampler.php` yaz: aday filtresi (`is_discarded`, arşiv, `never`, 3 gün bloğu, kalite filtresi) + ağırlık ifadesi + `ORDER BY -LOG(RAND())/weight` ile aşırı örnekleme (research.md R-04, R-05) — tüm sabitler `config('byagain.sampling.*')`
+- [X] T068 [US2] `app/Services/Review/SourceQuota.php` yaz veya `ReviewBuilder` içine kota uygulamasını ekle: kaynak başına `ceil(n/3)` sınırı (FR-033)
+- [X] T069 [US2] `app/Services/Review/ReviewBuilder.php` dosyasını `HighlightSampler` kullanacak biçimde güncelle; kısmi havuzda daha kısa tekrar üret, hata verme (FR-036, Edge Case)
+- [X] T070 [P] [US2] `app/Http/Requests/UpdateSettingsRequest.php` içine tekrar boyutu (5–15), kalite filtresi ve eşit kaynak ağırlığı alanlarını ekle (FR-024, FR-031, FR-032)
+- [X] T071 [P] [US2] `resources/views/settings/edit.blade.php` içine tekrar boyutu, kalite filtresi ve eşit kaynak ağırlığı denetimlerini ekle
+- [X] T072 [US2] Kaynak sıklığı denetimini iki yerde bağla: `resources/views/library/sources/edit.blade.php` ve tekrar kartı aksiyon menüsü (`source_frequency` alanı — contracts/review-actions.md, FR-038)
+- [X] T073 [P] [US2] `database/seeders/DemoSeeder.php` yaz: çok kaynaklı, 20.000 pasajlı performans senaryosu üretebilen seeder
 
 **Checkpoint**: US1 + US2 birlikte "doğru pasaj doğru gün" değerini tam verir.
 

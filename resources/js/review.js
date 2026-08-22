@@ -76,12 +76,19 @@ function start(root) {
         advance();
 
         const favorite = card.querySelector('[data-review-favorite]');
+        const frequency = card.querySelector('[data-review-frequency]');
 
         send(
             card.dataset.actionUrl,
             {
                 action,
                 favorite: favorite !== null && favorite.getAttribute('aria-pressed') === 'true',
+                // Only sent when the reader actually moved the dial, so a
+                // plain keep does not rewrite the source every time.
+                source_frequency:
+                    frequency !== null && frequency.value !== frequency.dataset.initial
+                        ? frequency.value
+                        : null,
                 client_acted_at: new Date().toISOString(),
             },
             csrf,

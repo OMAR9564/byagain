@@ -52,15 +52,38 @@
                     </x-button>
                 </div>
 
-                <button
-                    type="button"
-                    class="mt-3 inline-flex min-h-11 w-full items-center justify-center text-sm"
-                    style="color: var(--color-ink-muted);"
-                    data-review-favorite
-                    aria-pressed="{{ $item->highlight->is_favorite ? 'true' : 'false' }}"
-                >
-                    {{ __('review.action.favorite') }}
-                </button>
+                <div class="mt-3 flex items-center gap-3">
+                    <button
+                        type="button"
+                        class="inline-flex min-h-11 flex-1 items-center justify-center text-sm"
+                        style="color: var(--color-ink-muted);"
+                        data-review-favorite
+                        aria-pressed="{{ $item->highlight->is_favorite ? 'true' : 'false' }}"
+                    >
+                        {{ __('review.action.favorite') }}
+                    </button>
+
+                    {{-- Retuning a source from the card it interrupted you
+                         with, rather than making you go and find it in the
+                         library. Takes effect from the next review (FR-038,
+                         FR-028). --}}
+                    <label class="flex flex-1 items-center gap-2 text-sm" style="color: var(--color-ink-muted);">
+                        <span class="sr-only">{{ __('review.action.source_frequency') }}</span>
+
+                        <select
+                            data-review-frequency
+                            data-initial="{{ $item->highlight->source?->frequency }}"
+                            class="min-h-11 w-full rounded-lg px-2 text-sm"
+                            style="background-color: var(--color-surface); color: var(--color-ink-muted); border: 1px solid var(--color-border);"
+                        >
+                            @foreach (\App\Http\Requests\StoreSourceRequest::frequencies() as $frequency)
+                                <option value="{{ $frequency }}" @selected($item->highlight->source?->frequency === $frequency)>
+                                    {{ __('library.frequency.' . $frequency) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </label>
+                </div>
             </article>
         @endforeach
 

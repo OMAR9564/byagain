@@ -204,4 +204,19 @@ return [
         // Days rendered on the streak calendar (FR-056).
         'calendar_days' => 90,
     ],
+
+    /*
+    |------------------------------------------------------------------------
+    | Development fixtures
+    |------------------------------------------------------------------------
+    |
+    | Not a product decision — this only sizes DemoSeeder. Set
+    | BYAGAIN_DEMO_HIGHLIGHTS=20000 to build the account the performance
+    | budget is measured against (SC-004).
+    |
+    */
+
+    'demo' => [
+        'highlight_count' => (int) env('BYAGAIN_DEMO_HIGHLIGHTS', 400),
+    ],
 ];

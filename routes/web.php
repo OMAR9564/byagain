@@ -6,6 +6,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\HighlightController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewItemActionController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SourceController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +52,9 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::patch('/highlights/{highlight}', [HighlightController::class, 'update'])->name('highlights.update');
     Route::post('/highlights/{highlight}/discard', [HighlightController::class, 'discard'])->name('highlights.discard');
     Route::post('/highlights/{highlight}/favorite', [HighlightController::class, 'favorite'])->name('highlights.favorite');
+
+    Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
+    Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
     Route::delete('/account', [AccountController::class, 'destroy'])->name('account.destroy');
 });
