@@ -64,20 +64,23 @@ final class Greeting
      *
      * Chosen by local day so it holds for the whole day and turns over at the
      * same boundary as everything else in the product.
+     *
+     * The account is identified by id. Matching on the name would hand the
+     * note to anyone who signed up under the same one, and would lose it the
+     * moment this account edited its own name.
      */
     public function endearment(User $user, ?CarbonImmutable $localDay = null): ?string
     {
-        /** @var string $match */
-        $match = config('byagain.endearment.name', '');
+        $match = config('byagain.endearment.user_id');
 
         /** @var array<int, string> $lines */
         $lines = config('byagain.endearment.lines', []);
 
-        if ($match === '' || $lines === []) {
+        if ($match === null || $match === '' || $lines === []) {
             return null;
         }
 
-        if (mb_strtolower($this->firstName($user)) !== mb_strtolower($match)) {
+        if ($user->id !== (int) $match) {
             return null;
         }
 

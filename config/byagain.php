@@ -249,9 +249,15 @@ return [
 
     'endearment' => [
 
-        // Matched against the first word of the account name, folded to
-        // lowercase. Empty disables the whole thing.
-        'name' => env('BYAGAIN_ENDEARMENT_NAME', 'mila'),
+        // The account this is for, by id.
+        //
+        // Matching on the name was wrong: a name is not an identity. Anyone
+        // who signed up as Mila would have been handed someone else's private
+        // note, and this account renaming itself would have lost it. An id is
+        // the one thing about an account that means exactly one person.
+        //
+        // Empty disables the whole thing.
+        'user_id' => env('BYAGAIN_ENDEARMENT_USER_ID', 2),
 
         'lines' => [
             "Omar's love",

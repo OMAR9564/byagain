@@ -67,13 +67,17 @@ final class NavigationTest extends TestCase
     public function one_account_is_greeted_differently(): void
     {
         $ada = User::factory()->create(['name' => 'Ada']);
-        $mila = User::factory()->create(['name' => 'Mila']);
+        $recipient = User::factory()->create(['name' => 'Ada']);
+
+        // Identified by id, not by name — both of these are called Ada, and
+        // only one of them gets the line.
+        config(['byagain.endearment.user_id' => $recipient->id]);
 
         /** @var array<int, string> $lines */
         $lines = config('byagain.endearment.lines');
 
         $plain = (string) $this->actingAs($ada)->get('/')->getContent();
-        $noted = (string) $this->actingAs($mila)->get('/')->getContent();
+        $noted = (string) $this->actingAs($recipient)->get('/')->getContent();
 
         $this->assertSame(0, $this->countLines($plain, $lines));
         $this->assertSame(1, $this->countLines($noted, $lines));

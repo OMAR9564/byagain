@@ -65,23 +65,45 @@ final class GreetingTest extends TestCase
     }
 
     #[Test]
-    public function only_one_name_gets_a_line(): void
+    public function only_one_account_gets_a_line(): void
     {
         $greeting = app(Greeting::class);
 
-        $this->assertNull($greeting->endearment(new User(['name' => 'Ada', 'timezone' => 'UTC'])));
-        $this->assertNotNull($greeting->endearment(new User(['name' => 'Mila', 'timezone' => 'UTC'])));
+        $this->assertNotNull($greeting->endearment($this->recipient()));
+        $this->assertNull($greeting->endearment($this->reader(9)));
+    }
 
-        // Case and surname must not matter: it is the same person however
-        // they filled the form in.
-        $this->assertNotNull($greeting->endearment(new User(['name' => 'mila yılmaz', 'timezone' => 'UTC'])));
+    #[Test]
+    public function it_follows_the_account_and_not_the_name(): void
+    {
+        $greeting = app(Greeting::class);
+
+        // Renaming the account keeps the note. Matching on a name would have
+        // lost it here, and handed it to the impostor below.
+        $renamed = $this->recipient();
+        $renamed->name = 'Someone Else';
+
+        $this->assertNotNull($greeting->endearment($renamed));
+
+        $impostor = $this->reader(9);
+        $impostor->name = $this->recipient()->name;
+
+        $this->assertNull($greeting->endearment($impostor));
+    }
+
+    #[Test]
+    public function it_can_be_switched_off(): void
+    {
+        config(['byagain.endearment.user_id' => null]);
+
+        $this->assertNull(app(Greeting::class)->endearment($this->recipient()));
     }
 
     #[Test]
     public function the_line_holds_for_a_day_and_turns_over_with_it(): void
     {
         $greeting = app(Greeting::class);
-        $user = new User(['name' => 'Mila', 'timezone' => 'UTC']);
+        $user = $this->recipient();
 
         $monday = CarbonImmutable::parse('2026-08-24');
 
@@ -100,7 +122,7 @@ final class GreetingTest extends TestCase
     public function every_line_in_the_rotation_comes_round(): void
     {
         $greeting = app(Greeting::class);
-        $user = new User(['name' => 'Mila', 'timezone' => 'UTC']);
+        $user = $this->recipient();
 
         /** @var array<int, string> $lines */
         $lines = config('byagain.endearment.lines');
@@ -115,5 +137,21 @@ final class GreetingTest extends TestCase
         // A rotation that repeats before it has finished would mean the
         // arithmetic, not the list, decides how much variety there is.
         $this->assertCount(count($lines), array_unique($seen));
+    }
+
+    /**
+     * The account the note is written for.
+     */
+    private function recipient(): User
+    {
+        return $this->reader((int) config('byagain.endearment.user_id'));
+    }
+
+    private function reader(int $id): User
+    {
+        $user = new User(['name' => 'Mila', 'timezone' => 'UTC']);
+        $user->id = $id;
+
+        return $user;
     }
 }
