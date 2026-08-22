@@ -127,6 +127,61 @@ Tests run against `byagain_testing` on MySQL rather than SQLite in memory. The
 sampling query leans on MySQL-specific functions and the schema on composite
 UNIQUE indexes; a SQLite suite would pass while production broke.
 
+## Troubleshooting
+
+### `could not find driver`
+
+```
+Illuminate\Database\QueryException
+could not find driver (Connection: mysql, ...)
+```
+
+PHP is running without `pdo_mysql`. On Windows the DLLs ship with PHP but every
+extension is commented out in the default `php.ini`.
+
+```bash
+php --ini      # find the loaded file
+php -m         # list what is actually loaded
+```
+
+In that `php.ini`, set `extension_dir` to an absolute path and uncomment
+`curl`, `fileinfo`, `intl`, `mbstring`, `openssl`, `pdo_mysql`, `pdo_sqlite`,
+`zip`, `gd`, `bcmath`, `sodium`.
+
+If `php --ini` points somewhere unexpected, check whether you have more than
+one PHP on `PATH`:
+
+```powershell
+Get-Command php -All
+```
+
+### Every page 500s but `artisan test` passes
+
+Symptom, from `storage/logs/laravel.log`:
+
+```
+TypeError: Cannot assign Random\Engine\Secure to property
+           Random\Randomizer::$engine of type Random\Engine
+```
+
+A PHP 8.5.9 OPcache bug, not a byagain setting. `Secure` does implement
+`Engine`, but with OPcache on, any non-CLI SAPI (`php -S`, `php-fpm`) fails the
+type check. It takes down every database connection, because Laravel's
+`ConnectionFactory` shuffles the host list through `Randomizer`.
+
+CLI is unaffected, since `opcache.enable_cli` is `0` by default — which is
+exactly why the whole test suite passes while the served app is broken.
+
+Disable OPcache in your `php.ini`:
+
+```ini
+opcache.enable=0
+```
+
+Narrower settings do not help; `optimization_level=0` and `save_comments=1`
+were both tried and still fail. Re-enable once PHP ships a fix, then confirm
+with `php -S 127.0.0.1:8000 -t public public/index.php` and open `/login`.
+
 ## Documentation
 
 - [`docs/SPEC.md`](docs/SPEC.md) — routes, algorithms, the reasoning behind them
