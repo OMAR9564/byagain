@@ -102,14 +102,14 @@ Tek Laravel monoliti (plan.md "Structure Decision"): `app/`, `resources/`, `rout
 - [X] T034 `resources/views/auth/` altında Blade view'ları yaz: login, register, forgot-password, reset-password, verify-email (mobil öncelikli, `lang/en/` metinleriyle)
 - [X] T035 `app/Providers/FortifyServiceProvider.php` içinde giriş ve parola sıfırlama için `RateLimiter` tanımla (FR-006) ve parola sıfırlama yanıtını adresten bağımsız tek tip yap (FR-004)
 - [X] T036 [P] `app/Http/Middleware/EnsureUserIsActive.php` ve `app/Http/Middleware/EnsureUserIsAdmin.php` yaz, `bootstrap/app.php` içinde takma adlarını kaydet
-- [ ] T037 `app/Http/Controllers/AccountController.php` + `app/Http/Requests/DeleteAccountRequest.php`: parola onaylı hesap silme, içerik silme ve e-posta anonimleştirme (FR-008, research.md R-13)
-- [ ] T038 [P] `tests/Feature/Auth/AuthFlowTest.php` — kayıt, doğrulama süresi (24 sa), sıfırlama süresi (60 dk), tek tip yanıt, hız sınırı, hesap silme + anonimleştirme (FR-001..FR-008)
+- [X] T037 `app/Http/Controllers/AccountController.php` + `app/Http/Requests/DeleteAccountRequest.php`: parola onaylı hesap silme, içerik silme ve e-posta anonimleştirme (FR-008, research.md R-13)
+- [X] T038 [P] `tests/Feature/Auth/AuthFlowTest.php` — kayıt, doğrulama süresi (24 sa), sıfırlama süresi (60 dk), tek tip yanıt, hız sınırı, hesap silme + anonimleştirme (FR-001..FR-008)
 
 ### Kabuk
 
 - [X] T039 `resources/views/layouts/app.blade.php` yaz: 375px öncelikli kabuk, alt gezinme (baş parmak erişimi, ≥44×44px hedefler), karanlık mod (sistem + elle), `prefers-reduced-motion` (FR-077..FR-085)
 - [X] T040 [P] `resources/views/components/` altında ortak bileşenler: `card`, `button`, `empty-state`, `bottom-nav`, `progress-bar`, `highlight-content` (`{{-- purified: MarkdownRenderer --}}` yorumlu tek `{!! !!}` kullanımı burada)
-- [ ] T041 `routes/web.php` iskeletini contracts/routes.md'deki adlar ve middleware grupları ile kur (henüz controller'sız rotalar açılmaz)
+- [X] T041 `routes/web.php` iskeletini contracts/routes.md'deki adlar ve middleware grupları ile kur (henüz controller'sız rotalar açılmaz)
 
 **Checkpoint**: Şema, sahiplik, zaman, içerik ve kimlik hazır — hikâyeler başlayabilir.
 
