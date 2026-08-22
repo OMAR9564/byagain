@@ -42,7 +42,7 @@ Then:
 ```bash
 php artisan migrate
 npm install && npm run build
-php artisan db:seed --class=DemoSeeder   # optional: a library to look at
+php artisan db:seed --class=EngineeringLibrarySeeder   # optional: a real library to read
 ```
 
 Run it:
@@ -54,7 +54,29 @@ php artisan queue:work
 php artisan schedule:work
 ```
 
-The demo seeder creates `demo@byagain.test` with the password `password`.
+## Seeders
+
+| Seeder | What it gives you |
+| --- | --- |
+| `EngineeringLibrarySeeder` | 20 real sources — Clean Code, DDIA, SRE, CLRS, Peopleware — with ~85 Turkish passages. Spread across every frequency tier so the weighting has something to do. |
+| `DemoSeeder` | Volume rather than substance. Set `BYAGAIN_DEMO_HIGHLIGHTS=20000` to build the account the performance budget is measured against. |
+
+Both fill the first existing account. To choose one explicitly:
+
+```bash
+BYAGAIN_SEED_EMAIL=you@example.com php artisan db:seed --class=EngineeringLibrarySeeder
+```
+
+Each seeder prints the address it filled — worth reading, since "the first
+account" is not always the one you meant.
+
+`DemoSeeder` creates `demo@byagain.test` with the password `password` if the
+instance has no users at all.
+
+`EngineeringLibrarySeeder` writes through `HighlightWriter`, the same path the
+editor uses, so seeded passages are cleaned, rendered and purified exactly like
+typed ones. `DemoSeeder` bulk-inserts instead, because 20.000 models would make
+the fixture slower than the thing it exists to measure.
 
 To make yourself an administrator:
 
@@ -81,6 +103,7 @@ are product decisions and live in `config/byagain.php`.
 | `RESEND_WEBHOOK_SECRET` | — | Verifies the open-tracking webhook. Empty rejects every call. |
 | `BYAGAIN_SOURCE_URL` | this repository | Shown in the footer to satisfy the AGPL. |
 | `BYAGAIN_DEMO_HIGHLIGHTS` | `400` | Set to `20000` to build the performance fixture. |
+| `BYAGAIN_SEED_EMAIL` | — | Which account the seeders fill. Empty means the first existing one. |
 
 Before going live you also need SPF, DKIM and DMARC records for whatever
 domain `MAIL_FROM_ADDRESS` uses. Without them the morning email lands in spam,

@@ -231,5 +231,9 @@ return [
 
     'demo' => [
         'highlight_count' => (int) env('BYAGAIN_DEMO_HIGHLIGHTS', 400),
+
+        // Which account the seeders fill. Left empty they use the first
+        // existing reader, which on a development machine is yours.
+        'email' => env('BYAGAIN_SEED_EMAIL'),
     ],
 ];
