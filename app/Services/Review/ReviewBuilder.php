@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Review;
 
 use App\Models\Highlight;
+use App\Models\MasteryCard;
 use App\Models\Review;
 use App\Models\ReviewItem;
 use App\Models\User;
+use App\Services\Mastery\MasteryScheduler;
 use App\Services\Time\LocalDayResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -34,6 +36,7 @@ final class ReviewBuilder
     public function __construct(
         private readonly LocalDayResolver $days,
         private readonly HighlightSampler $sampler,
+        private readonly MasteryScheduler $mastery,
     ) {}
 
     /**
@@ -53,14 +56,23 @@ final class ReviewBuilder
             return $existing;
         }
 
-        $highlights = $this->sampler->sample($user, $user->review_size, $day);
+        // Mastery cards take their share first, but only as many as are
+        // actually due. Whatever the ratio does not claim — or claims but
+        // cannot fill — goes back to ordinary highlights, so a reader with no
+        // cards yet still gets a full review (FR-034, FR-036).
+        $masteryQuota = (int) floor($user->review_size * ($user->mastery_ratio / 100));
+        $cards = $masteryQuota > 0
+            ? $this->mastery->dueCards($user, $masteryQuota)->all()
+            : [];
 
-        if ($highlights === []) {
+        $highlights = $this->sampler->sample($user, $user->review_size - count($cards), $day);
+
+        if ($highlights === [] && $cards === []) {
             return null;
         }
 
         try {
-            return DB::transaction(fn (): Review => $this->create($user, $day, $highlights));
+            return DB::transaction(fn (): Review => $this->create($user, $day, $highlights, $cards));
         } catch (UniqueConstraintViolationException) {
             // Someone else built it between the check and the insert. Their
             // review is as valid as ours would have been; use it.
@@ -71,15 +83,16 @@ final class ReviewBuilder
     public function find(User $user, CarbonImmutable $localDay): ?Review
     {
         return $user->reviews()
-            ->with(['items.highlight.source'])
+            ->with($this->relations())
             ->where('review_date', $localDay->toDateString())
             ->first();
     }
 
     /**
      * @param  array<int, Highlight>  $highlights
+     * @param  array<int, MasteryCard>  $cards
      */
-    private function create(User $user, CarbonImmutable $localDay, array $highlights): Review
+    private function create(User $user, CarbonImmutable $localDay, array $highlights, array $cards): Review
     {
         $review = new Review;
         $review->user_id = $user->id;
@@ -88,15 +101,18 @@ final class ReviewBuilder
         // The size recorded is what was actually built, not what was asked
         // for. A user with four eligible highlights and a size of eight gets
         // a four-card review rather than an error (FR-036).
-        $review->size = count($highlights);
+        $review->size = count($highlights) + count($cards);
         $review->status = Review::STATUS_PENDING;
         $review->save();
 
         $now = Carbon::now();
         $position = 0;
+        $rows = [];
 
-        $rows = array_map(function (Highlight $highlight) use ($user, $review, &$position, $now): array {
-            return [
+        // Highlights first, then mastery cards. Reading comes before being
+        // asked questions: the ritual should open gently (FR-035).
+        foreach ($highlights as $highlight) {
+            $rows[] = [
                 'user_id' => $user->id,
                 'review_id' => $review->id,
                 'position' => ++$position,
@@ -106,10 +122,31 @@ final class ReviewBuilder
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
-        }, $highlights);
+        }
+
+        foreach ($cards as $card) {
+            $rows[] = [
+                'user_id' => $user->id,
+                'review_id' => $review->id,
+                'position' => ++$position,
+                'item_type' => ReviewItem::TYPE_MASTERY,
+                'highlight_id' => null,
+                'mastery_card_id' => $card->id,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
 
         ReviewItem::query()->insert($rows);
 
-        return $review->load(['items.highlight.source']);
+        return $review->load($this->relations());
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function relations(): array
+    {
+        return ['items.highlight.source', 'items.masteryCard.highlight'];
     }
 }

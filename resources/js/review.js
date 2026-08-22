@@ -45,8 +45,16 @@ function start(root) {
             });
         }
 
-        bindSwipe(card);
         bindExpand(card);
+
+        if (card.dataset.itemType === 'mastery') {
+            bindMastery(card, (feedback) => act(card, 'keep', feedback));
+        } else {
+            // Swiping is for highlights only. A mastery card is a question,
+            // and answering it by accident with a stray thumb would be worse
+            // than making the reader tap.
+            bindSwipe(card);
+        }
     });
 
     // Arrow keys on a desktop, where there is no thumb to swipe with.
@@ -64,7 +72,7 @@ function start(root) {
         }
     });
 
-    function act(card, action) {
+    function act(card, action, masteryFeedback = null) {
         if (card.dataset.acted === 'true') {
             return;
         }
@@ -82,6 +90,7 @@ function start(root) {
             card.dataset.actionUrl,
             {
                 action,
+                mastery_feedback: masteryFeedback,
                 favorite: favorite !== null && favorite.getAttribute('aria-pressed') === 'true',
                 // Only sent when the reader actually moved the dial, so a
                 // plain keep does not rewrite the source every time.
@@ -159,6 +168,34 @@ function start(root) {
             // the server as soon as they land.
         }
     }
+}
+
+/**
+ * A mastery card: question, then answer on request, then four ways to say
+ * when it should come back.
+ *
+ * The feedback buttons stay hidden until the answer has been shown, so there
+ * is no way to grade recall you have not actually attempted (FR-045).
+ */
+function bindMastery(card, onFeedback) {
+    const reveal = card.querySelector('[data-mastery-reveal]');
+    const answer = card.querySelector('[data-mastery-answer]');
+    const choices = card.querySelector('[data-mastery-feedback]');
+
+    if (reveal === null || answer === null || choices === null) {
+        return;
+    }
+
+    reveal.addEventListener('click', () => {
+        answer.hidden = false;
+        choices.hidden = false;
+        reveal.setAttribute('aria-expanded', 'true');
+        reveal.hidden = true;
+    });
+
+    choices.querySelectorAll('[data-mastery-choice]').forEach((button) => {
+        button.addEventListener('click', () => onFeedback(button.dataset.masteryChoice));
+    });
 }
 
 /**

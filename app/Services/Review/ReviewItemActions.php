@@ -7,6 +7,7 @@ namespace App\Services\Review;
 use App\Models\Review;
 use App\Models\ReviewItem;
 use App\Models\User;
+use App\Services\Mastery\MasteryScheduler;
 use App\Services\Streak\StreakService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
@@ -26,7 +27,10 @@ use Illuminate\Support\Facades\DB;
  */
 final class ReviewItemActions
 {
-    public function __construct(private readonly StreakService $streaks) {}
+    public function __construct(
+        private readonly StreakService $streaks,
+        private readonly MasteryScheduler $scheduler,
+    ) {}
 
     /**
      * @param  array{action: string, favorite?: bool|null, source_frequency?: string|null, client_acted_at?: string|null}  $input
@@ -65,6 +69,14 @@ final class ReviewItemActions
 
         $item->action = $action;
         $item->acted_at = $actedAt;
+
+        if ($item->item_type === ReviewItem::TYPE_MASTERY) {
+            $this->recordMasteryFeedback($item, $input, $actedAt);
+            $item->save();
+
+            return;
+        }
+
         $item->save();
 
         $highlight = $item->highlight;
@@ -91,6 +103,31 @@ final class ReviewItemActions
         $highlight->save();
 
         $this->applySourceFrequency($item, $input);
+    }
+
+    /**
+     * Reschedule a mastery card from the reader's answer.
+     *
+     * A card dealt with but given no feedback — swiped past, or replayed from
+     * an older client — is treated as `later`. Leaving it unscheduled would
+     * mean it never came back at all, which is worse than a slightly wrong
+     * interval.
+     *
+     * @param  array{mastery_feedback?: string|null}  $input
+     */
+    private function recordMasteryFeedback(ReviewItem $item, array $input, Carbon $actedAt): void
+    {
+        $card = $item->masteryCard;
+
+        if ($card === null) {
+            return;
+        }
+
+        $feedback = $input['mastery_feedback'] ?? 'later';
+
+        $item->mastery_feedback = $feedback;
+
+        $this->scheduler->applyFeedback($card, $feedback, $actedAt);
     }
 
     /**
@@ -186,7 +223,31 @@ final class ReviewItemActions
                 'longest' => $user->longest_streak,
                 'day' => $streakDay->toDateString(),
             ],
-            'mastery' => null,
+            'mastery' => $this->masteryPayload($item),
+        ];
+    }
+
+    /**
+     * What the card's new schedule looks like, so the interface can say when
+     * it will be back.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function masteryPayload(ReviewItem $item): ?array
+    {
+        $card = $item->masteryCard?->refresh();
+
+        if ($card === null) {
+            return null;
+        }
+
+        return [
+            'half_life_days' => $card->half_life_days,
+            'due_at' => $card->due_at?->toIso8601String(),
+            // Offered only once the reader has asked to see it sooner enough
+            // times to say something. The card is never rewritten for them
+            // (FR-052).
+            'hint' => $card->isStruggling() ? __('mastery.struggle_hint') : null,
         ];
     }
 }

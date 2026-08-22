@@ -190,20 +190,20 @@ Normal pasaj örneklemesinden bağımsız çalışır.
 
 ### Tests for User Story 3
 
-- [ ] T074 [P] [US3] `tests/Unit/Mastery/MasterySchedulerTest.php` — ilk geri bildirim 7/14/28, sonrakiler ×0.5/×2.0/×3.0, `clamp(1,365)` (FR-047..FR-049)
-- [ ] T075 [P] [US3] `tests/Feature/Mastery/MasteryInReviewTest.php` — mastery kartları normal pasajlardan sonra sıralanır, oran aşılmaz, vade gelmemiş kart çıkmaz, boşluk normal pasajla dolar (FR-035, FR-036, FR-051)
-- [ ] T076 [P] [US3] `tests/Feature/Mastery/RetireAndStruggleTest.php` — `learned` → `retired` (silinmez), 6. "daha erken" sonrası ipucu (FR-050, FR-052)
+- [X] T074 [P] [US3] `tests/Unit/Mastery/MasterySchedulerTest.php` — ilk geri bildirim 7/14/28, sonrakiler ×0.5/×2.0/×3.0, `clamp(1,365)` (FR-047..FR-049)
+- [X] T075 [P] [US3] `tests/Feature/Mastery/MasteryInReviewTest.php` — mastery kartları normal pasajlardan sonra sıralanır, oran aşılmaz, vade gelmemiş kart çıkmaz, boşluk normal pasajla dolar (FR-035, FR-036, FR-051)
+- [X] T076 [P] [US3] `tests/Feature/Mastery/RetireAndStruggleTest.php` — `learned` → `retired` (silinmez), 6. "daha erken" sonrası ipucu (FR-050, FR-052)
 
 ### Implementation for User Story 3
 
-- [ ] T077 [US3] `app/Services/Mastery/MasteryScheduler.php` yaz: `applyFeedback()`, `recallProbability()`, `dueCards()` (en düşük `p` önce, eşitlikte rastgele) — sabitler `config('byagain.mastery.*')` (research.md R-06)
-- [ ] T078 [P] [US3] `app/Http/Requests/StoreMasteryCardRequest.php` ve `UpdateMasteryCardRequest.php` yaz (cloze biçimi doğrulaması dahil)
-- [ ] T079 [US3] `app/Http/Controllers/MasteryCardController.php` yaz: store (pasajdan), index, edit, update, retire (FR-044, FR-053)
-- [ ] T080 [US3] `app/Services/Review/ReviewBuilder.php` içine mastery karışımını ekle: `mastery_ratio` kadar vadesi gelmiş kart, normal pasajlardan sonra `position` (FR-034, FR-035, FR-036)
-- [ ] T081 [US3] `app/Services/Review/ReviewItemActions.php` içine `mastery_feedback` işlemesini ekle ve JSON yanıtına `mastery.half_life_days`/`due_at`/`hint` alanlarını doldur (contracts/review-actions.md)
-- [ ] T082 [P] [US3] `resources/views/review/partials/mastery-card.blade.php` yaz: önce soru, kullanıcı isteğiyle cevap; dört geri bildirim düğmesi (FR-045, FR-046)
-- [ ] T083 [P] [US3] `resources/views/mastery/index.blade.php` ve `edit.blade.php` yaz: kart listesi, düzenleme, kaldırma (FR-053)
-- [ ] T084 [P] [US3] `resources/views/settings/edit.blade.php` içine mastery oranı (%) denetimini ekle (FR-034)
+- [X] T077 [US3] `app/Services/Mastery/MasteryScheduler.php` yaz: `applyFeedback()`, `recallProbability()`, `dueCards()` (en düşük `p` önce, eşitlikte rastgele) — sabitler `config('byagain.mastery.*')` (research.md R-06)
+- [X] T078 [P] [US3] `app/Http/Requests/StoreMasteryCardRequest.php` ve `UpdateMasteryCardRequest.php` yaz (cloze biçimi doğrulaması dahil)
+- [X] T079 [US3] `app/Http/Controllers/MasteryCardController.php` yaz: store (pasajdan), index, edit, update, retire (FR-044, FR-053)
+- [X] T080 [US3] `app/Services/Review/ReviewBuilder.php` içine mastery karışımını ekle: `mastery_ratio` kadar vadesi gelmiş kart, normal pasajlardan sonra `position` (FR-034, FR-035, FR-036)
+- [X] T081 [US3] `app/Services/Review/ReviewItemActions.php` içine `mastery_feedback` işlemesini ekle ve JSON yanıtına `mastery.half_life_days`/`due_at`/`hint` alanlarını doldur (contracts/review-actions.md)
+- [X] T082 [P] [US3] `resources/views/review/partials/mastery-card.blade.php` yaz: önce soru, kullanıcı isteğiyle cevap; dört geri bildirim düğmesi (FR-045, FR-046)
+- [X] T083 [P] [US3] `resources/views/mastery/index.blade.php` ve `edit.blade.php` yaz: kart listesi, düzenleme, kaldırma (FR-053)
+- [X] T084 [P] [US3] `resources/views/settings/edit.blade.php` içine mastery oranı (%) denetimini ekle (FR-034)
 
 **Checkpoint**: US1–US3 bağımsız çalışır.
 

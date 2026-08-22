@@ -12,16 +12,20 @@
         <x-progress-bar :current="$startIndex" :total="$review->items->count()" class="mb-5" data-review-progress />
 
         @foreach ($review->items as $index => $item)
-            @continue($item->highlight === null)
+            @continue($item->highlight === null && $item->masteryCard === null)
 
             <article
                 class="review-card"
                 data-review-card
+                data-item-type="{{ $item->item_type }}"
                 data-item-id="{{ $item->id }}"
                 data-action-url="{{ route('review.item.action', $item) }}"
                 data-acted="{{ $item->isActed() ? 'true' : 'false' }}"
                 @if ($index !== $startIndex) hidden @endif
             >
+            @if ($item->item_type === \App\Models\ReviewItem::TYPE_MASTERY)
+                @include('review.partials.mastery-card', ['item' => $item])
+            @else
                 <x-card>
                     <p class="mb-3 text-sm" style="color: var(--color-ink-muted);">
                         {{ $item->highlight->source?->title }}
@@ -84,6 +88,7 @@
                         </select>
                     </label>
                 </div>
+            @endif
             </article>
         @endforeach
 

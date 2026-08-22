@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\HighlightController;
+use App\Http\Controllers\MasteryCardController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewItemActionController;
 use App\Http\Controllers\SettingsController;
@@ -52,6 +53,12 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::patch('/highlights/{highlight}', [HighlightController::class, 'update'])->name('highlights.update');
     Route::post('/highlights/{highlight}/discard', [HighlightController::class, 'discard'])->name('highlights.discard');
     Route::post('/highlights/{highlight}/favorite', [HighlightController::class, 'favorite'])->name('highlights.favorite');
+
+    Route::post('/highlights/{highlight}/mastery', [MasteryCardController::class, 'store'])->name('mastery.store');
+    Route::get('/mastery', [MasteryCardController::class, 'index'])->name('mastery.index');
+    Route::get('/mastery/{card}/edit', [MasteryCardController::class, 'edit'])->name('mastery.edit');
+    Route::patch('/mastery/{card}', [MasteryCardController::class, 'update'])->name('mastery.update');
+    Route::post('/mastery/{card}/retire', [MasteryCardController::class, 'retire'])->name('mastery.retire');
 
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
