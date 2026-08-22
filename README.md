@@ -179,6 +179,20 @@ one PHP on `PATH`:
 Get-Command php -All
 ```
 
+### The whole test suite fails with 419
+
+Dozens of tests failing at once with `419` looks like a CSRF bug and is not.
+It means `bootstrap/cache/config.php` exists: a cached config bakes in
+`APP_ENV`, so `phpunit.xml`'s `APP_ENV=testing` never applies, Laravel does not
+realise it is running tests, and enforces CSRF on every request.
+
+```bash
+php artisan optimize:clear
+```
+
+`composer test` clears the config first for exactly this reason. Running
+`php artisan test` directly skips that guard — prefer `composer test`.
+
 ### Every page 500s but `artisan test` passes
 
 Symptom, from `storage/logs/laravel.log`:

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="byagain">
+    <!--
+        Three lines of a passage, the middle one singled out — the thing the
+        product does, in one mark. Deliberately not a letter: a "b" would say
+        nothing that a thousand other apps do not already say.
+
+        Colours are the accent and canvas from resources/css/tokens.css. The
+        ragged right edge is what makes it read as text rather than as a menu
+        icon; keep the widths uneven if you ever redraw this.
+    -->
+    <rect width="512" height="512" fill="#8a5a2b"/>
+    <g fill="#fbfaf8">
+        <rect x="112" y="124" width="240" height="56" rx="28" opacity="0.45"/>
+        <rect x="112" y="224" width="288" height="64" rx="32"/>
+        <rect x="112" y="332" width="180" height="56" rx="28" opacity="0.45"/>
+    </g>
+</svg>

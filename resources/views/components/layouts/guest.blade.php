@@ -7,6 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
     <title>{{ $title ?? config('app.name') }}</title>
+
+    <link rel="icon" href="{{ asset('icons/icon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('icons/favicon-32.png') }}" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-full !pb-0" style="background-color: var(--color-canvas); color: var(--color-ink);">

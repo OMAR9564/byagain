@@ -18,6 +18,14 @@
 
     <link rel="manifest" href="{{ url('manifest.json') }}">
 
+    {{-- SVG first for browsers that take it — it stays sharp at any size.
+         The PNGs are the fallback, and apple-touch-icon is what iOS uses when
+         the app is added to the home screen. --}}
+    <link rel="icon" href="{{ asset('icons/icon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('icons/favicon-32.png') }}" sizes="32x32" type="image/png">
+    <link rel="icon" href="{{ asset('icons/favicon-16.png') }}" sizes="16x16" type="image/png">
+    <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
+
     {{-- Applied before first paint so a dark-mode user never gets a white
          flash on the way in (FR-083). --}}
     <script>

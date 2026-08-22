@@ -66,6 +66,38 @@ final class PwaTest extends TestCase
     }
 
     #[Test]
+    public function every_icon_the_pages_reference_exists(): void
+    {
+        foreach ([
+            'icons/icon.svg',
+            'icons/favicon-32.png',
+            'icons/favicon-16.png',
+            'icons/apple-touch-icon.png',
+        ] as $icon) {
+            $this->assertFileExists(public_path($icon));
+        }
+    }
+
+    #[Test]
+    public function the_svg_mark_and_the_rasters_agree_on_the_brand_colour(): void
+    {
+        $svg = (string) file_get_contents(public_path('icons/icon.svg'));
+
+        // The SVG is the source of truth; scripts/make-icons.php mirrors its
+        // geometry by hand, so a colour change there has to be carried over.
+        $this->assertStringContainsString('#8a5a2b', $svg);
+
+        $png = imagecreatefrompng(public_path('icons/icon-512.png'));
+        $corner = imagecolorat($png, 4, 4);
+
+        $this->assertSame(0x8A, ($corner >> 16) & 0xFF);
+        $this->assertSame(0x5A, ($corner >> 8) & 0xFF);
+        $this->assertSame(0x2B, $corner & 0xFF);
+
+        imagedestroy($png);
+    }
+
+    #[Test]
     public function the_offline_page_stands_alone(): void
     {
         $html = (string) file_get_contents(public_path('offline.html'));
