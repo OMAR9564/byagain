@@ -44,6 +44,53 @@ mysql -u u179024548_byagain -p u179024548_byagain -e 'select 1'
 
 ---
 
+## 1b. PHP configuration (hPanel)
+
+**Advanced → PHP Configuration.** These settings apply to the *web* PHP, which
+hPanel tracks separately from the CLI one you get over SSH.
+
+**PHP version — pick 8.4**, matching the CLI. A mismatch between the two means
+`artisan` and the browser disagree, and that is a genuinely annoying afternoon.
+8.3 is fine too. Do not pick **8.5**: it has an OPcache bug that breaks every
+database connection from a web request while leaving CLI perfectly healthy —
+see the README's troubleshooting section.
+
+**Extensions** — these must be ticked:
+
+`pdo_mysql`, `mbstring`, `openssl`, `intl`, `curl`, `zip`, `gd`, `bcmath`,
+`fileinfo`, `tokenizer`, `xml`, `dom`, `simplexml`, `opcache`
+
+Leave the rest alone. `imagick`, `redis`, `soap` and `imap` are not used but
+cost nothing switched on.
+
+**Options:**
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| `memory_limit` | `256M` | headroom for Composer and `artisan optimize` |
+| `max_execution_time` | `120` | |
+| `max_input_vars` | `3000` | Filament forms post a lot of fields |
+| `allow_url_fopen` | On | Composer |
+| `display_errors` | **Off** | left on, an error page prints your database password |
+| `opcache.enable` | On | safe on 8.4 |
+| `date.timezone` | `UTC` | everything is stored in UTC and converted per user |
+| `upload_max_filesize` | `8M` | |
+| `post_max_size` | `8M` | |
+
+`display_errors=Off` and `APP_DEBUG=false` are separate layers. You need both.
+
+After changing anything here, confirm the web PHP really moved — and re-run
+`php artisan optimize`, since the config cache holds the old values:
+
+```bash
+cd ~/byagain
+echo '<?php echo PHP_VERSION," ",(extension_loaded("pdo_mysql")?"pdo_mysql ok":"NO pdo_mysql");' > public/__v.php
+curl -s https://byagain.omaralfarouk.com/__v.php; echo
+rm public/__v.php
+```
+
+---
+
 ## 2. Clone the application outside the document root
 
 ```bash
