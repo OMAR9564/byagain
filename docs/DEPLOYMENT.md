@@ -72,6 +72,61 @@ has everything the application needs — `pdo_mysql`, `mbstring`, `intl`, `gd`,
 `bcmath`, `zip`, `openssl`, `tokenizer` — but check anyway, because the CLI
 and the web PHP can be different builds.
 
+### When Composer asks for a GitHub token
+
+```
+Install of filament/forms failed
+Token (hidden):
+fatal: unable to create thread: Resource temporarily unavailable
+```
+
+One cause, two symptoms. Shared hosting means hundreds of accounts leaving
+GitHub's anonymous API from the same address, so the 60-requests-per-hour limit
+is usually already spent. Composer cannot fetch the zip, falls back to cloning
+from source, and the clone then trips the account's process limit when git
+tries to spawn threads to repack.
+
+Fix the rate limit and git never gets involved. Create a **classic personal
+access token with no scopes ticked** — public repositories need no permission,
+the token only raises the limit to 5000 per hour:
+
+```bash
+composer config --global --auth github-oauth.github.com ghp_your_token
+
+# belt and braces, in case git is still reached for anything
+git config --global pack.threads 1
+git config --global core.compression 0
+
+cd ~/byagain
+rm -rf vendor
+COMPOSER_MAX_PARALLEL_HTTP=4 composer install --no-dev --optimize-autoloader --prefer-dist
+```
+
+`rm -rf vendor` matters: a half-finished install is not something to write over.
+
+### If Composer still will not run there
+
+Skip the server entirely — build `vendor/` on your machine and ship it. It is
+plain PHP with nothing compiled, so it transfers cleanly.
+
+```powershell
+cd C:\Users\BYA\Documents\github\byagain
+composer install --no-dev --optimize-autoloader
+tar -czf vendor.tar.gz vendor
+scp vendor.tar.gz u179024548@fr-int-web1271:~/byagain/
+composer install                      # put your dev dependencies back
+```
+
+```bash
+cd ~/byagain
+rm -rf vendor && tar -xzf vendor.tar.gz && rm vendor.tar.gz
+composer check-platform-reqs
+```
+
+Archive first rather than `scp -r`. The directory is around 18.000 files, and
+copying them one by one over SSH takes far longer than sending a single 40MB
+file.
+
 ---
 
 ## 4. Configure
