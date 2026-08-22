@@ -147,6 +147,6 @@ final class ReviewBuilder
      */
     private function relations(): array
     {
-        return ['items.highlight.source', 'items.masteryCard.highlight'];
+        return Review::cardRelations();
     }
 }

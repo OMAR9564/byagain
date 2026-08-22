@@ -52,6 +52,18 @@ final class Review extends Model
     }
 
     /**
+     * Everything needed to render a review's cards, on the screen or in an
+     * email. Kept here so the two never diverge and neither ends up loading
+     * a relation per card.
+     *
+     * @return array<int, string>
+     */
+    public static function cardRelations(): array
+    {
+        return ['items.highlight.source', 'items.masteryCard.highlight.source'];
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

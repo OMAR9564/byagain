@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\HighlightController;
+use App\Http\Controllers\MailWebhookController;
 use App\Http\Controllers\MasteryCardController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewItemActionController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SourceController;
+use App\Http\Controllers\UnsubscribeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,6 +29,19 @@ use Illuminate\Support\Facades\Route;
 | controller that does not exist yet.
 |
 */
+
+/*
+ * Signed-out routes.
+ *
+ * `unsubscribe` is authorised by its signature rather than by a session:
+ * someone who wants these emails to stop should not have to find their
+ * password first, or "unsubscribe" becomes "mark as spam" (FR-065).
+ */
+Route::get('/unsubscribe/{user}/{type}', UnsubscribeController::class)
+    ->middleware('signed')
+    ->name('unsubscribe');
+
+Route::post('/webhooks/mail', MailWebhookController::class)->name('webhooks.mail');
 
 Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::view('/', 'home')->name('home');

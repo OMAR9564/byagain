@@ -22,6 +22,11 @@ return [
 
     'resend' => [
         'key' => env('RESEND_API_KEY'),
+
+        // Verifies the open-tracking webhook. Left empty the endpoint rejects
+        // everything, which is the right default: an unconfigured webhook
+        // should be closed, not open (FR-064).
+        'webhook_secret' => env('RESEND_WEBHOOK_SECRET', ''),
     ],
 
     'ses' => [

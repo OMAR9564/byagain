@@ -219,24 +219,24 @@ hangi e-postanın ne zaman gönderildiğini doğrula.
 
 ### Tests for User Story 4
 
-- [ ] T085 [P] [US4] `tests/Feature/Mail/DailyPipelineTest.php` — `America/New_York` 08:00 kullanıcısı doğru pencerede sıraya alınır (±5 dk, SC-013); uygun pasajı olmayan kullanıcıya tekrar ve e-posta yok (US2-7)
-- [ ] T086 [P] [US4] `tests/Feature/Mail/ReminderDedupeTest.php` — komut aynı gün 10 kez çalışsa da kullanıcı başına 1 daily + 1 reminder (FR-063, SC-014)
-- [ ] T087 [P] [US4] `tests/Feature/Mail/ReminderSkipTest.php` — gönderim anında tekrar tamamlanmışsa `skipped` yazılır, gönderilmez (FR-062, US4-5)
-- [ ] T088 [P] [US4] `tests/Feature/Mail/UnverifiedAndUnsubscribeTest.php` — doğrulanmamış e-postaya ritüel maili gitmez (FR-007); imzalı "kapat" bağlantısı girişsiz çalışır, imza bozulursa 403 (FR-065)
-- [ ] T089 [P] [US4] `tests/Feature/Mail/EmailMatchesAppTest.php` — e-postadaki kartlar `review_items` ile birebir aynı (FR-061, US4-2)
+- [X] T085 [P] [US4] `tests/Feature/Mail/DailyPipelineTest.php` — `America/New_York` 08:00 kullanıcısı doğru pencerede sıraya alınır (±5 dk, SC-013); uygun pasajı olmayan kullanıcıya tekrar ve e-posta yok (US2-7)
+- [X] T086 [P] [US4] `tests/Feature/Mail/ReminderDedupeTest.php` — komut aynı gün 10 kez çalışsa da kullanıcı başına 1 daily + 1 reminder (FR-063, SC-014)
+- [X] T087 [P] [US4] `tests/Feature/Mail/ReminderSkipTest.php` — gönderim anında tekrar tamamlanmışsa `skipped` yazılır, gönderilmez (FR-062, US4-5)
+- [X] T088 [P] [US4] `tests/Feature/Mail/UnverifiedAndUnsubscribeTest.php` — doğrulanmamış e-postaya ritüel maili gitmez (FR-007); imzalı "kapat" bağlantısı girişsiz çalışır, imza bozulursa 403 (FR-065)
+- [X] T089 [P] [US4] `tests/Feature/Mail/EmailMatchesAppTest.php` — e-postadaki kartlar `review_items` ile birebir aynı (FR-061, US4-2)
 
 ### Implementation for User Story 4
 
-- [ ] T090 [US4] `app/Console/Commands/DispatchDailyPipeline.php` yaz: 5 dakikalık pencere taraması, tekrar üretimi, `email_deliveries` `insertOrIgnore`, `--dry-run`/`--user`/`--now` seçenekleri (contracts/console-and-jobs.md)
-- [ ] T091 [US4] `routes/console.php` içinde `byagain:dispatch-daily` görevini her 5 dakikada `withoutOverlapping()` ile zamanla (FR-089)
-- [ ] T092 [US4] `app/Services/Mail/MailDispatcher.php` yaz: dedupe anahtarı üretimi, sıraya alma, gönderim öncesi durum yeniden kontrolü, `skipped` nedeni kaydı (FR-062, FR-063, FR-068)
-- [ ] T093 [P] [US4] `app/Jobs/SendDailyReviewEmail.php` yaz: `tries=5`, artan `backoff`, `failed()` kancasında `status=failed` (FR-067)
-- [ ] T094 [P] [US4] `app/Jobs/SendEveningReminderEmail.php` yaz: aynı sözleşme + tamamlanma yeniden kontrolü + haftada 1 kısıtı (FR-062, FR-064)
-- [ ] T095 [P] [US4] `app/Mail/DailyReviewMail.php` + `resources/views/mail/daily.blade.php` + düz metin sürümü: kartlar gömülü, tek çağrı, dar ekran + karanlık mod (FR-060, FR-066)
-- [ ] T096 [P] [US4] `app/Mail/EveningReminderMail.php` + `resources/views/mail/reminder.blade.php` + düz metin sürümü (FR-062, suçlayıcı olmayan dil)
-- [ ] T097 [US4] `app/Http/Controllers/UnsubscribeController.php` yaz: imzalı rota, girişsiz, idempotent tercih kapatma + onay ekranı (FR-065, research.md R-12)
-- [ ] T098 [US4] `app/Http/Controllers/MailWebhookController.php` yaz: sağlayıcı imzası doğrulaması → `email_deliveries.opened_at` ve `users.consecutive_unopened_emails` güncellemesi (FR-064)
-- [ ] T099 [P] [US4] `resources/views/settings/edit.blade.php` içine e-posta saatleri, zaman dilimi ve iki ayrı açma/kapama denetimini ekle (FR-059)
+- [X] T090 [US4] `app/Console/Commands/DispatchDailyPipeline.php` yaz: 5 dakikalık pencere taraması, tekrar üretimi, `email_deliveries` `insertOrIgnore`, `--dry-run`/`--user`/`--now` seçenekleri (contracts/console-and-jobs.md)
+- [X] T091 [US4] `routes/console.php` içinde `byagain:dispatch-daily` görevini her 5 dakikada `withoutOverlapping()` ile zamanla (FR-089)
+- [X] T092 [US4] `app/Services/Mail/MailDispatcher.php` yaz: dedupe anahtarı üretimi, sıraya alma, gönderim öncesi durum yeniden kontrolü, `skipped` nedeni kaydı (FR-062, FR-063, FR-068)
+- [X] T093 [P] [US4] `app/Jobs/SendDailyReviewEmail.php` yaz: `tries=5`, artan `backoff`, `failed()` kancasında `status=failed` (FR-067)
+- [X] T094 [P] [US4] `app/Jobs/SendEveningReminderEmail.php` yaz: aynı sözleşme + tamamlanma yeniden kontrolü + haftada 1 kısıtı (FR-062, FR-064)
+- [X] T095 [P] [US4] `app/Mail/DailyReviewMail.php` + `resources/views/mail/daily.blade.php` + düz metin sürümü: kartlar gömülü, tek çağrı, dar ekran + karanlık mod (FR-060, FR-066)
+- [X] T096 [P] [US4] `app/Mail/EveningReminderMail.php` + `resources/views/mail/reminder.blade.php` + düz metin sürümü (FR-062, suçlayıcı olmayan dil)
+- [X] T097 [US4] `app/Http/Controllers/UnsubscribeController.php` yaz: imzalı rota, girişsiz, idempotent tercih kapatma + onay ekranı (FR-065, research.md R-12)
+- [X] T098 [US4] `app/Http/Controllers/MailWebhookController.php` yaz: sağlayıcı imzası doğrulaması → `email_deliveries.opened_at` ve `users.consecutive_unopened_emails` güncellemesi (FR-064)
+- [X] T099 [P] [US4] `resources/views/settings/edit.blade.php` içine e-posta saatleri, zaman dilimi ve iki ayrı açma/kapama denetimini ekle (FR-059)
 
 **Checkpoint**: Geri dönüş döngüsü çalışır.
 

@@ -12,8 +12,9 @@ return [
     ],
 
     'reminder' => [
-        'subject' => 'Today\'s review is still there',
+        'subject' => 'Your review is waiting',
         'greeting' => 'No rush — it will keep.',
+        'remaining' => '{0}Nothing left, in fact.|{1}One card left.|[2,*]:count cards left.',
         'body' => 'Two minutes if you have them.',
         'cta' => 'Read today\'s review',
     ],
