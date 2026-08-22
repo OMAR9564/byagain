@@ -32,7 +32,27 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role' => User::ROLE_USER,
+            'status' => User::STATUS_ACTIVE,
+            'timezone' => 'UTC',
+            'review_size' => (int) config('byagain.review.default_size'),
+            'mastery_ratio' => (int) config('byagain.review.default_mastery_ratio'),
         ];
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn (): array => ['role' => User::ROLE_ADMIN]);
+    }
+
+    public function suspended(): static
+    {
+        return $this->state(fn (): array => ['status' => User::STATUS_SUSPENDED]);
+    }
+
+    public function inTimezone(string $timezone): static
+    {
+        return $this->state(fn (): array => ['timezone' => $timezone]);
     }
 
     /**

@@ -67,34 +67,34 @@ Tek Laravel monoliti (plan.md "Structure Decision"): `app/`, `resources/`, `rout
 
 ### Şema
 
-- [ ] T014 `database/migrations/` içinde `users` tablosuna byagain kolonlarını ekleyen migration yaz: `role`, `status`, `timezone`, `review_size`, `mastery_ratio`, `quality_filter_enabled`, `equal_source_weighting`, `daily_email_*`, `reminder_email_*`, `consecutive_unopened_emails`, `current_streak`, `longest_streak`, `last_streak_day` — `down()` dahil (data-model.md)
-- [ ] T015 [P] `database/migrations/` içinde `sources` tablosu migration'ı: kolonlar + `(user_id, is_archived)` ve `(user_id, frequency)` indeksleri
-- [ ] T016 [P] `database/migrations/` içinde `highlights` tablosu migration'ı: `content_md/html/text`, `note`, `location`, `is_favorite`, `is_discarded`, `contains_code`, `char_count`, `shown_count`, `last_shown_at` + `(user_id, is_discarded, last_shown_at)` indeksi
-- [ ] T017 [P] `database/migrations/` içinde `mastery_cards` tablosu migration'ı + `(user_id, status, due_at)` indeksi
-- [ ] T018 [P] `database/migrations/` içinde `reviews` ve `review_items` tabloları migration'ı: `UNIQUE (user_id, review_date)` ve `UNIQUE (review_id, position)` (FR-025, SC-015)
-- [ ] T019 [P] `database/migrations/` içinde `streak_days` (`UNIQUE (user_id, day)`), `email_deliveries` (`UNIQUE (user_id, dedupe_key)`), `admin_action_logs` ve `settings` tabloları migration'ları
+- [X] T014 `database/migrations/` içinde `users` tablosuna byagain kolonlarını ekleyen migration yaz: `role`, `status`, `timezone`, `review_size`, `mastery_ratio`, `quality_filter_enabled`, `equal_source_weighting`, `daily_email_*`, `reminder_email_*`, `consecutive_unopened_emails`, `current_streak`, `longest_streak`, `last_streak_day` — `down()` dahil (data-model.md)
+- [X] T015 [P] `database/migrations/` içinde `sources` tablosu migration'ı: kolonlar + `(user_id, is_archived)` ve `(user_id, frequency)` indeksleri
+- [X] T016 [P] `database/migrations/` içinde `highlights` tablosu migration'ı: `content_md/html/text`, `note`, `location`, `is_favorite`, `is_discarded`, `contains_code`, `char_count`, `shown_count`, `last_shown_at` + `(user_id, is_discarded, last_shown_at)` indeksi
+- [X] T017 [P] `database/migrations/` içinde `mastery_cards` tablosu migration'ı + `(user_id, status, due_at)` indeksi
+- [X] T018 [P] `database/migrations/` içinde `reviews` ve `review_items` tabloları migration'ı: `UNIQUE (user_id, review_date)` ve `UNIQUE (review_id, position)` (FR-025, SC-015)
+- [X] T019 [P] `database/migrations/` içinde `streak_days` (`UNIQUE (user_id, day)`), `email_deliveries` (`UNIQUE (user_id, dedupe_key)`), `admin_action_logs` ve `settings` tabloları migration'ları
 
 ### Modeller ve sahiplik
 
-- [ ] T020 `app/Models/Concerns/BelongsToUser.php` trait'ini yaz: global scope + `creating` olayında `user_id` atama (Ana Yasa m. III)
-- [ ] T021 [P] `app/Models/Source.php` ve `app/Models/Highlight.php` modellerini `final class`, `$fillable`, tip belirtimli cast ve `BelongsToUser` ile yaz
-- [ ] T022 [P] `app/Models/Review.php`, `app/Models/ReviewItem.php`, `app/Models/MasteryCard.php` modellerini aynı kurallarla yaz
-- [ ] T023 [P] `app/Models/StreakDay.php`, `app/Models/EmailDelivery.php`, `app/Models/AdminActionLog.php` (değiştirilemez: `updating`/`deleting` olaylarında istisna) modellerini yaz
-- [ ] T024 `app/Models/User.php` içine byagain alanlarını, cast'leri ve `isAdmin()`/`isActive()` yardımcılarını ekle
-- [ ] T025 [P] `database/factories/` altında Source, Highlight, MasteryCard, Review, ReviewItem factory'lerini yaz
+- [X] T020 `app/Models/Concerns/BelongsToUser.php` trait'ini yaz: global scope + `creating` olayında `user_id` atama (Ana Yasa m. III)
+- [X] T021 [P] `app/Models/Source.php` ve `app/Models/Highlight.php` modellerini `final class`, `$fillable`, tip belirtimli cast ve `BelongsToUser` ile yaz
+- [X] T022 [P] `app/Models/Review.php`, `app/Models/ReviewItem.php`, `app/Models/MasteryCard.php` modellerini aynı kurallarla yaz
+- [X] T023 [P] `app/Models/StreakDay.php`, `app/Models/EmailDelivery.php`, `app/Models/AdminActionLog.php` (değiştirilemez: `updating`/`deleting` olaylarında istisna) modellerini yaz
+- [X] T024 `app/Models/User.php` içine byagain alanlarını, cast'leri ve `isAdmin()`/`isActive()` yardımcılarını ekle
+- [X] T025 [P] `database/factories/` altında Source, Highlight, MasteryCard, Review, ReviewItem factory'lerini yaz
 - [ ] T026 [P] `tests/Feature/Security/IdorTest.php` — başka kullanıcının kaynak/pasaj/kart/tekrar kimliğiyle her rotanın 404 döndüğünü doğrula (FR-010, SC-011) *(rotalar eklendikçe genişletilir)*
 
 ### Zaman
 
-- [ ] T027 `app/Services/Time/LocalDayResolver.php` yaz: `localDayFor()`, `windowForLocalDay()`, `isWithinSendWindow()` — 04:00 sınırı `config('byagain.day.boundary_hour')` (research.md R-01)
-- [ ] T028 [P] `tests/Unit/Time/LocalDayResolverTest.php` — 01:30 önceki güne yazılır, farklı zaman dilimleri, DST geçişi; `Carbon::setTestNow()` ile (FR-055)
+- [X] T027 `app/Services/Time/LocalDayResolver.php` yaz: `localDayFor()`, `windowForLocalDay()`, `isWithinSendWindow()` — 04:00 sınırı `config('byagain.day.boundary_hour')` (research.md R-01)
+- [X] T028 [P] `tests/Unit/Time/LocalDayResolverTest.php` — 01:30 önceki güne yazılır, farklı zaman dilimleri, DST geçişi; `Carbon::setTestNow()` ile (FR-055)
 
 ### İçerik boru hattı
 
-- [ ] T029 `app/Services/Content/MarkdownRenderer.php` yaz: CommonMark (`html_input: escape`, GFM tablo/strikethrough) → HTMLPurifier beyaz listesi → `content_html`, ayrıca `content_text`; dış bağlantılara `rel="noopener noreferrer nofollow" target="_blank"` (FR-014..FR-017, research.md R-09)
-- [ ] T030 [P] `app/Services/Content/PastedTextCleaner.php` yaz: fazla satır sonu ve satır sonu tiresiyle bölünmüş kelime birleştirme (FR-022)
-- [ ] T031 [P] `tests/Unit/Content/MarkdownRendererTest.php` — `<script>alert(1)</script>` metin olarak kalır, tablo/kod bloğu korunur, `javascript:` bağlantısı düşer (SC-012)
-- [ ] T032 [P] `tests/Unit/Content/PastedTextCleanerTest.php` — PDF'ten yapıştırılmış tireli/kırık metin senaryoları (FR-022)
+- [X] T029 `app/Services/Content/MarkdownRenderer.php` yaz: CommonMark (`html_input: escape`, GFM tablo/strikethrough) → HTMLPurifier beyaz listesi → `content_html`, ayrıca `content_text`; dış bağlantılara `rel="noopener noreferrer nofollow" target="_blank"` (FR-014..FR-017, research.md R-09)
+- [X] T030 [P] `app/Services/Content/PastedTextCleaner.php` yaz: fazla satır sonu ve satır sonu tiresiyle bölünmüş kelime birleştirme (FR-022)
+- [X] T031 [P] `tests/Unit/Content/MarkdownRendererTest.php` — `<script>alert(1)</script>` metin olarak kalır, tablo/kod bloğu korunur, `javascript:` bağlantısı düşer (SC-012)
+- [X] T032 [P] `tests/Unit/Content/PastedTextCleanerTest.php` — PDF'ten yapıştırılmış tireli/kırık metin senaryoları (FR-022)
 
 ### Kimlik ve erişim
 

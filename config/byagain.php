@@ -80,21 +80,22 @@ return [
 
     'mastery' => [
 
-        // First feedback on a brand-new card sets the half-life directly.
-        // Keyed by feedback value; "again" is not an initial option because a
-        // card the user cannot recall at all stays at the shortest interval.
+        // Feedback is about timing, not correctness: the user says when they
+        // want to meet the card again, and `learned` retires it (FR-046).
+        //
+        // The first feedback on a card sets the half-life outright, because
+        // there is no prior interval to scale (FR-047).
         'initial_half_lives' => [
-            'hard' => 7,
-            'good' => 14,
-            'easy' => 28,
+            'sooner' => 7,
+            'later' => 14,
+            'someday' => 28,
         ],
 
-        // Every later feedback multiplies the current half-life.
+        // Every later feedback multiplies the current half-life (FR-048).
         'multipliers' => [
-            'again' => 0.5,
-            'hard' => 0.5,
-            'good' => 2.0,
-            'easy' => 3.0,
+            'sooner' => 0.5,
+            'later' => 2.0,
+            'someday' => 3.0,
         ],
 
         // The half-life is clamped into this range after every update
@@ -102,9 +103,13 @@ return [
         'min_half_life' => 1,
         'max_half_life' => 365,
 
-        // After this many "earlier than expected" feedbacks in a row the card
-        // is flagged as a struggle and the user is offered a hint (FR-052).
+        // After this many `sooner` feedbacks the card is flagged as a
+        // struggle and the user is offered a hint (FR-052).
         'struggle_threshold' => 6,
+
+        // Feedback value that retires a card instead of rescheduling it
+        // (FR-050). Retiring hides the card; it never deletes it.
+        'retire_feedback' => 'learned',
     ],
 
     /*
@@ -127,9 +132,9 @@ return [
         // (FR-033).
         'source_quota_divisor' => 3,
 
-        // Share of the review reserved for due mastery cards, as a fraction
-        // (FR-034). Users can override this in settings.
-        'default_mastery_ratio' => 0.25,
+        // Percentage of the review reserved for due mastery cards (FR-034).
+        // Users can override this in settings; 0..100.
+        'default_mastery_ratio' => 50,
     ],
 
     /*

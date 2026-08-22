@@ -14,16 +14,18 @@ return [
         'cloze_hint' => 'Wrap the hidden part in {{curly braces}}.',
     ],
 
+    // The question is "when do you want to see this again?", never "were you
+    // right?" — there is no score to lose here (FR-046).
     'feedback' => [
-        'again' => 'No idea',
-        'hard' => 'Came back slowly',
-        'good' => 'Remembered it',
-        'easy' => 'Knew it cold',
+        'sooner' => 'Show me sooner',
+        'later' => 'Later is fine',
+        'someday' => 'Someday',
+        'learned' => 'I know this',
     ],
 
     'status' => [
-        'learning' => 'Learning',
-        'learned' => 'Learned',
+        'active' => 'Active',
+        'paused' => 'Paused',
         'retired' => 'Retired',
     ],
 
