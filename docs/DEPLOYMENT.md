@@ -284,6 +284,33 @@ npm run build
 scp -r public\build u179024548@fr-int-web1271:~/byagain/public/
 ```
 
+**Then fix the permissions, every time:**
+
+```bash
+cd ~/byagain/public/build
+find . -type d -exec chmod 755 {} \;
+find . -type f -exec chmod 644 {} \;
+```
+
+Windows has no POSIX modes, so `scp` invents them and the directories arrive
+`700` — readable only by you. The web server cannot enter them, Laravel's
+rewrite rule concludes the file does not exist, sends the request to
+`index.php`, and you get a **404 from Laravel for a file that is plainly
+sitting on disk**.
+
+It looks like a routing or symlink problem and is neither. The quickest way to
+tell them apart is to drop a plain file at two depths and compare:
+
+```bash
+echo hi > ~/byagain/public/plain.txt
+echo hi > ~/byagain/public/build/plain.txt
+curl -s -o /dev/null -w "root  %{http_code}\n" https://byagain.omaralfarouk.com/plain.txt
+curl -s -o /dev/null -w "build %{http_code}\n" https://byagain.omaralfarouk.com/build/plain.txt
+rm ~/byagain/public/plain.txt ~/byagain/public/build/plain.txt
+```
+
+Root `200` with build `404` is this permission problem and nothing else.
+
 `public/build` is gitignored on purpose — build output does not belong in
 source history. The cost is this one extra step per deploy, and it is only
 needed when CSS or JS actually changed.
