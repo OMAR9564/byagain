@@ -124,28 +124,28 @@ Tek Laravel monoliti (plan.md "Structure Decision"): `app/`, `resources/`, `rout
 
 ### Tests for User Story 1
 
-- [ ] T042 [P] [US1] `tests/Feature/Review/FirstReviewFlowTest.php` — kayıt → kaynak → 3 pasaj → tekrar üretimi → 3 kart işleme → tamamlanma + seri 1 (US1 kabul senaryoları 1, 2, 6)
-- [ ] T043 [P] [US1] `tests/Feature/Library/HighlightCrudTest.php` — pasaj oluşturma, düzenleme, `discard` (silme yok), favori (FR-013, FR-011, FR-019)
-- [ ] T044 [P] [US1] `tests/Feature/Review/ReviewItemActionTest.php` — `keep` sayaç ve `last_shown_at` günceller, `discard` gizler, ikinci çağrı idempotenttir (FR-038, FR-039, contracts/review-actions.md)
-- [ ] T045 [P] [US1] `tests/Feature/Review/ResumePartialReviewTest.php` — yarım bırakılan tekrar işlenmemiş karttan devam eder (FR-040)
+- [X] T042 [P] [US1] `tests/Feature/Review/FirstReviewFlowTest.php` — kayıt → kaynak → 3 pasaj → tekrar üretimi → 3 kart işleme → tamamlanma + seri 1 (US1 kabul senaryoları 1, 2, 6)
+- [X] T043 [P] [US1] `tests/Feature/Library/HighlightCrudTest.php` — pasaj oluşturma, düzenleme, `discard` (silme yok), favori (FR-013, FR-011, FR-019)
+- [X] T044 [P] [US1] `tests/Feature/Review/ReviewItemActionTest.php` — `keep` sayaç ve `last_shown_at` günceller, `discard` gizler, ikinci çağrı idempotenttir (FR-038, FR-039, contracts/review-actions.md)
+- [X] T045 [P] [US1] `tests/Feature/Review/ResumePartialReviewTest.php` — yarım bırakılan tekrar işlenmemiş karttan devam eder (FR-040)
 
 ### Implementation for User Story 1
 
-- [ ] T046 [P] [US1] `app/Http/Requests/StoreSourceRequest.php` ve `UpdateSourceRequest.php` yaz (`authorize()` gerçek kontrol)
-- [ ] T047 [P] [US1] `app/Http/Requests/StoreHighlightRequest.php` ve `UpdateHighlightRequest.php` yaz
-- [ ] T048 [US1] `app/Http/Controllers/SourceController.php` yaz: index/create/store/show/edit/update (FR-012, FR-023)
-- [ ] T049 [US1] `app/Http/Controllers/HighlightController.php` yaz: create/store/edit/update/discard/favorite — kaydetmede `MarkdownRenderer` + `PastedTextCleaner` çağrılır, `char_count`/`contains_code` hesaplanır
-- [ ] T050 [US1] `app/Services/Review/ReviewBuilder.php` ilk sürümünü yaz: uygun pasajlardan `reviews` + `review_items` üretimi, `(user_id, review_date)` benzersizliğiyle idempotent, uygun pasaj yoksa üretmez (FR-025, FR-037, research.md R-07) *(ağırlıklandırma US2'de eklenir)*
-- [ ] T051 [US1] `app/Services/Review/ReviewItemActions.php` yaz: `keep`/`discard`, favori, idempotency, tüm kalemler işlendiğinde tekrarı tamamlama (FR-038..FR-040, FR-054)
-- [ ] T052 [US1] `app/Http/Controllers/ReviewController.php` yaz: `show` (bugünün tekrarı, yoksa üret), `complete` (contracts/routes.md)
-- [ ] T053 [US1] `app/Http/Controllers/ReviewItemActionController.php` + `app/Http/Requests/ReviewItemActionRequest.php` yaz: JSON yanıt sözleşmesi contracts/review-actions.md'e birebir uyar
-- [ ] T054 [US1] `resources/views/review/show.blade.php` yaz: kartlar sunucuda gömülü, ilerleme çubuğu (sayı değil), tamamlanma ekranı (FR-043)
-- [ ] T055 [US1] `resources/js/review.js` yaz (vanilla, <6KB): optimistic kart geçişi, kaydırma (mobil) + ok tuşları (masaüstü), başarısız istek için `localStorage` kuyruğu (FR-041, FR-042, research.md R-10)
-- [ ] T056 [US1] `resources/views/editor/create.blade.php` + `resources/js/editor.js` yaz: tek elle kullanım, klavye üstü biçimlendirme kısayolları, yaz/önizle geçişi, 500ms debounce ile `localStorage` taslağı (FR-020, FR-021)
-- [ ] T057 [P] [US1] `resources/views/library/index.blade.php` ve `sources/show.blade.php` yaz: kütüphane listesi + boş durum yönlendirmesi ("ilk kaynağını ekle") (FR-023, US1-1)
-- [ ] T058 [US1] `resources/views/components/highlight-content.blade.php` içinde 600 karakterden uzun pasajları kısaltma + genişletme davranışını uygula (FR-082) ve kod bloğu/tablo için kendi kabında yatay kaydırma (FR-081)
-- [ ] T059 [US1] `app/Services/Streak/StreakService::recordCompletion()` asgari sürümünü yaz ve tekrar tamamlanmasına bağla (yerel gün `LocalDayResolver`'dan) — takvim ve seri kırılma mantığı US5'te tamamlanır
-- [ ] T060 [P] [US1] `tests/Feature/Content/MobileRenderingTest.php` — 3.000 karakterlik başlık+liste+kod+tablo içeren pasajın render edildiğini ve `{!! !!}` kullanımının yalnızca `content_html` olduğunu doğrula (SC-008 elle doğrulama quickstart V1'de)
+- [X] T046 [P] [US1] `app/Http/Requests/StoreSourceRequest.php` ve `UpdateSourceRequest.php` yaz (`authorize()` gerçek kontrol)
+- [X] T047 [P] [US1] `app/Http/Requests/StoreHighlightRequest.php` ve `UpdateHighlightRequest.php` yaz
+- [X] T048 [US1] `app/Http/Controllers/SourceController.php` yaz: index/create/store/show/edit/update (FR-012, FR-023)
+- [X] T049 [US1] `app/Http/Controllers/HighlightController.php` yaz: create/store/edit/update/discard/favorite — kaydetmede `MarkdownRenderer` + `PastedTextCleaner` çağrılır, `char_count`/`contains_code` hesaplanır
+- [X] T050 [US1] `app/Services/Review/ReviewBuilder.php` ilk sürümünü yaz: uygun pasajlardan `reviews` + `review_items` üretimi, `(user_id, review_date)` benzersizliğiyle idempotent, uygun pasaj yoksa üretmez (FR-025, FR-037, research.md R-07) *(ağırlıklandırma US2'de eklenir)*
+- [X] T051 [US1] `app/Services/Review/ReviewItemActions.php` yaz: `keep`/`discard`, favori, idempotency, tüm kalemler işlendiğinde tekrarı tamamlama (FR-038..FR-040, FR-054)
+- [X] T052 [US1] `app/Http/Controllers/ReviewController.php` yaz: `show` (bugünün tekrarı, yoksa üret), `complete` (contracts/routes.md)
+- [X] T053 [US1] `app/Http/Controllers/ReviewItemActionController.php` + `app/Http/Requests/ReviewItemActionRequest.php` yaz: JSON yanıt sözleşmesi contracts/review-actions.md'e birebir uyar
+- [X] T054 [US1] `resources/views/review/show.blade.php` yaz: kartlar sunucuda gömülü, ilerleme çubuğu (sayı değil), tamamlanma ekranı (FR-043)
+- [X] T055 [US1] `resources/js/review.js` yaz (vanilla, <6KB): optimistic kart geçişi, kaydırma (mobil) + ok tuşları (masaüstü), başarısız istek için `localStorage` kuyruğu (FR-041, FR-042, research.md R-10)
+- [X] T056 [US1] `resources/views/editor/create.blade.php` + `resources/js/editor.js` yaz: tek elle kullanım, klavye üstü biçimlendirme kısayolları, yaz/önizle geçişi, 500ms debounce ile `localStorage` taslağı (FR-020, FR-021)
+- [X] T057 [P] [US1] `resources/views/library/index.blade.php` ve `sources/show.blade.php` yaz: kütüphane listesi + boş durum yönlendirmesi ("ilk kaynağını ekle") (FR-023, US1-1)
+- [X] T058 [US1] `resources/views/components/highlight-content.blade.php` içinde 600 karakterden uzun pasajları kısaltma + genişletme davranışını uygula (FR-082) ve kod bloğu/tablo için kendi kabında yatay kaydırma (FR-081)
+- [X] T059 [US1] `app/Services/Streak/StreakService::recordCompletion()` asgari sürümünü yaz ve tekrar tamamlanmasına bağla (yerel gün `LocalDayResolver`'dan) — takvim ve seri kırılma mantığı US5'te tamamlanır
+- [X] T060 [P] [US1] `tests/Feature/Content/MobileRenderingTest.php` — 3.000 karakterlik başlık+liste+kod+tablo içeren pasajın render edildiğini ve `{!! !!}` kullanımının yalnızca `content_html` olduğunu doğrula (SC-008 elle doğrulama quickstart V1'de)
 
 **Checkpoint**: US1 tek başına çalışır ve teslim edilebilir (MVP).
 

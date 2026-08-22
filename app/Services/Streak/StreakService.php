@@ -1,0 +1,70 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Streak;
+
+use App\Models\User;
+use App\Services\Time\LocalDayResolver;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Carbon;
+
+/**
+ * Streaks.
+ *
+ * The counters on `users` are a cache; `streak_days` is the record. Finishing
+ * twice in one local day is one day, guaranteed by UNIQUE (user_id, day)
+ * rather than by checking first.
+ *
+ * The calendar view and break handling are completed in US5; this version is
+ * what US1 needs to say "day 1" on the completion screen.
+ */
+final class StreakService
+{
+    public function __construct(private readonly LocalDayResolver $days) {}
+
+    /**
+     * Record that the user finished their review, and return the day it
+     * counted for.
+     *
+     * Idempotent: calling it again for the same local day changes nothing,
+     * which matters because review completion can be replayed by the offline
+     * queue (FR-054, FR-055).
+     */
+    public function recordCompletion(User $user, ?CarbonImmutable $localDay = null): CarbonImmutable
+    {
+        $day = $localDay ?? $this->days->localDayFor($user);
+
+        // Through the relation, so user_id is set by the relationship rather
+        // than mass-assigned — BelongsToUser owns that column deliberately.
+        $created = $user->streakDays()->firstOrCreate([
+            'day' => $day->toDateString(),
+        ]);
+
+        if (! $created->wasRecentlyCreated) {
+            return $day;
+        }
+
+        $this->advanceCounters($user, $day);
+
+        return $day;
+    }
+
+    /**
+     * Move the cached counters on for a newly recorded day.
+     */
+    private function advanceCounters(User $user, CarbonImmutable $day): void
+    {
+        $previous = $user->last_streak_day;
+
+        // Consecutive only if the day before this one was also completed.
+        // Anything else — a gap, or a first ever review — starts at one.
+        $isConsecutive = $previous !== null
+            && $previous->toDateString() === $day->subDay()->toDateString();
+
+        $user->current_streak = $isConsecutive ? $user->current_streak + 1 : 1;
+        $user->longest_streak = max($user->longest_streak, $user->current_streak);
+        $user->last_streak_day = Carbon::parse($day->toDateString());
+        $user->save();
+    }
+}

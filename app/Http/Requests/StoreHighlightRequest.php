@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests;
+
+use App\Models\Source;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+final class StoreHighlightRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user() !== null;
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    public function rules(): array
+    {
+        return [
+            // `exists` is scoped to this user's sources, so a guessed
+            // source_id cannot file a highlight into someone else's library.
+            'source_id' => [
+                'required',
+                'integer',
+                Rule::exists(Source::class, 'id')->where('user_id', $this->user()?->id),
+            ],
+
+            // `content_md` is the source of truth. `content_html` is never
+            // accepted from a request — only MarkdownRenderer writes it.
+            'content_md' => ['required', 'string', 'max:20000'],
+            'note' => ['nullable', 'string', 'max:5000'],
+            'location' => ['nullable', 'string', 'max:120'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'content_md' => __('library.highlight.title'),
+            'source_id' => __('library.source.title'),
+        ];
+    }
+}

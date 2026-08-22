@@ -72,6 +72,32 @@ class User extends Authenticatable implements MustVerifyEmail
     public const string STATUS_DELETED = 'deleted';
 
     /**
+     * Defaults mirrored from the migration.
+     *
+     * A model created in PHP is not read back from the database, so a column
+     * left to its SQL default is simply absent from the instance — and under
+     * Model::shouldBeStrict() reading it throws rather than returning null.
+     * Registration creates a user and then uses it in the same request, so
+     * these have to exist in memory too.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'role' => self::ROLE_USER,
+        'status' => self::STATUS_ACTIVE,
+        'timezone' => 'UTC',
+        'quality_filter_enabled' => true,
+        'equal_source_weighting' => false,
+        'daily_email_enabled' => true,
+        'daily_email_at' => '08:00:00',
+        'reminder_email_enabled' => true,
+        'reminder_email_at' => '20:00:00',
+        'consecutive_unopened_emails' => 0,
+        'current_streak' => 0,
+        'longest_streak' => 0,
+    ];
+
+    /**
      * @return HasMany<Source, $this>
      */
     public function sources(): HasMany

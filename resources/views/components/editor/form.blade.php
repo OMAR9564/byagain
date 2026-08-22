@@ -1,0 +1,131 @@
+@props([
+    'sources',
+    'action',
+    'highlight' => null,
+    'method' => 'POST',
+])
+
+{{-- The editor. Built for one hand: the passage field is the first thing under
+     the thumb, formatting sits directly above the keyboard rather than in a
+     toolbar at the top of the screen, and the draft is kept locally so a
+     dropped connection never costs anything typed (FR-020, FR-021). --}}
+<form
+    method="POST"
+    action="{{ $action }}"
+    class="flex flex-col gap-5"
+    data-editor
+    data-draft-key="{{ $highlight?->id ?? 'new' }}"
+>
+    @csrf
+    @if ($method !== 'POST')
+        @method($method)
+    @endif
+
+    <div class="flex flex-col gap-1.5">
+        <label for="source_id" class="text-sm font-medium" style="color: var(--color-ink);">
+            {{ __('library.source.title') }}
+        </label>
+
+        <select
+            id="source_id"
+            name="source_id"
+            class="min-h-11 w-full rounded-lg px-3"
+            style="background-color: var(--color-surface); color: var(--color-ink); border: 1px solid var(--color-border-strong);"
+            required
+        >
+            @foreach ($sources as $source)
+                <option value="{{ $source->id }}" @selected(old('source_id', $highlight?->source_id) === $source->id)>
+                    {{ $source->title }}
+                </option>
+            @endforeach
+        </select>
+
+        @error('source_id')
+            <p class="text-sm" style="color: var(--color-critical);">{{ $message }}</p>
+        @enderror
+    </div>
+
+    <div class="flex flex-col gap-2">
+        <div class="flex items-center gap-1" role="tablist">
+            <button type="button" role="tab" aria-selected="true" data-editor-tab="write"
+                    class="min-h-11 rounded-lg px-3 text-sm font-medium">
+                {{ __('editor.tab.write') }}
+            </button>
+            <button type="button" role="tab" aria-selected="false" data-editor-tab="preview"
+                    class="min-h-11 rounded-lg px-3 text-sm font-medium">
+                {{ __('editor.tab.preview') }}
+            </button>
+
+            <span class="ml-auto text-xs" style="color: var(--color-ink-subtle);" data-editor-draft-status></span>
+        </div>
+
+        <textarea
+            id="content_md"
+            name="content_md"
+            rows="12"
+            required
+            autofocus
+            data-editor-input
+            placeholder="{{ __('editor.placeholder') }}"
+            class="w-full rounded-lg p-3.5"
+            style="background-color: var(--color-surface); color: var(--color-ink); border: 1px solid var(--color-border-strong); line-height: var(--leading-relaxed);"
+        >{{ old('content_md', $highlight?->content_md) }}</textarea>
+
+        {{-- Preview renders the *markdown source* as plain text, not HTML. It
+             is a shape check for the writer, and it must never become a second
+             path by which unpurified markup reaches the page. --}}
+        <pre
+            data-editor-preview
+            hidden
+            class="w-full whitespace-pre-wrap rounded-lg p-3.5"
+            style="background-color: var(--color-surface-sunken); color: var(--color-ink); font-family: var(--font-sans); line-height: var(--leading-relaxed);"
+        ></pre>
+
+        @error('content_md')
+            <p class="text-sm" style="color: var(--color-critical);">{{ $message }}</p>
+        @enderror
+
+        {{-- Formatting keys sit here, immediately above the on-screen
+             keyboard, so the thumb never travels. --}}
+        <div class="flex flex-wrap gap-2">
+            @foreach ([
+                'bold' => '**',
+                'italic' => '*',
+                'quote' => '> ',
+                'list' => '- ',
+                'code' => '`',
+                'heading' => '## ',
+            ] as $name => $token)
+                <button
+                    type="button"
+                    data-editor-format="{{ $token }}"
+                    class="min-h-11 min-w-11 rounded-lg px-3 text-sm"
+                    style="background-color: var(--color-surface); color: var(--color-ink-muted); border: 1px solid var(--color-border);"
+                >
+                    {{ __('editor.format.' . $name) }}
+                </button>
+            @endforeach
+        </div>
+    </div>
+
+    <x-field name="location" :label="__('library.highlight.location')" :value="$highlight?->location" />
+
+    <div class="flex flex-col gap-1.5">
+        <label for="note" class="text-sm font-medium" style="color: var(--color-ink);">
+            {{ __('library.highlight.note') }}
+        </label>
+
+        <textarea
+            id="note"
+            name="note"
+            rows="3"
+            placeholder="{{ __('editor.note_placeholder') }}"
+            class="w-full rounded-lg p-3.5"
+            style="background-color: var(--color-surface); color: var(--color-ink); border: 1px solid var(--color-border-strong);"
+        >{{ old('note', $highlight?->note) }}</textarea>
+    </div>
+
+    <x-button type="submit">{{ __('actions.save') }}</x-button>
+</form>
+
+@vite('resources/js/editor.js')

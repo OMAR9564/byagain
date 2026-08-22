@@ -44,3 +44,102 @@
         font-family: inherit;
     }
 }
+
+/*
+ * Rendered highlight bodies. These styles target markup produced by
+ * MarkdownRenderer, so there are no classes to hang them on — element
+ * selectors scoped to the container are the honest way to do it.
+ */
+@layer components {
+    .highlight-content .highlight-body {
+        font-size: var(--text-lg);
+        line-height: var(--leading-relaxed);
+        color: var(--color-ink);
+    }
+
+    /* Collapsed long passages fade out rather than cutting mid-letter. */
+    .highlight-content .highlight-body.is-collapsed {
+        max-height: 22rem;
+        overflow: hidden;
+        mask-image: linear-gradient(to bottom, black 78%, transparent 100%);
+    }
+
+    .highlight-content .highlight-body > * + * {
+        margin-top: 0.9em;
+    }
+
+    .highlight-content .highlight-body h1,
+    .highlight-content .highlight-body h2,
+    .highlight-content .highlight-body h3 {
+        font-size: var(--text-xl);
+        font-weight: 600;
+        line-height: var(--leading-snug);
+    }
+
+    .highlight-content .highlight-body ul,
+    .highlight-content .highlight-body ol {
+        padding-left: 1.25em;
+    }
+
+    .highlight-content .highlight-body ul { list-style: disc; }
+    .highlight-content .highlight-body ol { list-style: decimal; }
+    .highlight-content .highlight-body li + li { margin-top: 0.35em; }
+
+    .highlight-content .highlight-body blockquote {
+        padding-left: 0.9em;
+        border-left: 2px solid var(--color-border-strong);
+        color: var(--color-ink-muted);
+    }
+
+    .highlight-content .highlight-body a {
+        color: var(--color-accent);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .highlight-content .highlight-body code {
+        font-family: var(--font-mono);
+        font-size: 0.9em;
+        background-color: var(--color-surface-sunken);
+        border-radius: var(--radius-sm);
+        padding: 0.15em 0.35em;
+    }
+
+    /*
+     * Code blocks and tables scroll inside their own box. The page itself
+     * must never scroll sideways — a horizontal wobble while reading is the
+     * fastest way to make a phone feel broken (FR-081).
+     */
+    .highlight-content .highlight-body pre,
+    .highlight-content .highlight-body table {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .highlight-content .highlight-body pre {
+        background-color: var(--color-surface-sunken);
+        border-radius: var(--radius-md);
+        padding: 0.9em 1em;
+    }
+
+    .highlight-content .highlight-body pre code {
+        background-color: transparent;
+        padding: 0;
+        white-space: pre;
+    }
+
+    .highlight-content .highlight-body table {
+        border-collapse: collapse;
+        font-size: var(--text-sm);
+        white-space: nowrap;
+    }
+
+    .highlight-content .highlight-body th,
+    .highlight-content .highlight-body td {
+        border: 1px solid var(--color-border);
+        padding: 0.4em 0.65em;
+        text-align: left;
+    }
+}

@@ -15,6 +15,12 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
+
+                // Loaded only by the screens that need them, so the shell's
+                // first paint does not pay for the review or the editor.
+                'resources/js/review.js',
+                'resources/js/editor.js',
+
                 'resources/css/admin.css',
             ],
             refresh: true,

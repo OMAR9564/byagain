@@ -32,11 +32,25 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            // Every byagain column is set explicitly rather than left to the
+            // database default. `create()` does not read the row back, so a
+            // column omitted here is simply absent from the model — and under
+            // Model::shouldBeStrict() that is an exception, not a null.
             'role' => User::ROLE_USER,
             'status' => User::STATUS_ACTIVE,
             'timezone' => 'UTC',
             'review_size' => (int) config('byagain.review.default_size'),
             'mastery_ratio' => (int) config('byagain.review.default_mastery_ratio'),
+            'quality_filter_enabled' => true,
+            'equal_source_weighting' => false,
+            'daily_email_enabled' => true,
+            'daily_email_at' => '08:00:00',
+            'reminder_email_enabled' => true,
+            'reminder_email_at' => '20:00:00',
+            'consecutive_unopened_emails' => 0,
+            'current_streak' => 0,
+            'longest_streak' => 0,
+            'last_streak_day' => null,
         ];
     }
 
