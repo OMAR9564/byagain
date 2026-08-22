@@ -82,7 +82,7 @@ Tek Laravel monoliti (plan.md "Structure Decision"): `app/`, `resources/`, `rout
 - [X] T023 [P] `app/Models/StreakDay.php`, `app/Models/EmailDelivery.php`, `app/Models/AdminActionLog.php` (değiştirilemez: `updating`/`deleting` olaylarında istisna) modellerini yaz
 - [X] T024 `app/Models/User.php` içine byagain alanlarını, cast'leri ve `isAdmin()`/`isActive()` yardımcılarını ekle
 - [X] T025 [P] `database/factories/` altında Source, Highlight, MasteryCard, Review, ReviewItem factory'lerini yaz
-- [ ] T026 [P] `tests/Feature/Security/IdorTest.php` — başka kullanıcının kaynak/pasaj/kart/tekrar kimliğiyle her rotanın 404 döndüğünü doğrula (FR-010, SC-011) *(rotalar eklendikçe genişletilir)*
+- [X] T026 [P] `tests/Feature/Security/IdorTest.php` — başka kullanıcının kaynak/pasaj/kart/tekrar kimliğiyle her rotanın 404 döndüğünü doğrula (FR-010, SC-011) *(rotalar eklendikçe genişletilir)*
 
 ### Zaman
 
