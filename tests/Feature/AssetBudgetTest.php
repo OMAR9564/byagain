@@ -83,6 +83,22 @@ final class AssetBudgetTest extends TestCase
         );
     }
 
+    #[Test]
+    public function the_build_output_stays_in_the_repository(): void
+    {
+        $ignore = (string) file_get_contents(base_path('.gitignore'));
+
+        // Committing build output is unusual, and someone tidying up will
+        // eventually want to ignore it again. They must not: production is
+        // shared hosting with no node, so it cannot build, and an ignored
+        // bundle means uploading it by hand — which is what made the
+        // stylesheet 404 twice. See docs/DEPLOYMENT.md section 6.
+        $lines = array_map(trim(...), explode("\n", $ignore));
+
+        $this->assertNotContains('/public/build', $lines);
+        $this->assertNotContains('public/build', $lines);
+    }
+
     /**
      * @return array<string, array<string, mixed>>
      */

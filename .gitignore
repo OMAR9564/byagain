@@ -14,7 +14,19 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
+
+# /public/build is deliberately NOT ignored.
+#
+# The production host is shared hosting with no node, so it cannot run the
+# build itself — which makes the compiled bundle a deployment artefact rather
+# than a working file. Ignoring it meant every release had to be scp'd by
+# hand, and Windows scp writes directories as 700, so the stylesheet 404'd
+# while the pages themselves loaded fine. Twice.
+#
+# Committing it costs a noisy diff on every asset change and buys a deploy
+# that is `git pull` and nothing else. On a host that could run `npm ci`, take
+# this back out.
+
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage

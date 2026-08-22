@@ -274,31 +274,58 @@ symlink.
 
 ---
 
-## 6. Upload the built assets
+## 6. The built assets
 
-There is no Node on the server, so build on your Windows machine:
+**`public/build` is committed to the repository**, so `git pull` delivers it
+with the rest of the code and there is nothing to upload.
+
+That is not the usual arrangement and it is deliberate. There is no Node here,
+so the server cannot build; that makes the compiled bundle a deployment
+artefact rather than a working file. The cost is a noisy diff whenever CSS or
+JS changes. What it buys is that a deploy is `git pull` and nothing else — see
+below for what the alternative cost twice.
+
+Build on your machine and commit the result whenever assets change:
 
 ```powershell
 cd C:\Users\BYA\Documents\github\byagain
 npm run build
-scp -r public\build u179024548@fr-int-web1271:~/byagain/public/
+git add public/build && git commit -m "chore(assets): rebuild"
 ```
 
-**Then fix the permissions, every time:**
+Filament ships its own assets separately and republishes them on the server:
 
 ```bash
-cd ~/byagain/public/build
-find . -type d -exec chmod 755 {} \;
-find . -type f -exec chmod 644 {} \;
+cd ~/byagain
+php artisan filament:assets
 ```
 
-Windows has no POSIX modes, so `scp` invents them and the directories arrive
-`700` — readable only by you. The web server cannot enter them, Laravel's
-rewrite rule concludes the file does not exist, sends the request to
-`index.php`, and you get a **404 from Laravel for a file that is plainly
-sitting on disk**.
+### If the stylesheet 404s
 
-It looks like a routing or symlink problem and is neither. The quickest way to
+Two causes, and they look identical from the browser.
+
+**The manifest points at files that are not there.** Every build produces new
+hashed filenames. If `public/build` on the server is older than the code, the
+page asks for a stylesheet that no longer exists. Check that they agree:
+
+```bash
+cd ~/byagain && cat public/build/manifest.json | head -5
+ls public/build/assets
+```
+
+**The directory is not readable.** This is what happened when the bundle was
+uploaded by hand: Windows has no POSIX modes, so `scp` invents them and the
+directories arrive `700`. The web server cannot enter them, the rewrite rule
+concludes the file does not exist, sends the request to `index.php`, and you
+get a **404 from Laravel for a file plainly sitting on disk**.
+
+```bash
+cd ~/byagain
+find public -type d -exec chmod 755 {} \;
+find public -type f -exec chmod 644 {} \;
+```
+
+It reads as a routing or symlink problem and is neither. The quickest way to
 tell them apart is to drop a plain file at two depths and compare:
 
 ```bash
@@ -309,11 +336,8 @@ curl -s -o /dev/null -w "build %{http_code}\n" https://byagain.omaralfarouk.com/
 rm ~/byagain/public/plain.txt ~/byagain/public/build/plain.txt
 ```
 
-Root `200` with build `404` is this permission problem and nothing else.
-
-`public/build` is gitignored on purpose — build output does not belong in
-source history. The cost is this one extra step per deploy, and it is only
-needed when CSS or JS actually changed.
+Root `200` with build `404` is the permission problem and nothing else. Both
+`200` means the files are fine and the manifest is stale.
 
 Filament ships its own assets and republishes them on the server:
 
@@ -462,6 +486,16 @@ that part works.
 
 ## 11. Deploying a change
 
+First, on your machine, if CSS or JS changed:
+
+```powershell
+npm run build
+git add public/build && git commit -m "chore(assets): rebuild"
+git push
+```
+
+Then, on the server — the whole deploy:
+
 ```bash
 cd ~/byagain
 php artisan down
@@ -475,12 +509,10 @@ php artisan optimize
 php artisan up
 ```
 
-Plus, from Windows, only when CSS or JS changed:
-
-```powershell
-npm run build
-scp -r public\build u179024548@fr-int-web1271:~/byagain/public/
-```
+`php artisan optimize` is not optional after a pull. It caches config, routes
+and views; the old cache describes the old code, and a route added in this
+release simply will not exist until it is rebuilt. A 500 on a page that works
+locally is this, more often than not.
 
 There is no worker to restart — cron starts a fresh one every minute, which is
 the one genuine advantage of this arrangement.
