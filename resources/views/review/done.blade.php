@@ -37,14 +37,27 @@
             </p>
         @endif
 
-        @if ($rounds < $limit)
-            {{-- They asked for more reviews a day than there is material for
-                 today. Said plainly, and with no button that would only fail
-                 the same way. --}}
+        {{-- Three ends, and they say different things. The day may be closed
+             because the reader has had every round they asked for, or open but
+             out of passages to fill one with. Reading either off the other is
+             what went wrong before: while `show()` still opened rounds by
+             itself, landing on this screen proved the material had run out, so
+             `$rounds < $limit` stood in for the question. It no longer does
+             (contracts/review-completion.md). --}}
+        @if (! $canRepeat)
+            {{-- Closed. No button, and pointedly not the "nothing new to draw
+                 on" line either: material is not why the day ended (FR-104). --}}
+            <p class="mt-8 max-w-xs text-sm" style="color: var(--color-ink-subtle);">
+                {{ $rounds >= $limit ? __('review.done.closed') : __('review.done.ceiling') }}
+            </p>
+        @elseif (! $hasMaterial)
+            {{-- Room left in the day, but every eligible passage is inside its
+                 cooldown. Said plainly, and with no button that would only
+                 come back with this same sentence (FR-029). --}}
             <p class="mt-8 max-w-xs text-sm" style="color: var(--color-ink-subtle);">
                 {{ __('review.again.exhausted') }}
             </p>
-        @elseif ($canRepeat)
+        @else
             <form method="POST" action="{{ route('review.again') }}" class="mt-10 w-full max-w-xs">
                 @csrf
 

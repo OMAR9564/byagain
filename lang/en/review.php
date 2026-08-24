@@ -54,6 +54,16 @@ return [
         'rounds' => 'You have finished :count review today.|You have finished :count reviews today.',
         'again' => 'One more round',
         'again_help' => 'Fresh passages, and it will not change your streak.',
+
+        // The day is closed because the reader has had every round they asked
+        // for. Points at the setting rather than just refusing, because the
+        // number is theirs to choose (FR-104).
+        'closed' => 'That is every review you asked for today. Settings can change how many.',
+
+        // The other way a day closes: the product's own ceiling, reached by
+        // insisting rather than by the reader's setting. Rare enough that it
+        // only needs to be true (FR-108).
+        'ceiling' => 'That is as far as today goes.',
     ],
 
     'again' => [

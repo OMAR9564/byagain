@@ -136,16 +136,22 @@ return [
         // Users can override this in settings; 0..100.
         'default_mastery_ratio' => 50,
 
-        // How many reviews a day is offered by default. One, because the
-        // product's promise is that finishing is possible — a screen that
-        // refills itself is a feed, and this is deliberately not one.
+        // How many rounds a day may hold, and so how long the done screen goes
+        // on offering another. One by default, because the product's promise
+        // is that finishing is possible — a screen that refills itself is a
+        // feed, and this is deliberately not one.
+        //
+        // Rounds past the first are never opened for the reader; this only
+        // decides how long they may keep asking (FR-102, FR-104).
         'default_daily_limit' => 1,
 
         // The most a reader may ask for in settings.
         'max_daily_limit' => 5,
 
-        // A reader who insists can go past their own limit, but not without
-        // end: this is where "one more" stops being answered.
+        // The product's own ceiling, under the reader's. It is reachable only
+        // by posting to `review.again` past a raised limit — the button stops
+        // at the limit above — and it is what keeps that from being a loop
+        // (FR-108).
         'max_rounds_per_day' => 10,
 
         // How long an action can be taken back before it is sent (FR-042).
@@ -192,6 +198,32 @@ return [
         // Delivery rows older than this are pruned; user content is never
         // touched (FR-091).
         'delivery_retention_days' => 30,
+    ],
+
+    /*
+    |------------------------------------------------------------------------
+    | Browser notifications — SPEC 7 (FR-141…FR-153)
+    |------------------------------------------------------------------------
+    |
+    | A second channel next to the evening email, and independent of it: both
+    | can be turned off separately, and neither knows about the other
+    | (FR-151).
+    |
+    | Nothing here is a user preference. How long to wait and how often to
+    | speak are product decisions about what a reminder is, and they live here
+    | rather than on `users` (art. V).
+    */
+
+    'push' => [
+
+        // How long after the morning email to look again. An hour is long
+        // enough that someone who was going to do it has, and short enough
+        // that the day has not moved on (FR-141).
+        'nudge_delay_minutes' => 60,
+
+        // Per reader, per local day. One notification is a reminder; two is
+        // an app that wants something (FR-143).
+        'max_per_day' => 1,
     ],
 
     /*

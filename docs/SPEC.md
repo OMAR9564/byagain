@@ -44,6 +44,7 @@ by the ownership scope, so another account's id produces **404, not 403** — a
 | GET | `/` | `home` |
 | GET | `/review` | `review.show` |
 | POST | `/review/complete` | `review.complete` |
+| POST | `/review/again` | `review.again` |
 | POST | `/review/items/{item}/action` | `review.item.action` |
 | GET | `/library` | `library.index` |
 | GET | `/library/sources/create` | `sources.create` |
@@ -142,13 +143,51 @@ correct answer for them.
 
 ### 4.3 Once per day
 
-`reviews` has `UNIQUE (user_id, review_date)`. The builder does not check and
-then insert — it inserts and catches the violation, reading back whichever row
-won. The five-minute sweep can race a reader opening the app, and two reviews
-for one day would mean the email and the screen disagree about what today is.
+`reviews` has `UNIQUE (user_id, review_date, round)`. The builder does not check
+and then insert — it inserts and catches the violation, reading back whichever
+row won. The five-minute sweep can race a reader opening the app, and two
+reviews for one day would mean the email and the screen disagree about what
+today is.
 
 Highlights come first in the review, then due mastery cards: reading before
 being asked questions.
+
+### 4.4 Rounds past the first
+
+Round 1 is the day. Everything outside the review screen — the sweep, the email,
+the reminder, the streak — reaches for it through `find()` and gets round 1 and
+nothing else, however many rounds the day ends up holding.
+
+`GET /review` opens round 1 and never anything beyond it. A finished day stays
+finished for as long as it is the reader's day, however often the tab is
+reopened. The only way to a further round is `POST /review/again` — a decision,
+behind a button, throttled.
+
+It did not always work this way: `show()` used to build the next round by itself
+whenever `roundsToday < daily_review_limit`, so a reader who had asked in
+settings for two reviews a day was dealt the second one simply for tapping back
+into the tab. The day could not be finished, which is the one thing the product
+has to be able to do.
+
+Two numbers bound it, and both hold:
+
+- `users.daily_review_limit` — how many rounds the day may hold, and so how long
+  the done screen keeps offering another. At the limit the day is closed and the
+  button is gone.
+- `byagain.review.max_rounds_per_day` — the product's ceiling under the reader's,
+  reachable only by posting to `review.again` past a raised limit. It is what
+  keeps "one more" from being a loop.
+
+The done screen has three ends and tells them apart out loud, because it can no
+longer infer one from the other: the day is closed, or it is open but every
+eligible passage is inside its cooldown, or there is a round to be had. The
+middle one is asked as a question — `ReviewBuilder::hasMaterialFor()`, which
+reads and writes nothing — rather than deduced from a round having failed to
+appear.
+
+There is no way back into a finished round. The completion screen is the last
+stop; a reader who wants to see what they decided opens the passage from the
+library.
 
 ## 5. Streaks
 
