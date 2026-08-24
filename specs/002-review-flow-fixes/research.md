@@ -103,6 +103,28 @@ imzası ve payload şifrelemesi yapar.
   zorunlu; `ext-gmp`/`ext-bcmath` performans için önerilir). Eksik eklenti
   varsa README ve `.env.example` değil, kurulum belgesi güncellenir.
 
+### Doğrulama sonucu (T001, 2026-08-24)
+
+| Kontrol | Bulgu |
+|---|---|
+| Güncel sürüm | `v11.0.0` |
+| Lisans | **MIT** (OSI onaylı) — AGPL-3.0-only ile uyumlu ✔ |
+| PHP | `>=8.2`; depo `^8.3` ✔ |
+| Laravel 13 | Paket çatıdan bağımsız, `laravel/framework` kısıtı yok ✔ |
+| Zorunlu eklentiler | `ext-curl`, `ext-json`, `ext-mbstring`, `ext-openssl` — hepsi kurulu ✔ |
+| Önerilen eklentiler | `ext-gmp` **yok**, `ext-bcmath` var. GMP yalnızca performans içindir; tek haneli kullanıcıda önemsiz |
+| `composer audit` | Yeni paketlerde güvenlik danışmanlığı yok ✔ |
+
+**Tek sonuç, kayda değer**: `minishlink/web-push v11` → `web-token/jwt-library`
+→ `brick/math` zinciri, `brick/math`'ı **0.18.0'dan 0.17.2'ye düşürüyor**.
+Düşürme her tüketicinin kendi kısıtı içinde kalıyor
+(`laravel/framework 13.26.1` `^0.14.2|…|^0.19`, `ramsey/uuid` `>=0.8.16 <=0.18`),
+yani desteklenen bir sürüme iniliyor — kısıt zorlaması değil. Kurulum bu yüzden
+`composer require minishlink/web-push -W` ile yapılır; `-W` olmadan çözücü
+sessizce **v0.2.2**'ye (2014 tarihli) düşer, ki bu kabul edilemez.
+
+**Karar**: paket uygun, iş durmaz. `brick/math` düşürmesi PR açıklamasına yazılır.
+
 **Gerekçe**: Sarmalayıcı, kütüphanenin tüm yüzeyini tek dosyada tutar — sürüm
 değişince dokunulacak yer bellidir ve testte sahtelenecek tek nokta orasıdır.
 
@@ -230,6 +252,50 @@ push olayını hiç duymaz. `push.js` yalnızca ayarlarda yüklendiği için tek
 ekranının bütçesi hiç etkilenmez (SC-106).
 
 ---
+
+## Mevcut test etkisi (T003)
+
+`GET /review`'in tamamlanmış günde kendiliğinden tur ürettiğini varsayan testler
+tarandı. Tek dosya etkileniyor: `tests/Feature/Review/ExtraRoundsTest.php`.
+
+| Test | Satır | Bugünkü varsayım | Yeni davranışta |
+|---|---|---|---|
+| `a_reader_who_asked_for_two_a_day_gets_the_second_without_asking_again` | 92 | `GET /review` limiti dolmamışsa ikinci turu üretir; kartlar gelir | **Kırılır.** Davranışın kendisi kalkıyor (FR-101). Test tersine yazılır: tamamlanma ekranı gelir, satır sayısı 1'de kalır |
+| `a_finished_day_shows_the_done_screen_rather_than_more_cards` | 37 | Varsayılan `daily_review_limit = 1` ile "bir tur daha" düğmesi görünür | **Kırılır.** Yeni `canRepeat` limiti de sayıyor; varsayılan kullanıcıda düğme yok. Test limiti 2 olan bir okurla kurulur |
+| `asking_for_one_more_builds_a_second_round` | 54 | `POST /review/again` round 2 açar | Geçer — uç sözleşmesi değişmiyor (contracts/review-completion.md) |
+| `a_second_round_never_repeats_the_first` | 71 | `buildNextRound()` doğrudan çağrılır | Geçer — servis imzası değişmiyor |
+| `extra_rounds_do_not_move_the_streak` | 104 | `buildNextRound()` doğrudan çağrılır | Geçer |
+| `the_email_is_always_built_from_the_first_round` | 121 | `find()` round 1 döner | Geçer |
+| `insisting_has_an_end` | 141 | Tavan dolunca düğme yok | Geçer |
+
+Ayrıca `tests/Feature/Review/ResumePartialReviewTest.php` ve
+`FirstReviewFlowTest.php` tarandı: ikisi de yarım/ilk turla ilgileniyor,
+otomatik tur üretimine dayanmıyor.
+
+### `canRepeat` çelişkisi ve kararı (2026-08-24)
+
+`contracts/review-completion.md` `canRepeat`'i
+`rounds < max_rounds_per_day && rounds < limit` olarak tanımlıyor;
+`config/byagain.php:147-149` yorumu ise tersini söylüyordu ("bir okur kendi
+limitini aşabilir"). `max_daily_limit` (5) `max_rounds_per_day`'den (10) küçük
+olduğu için iki koşuldan ikincisi her zaman belirleyici — yani ilk koşul ölü kod.
+
+**Depo sahibi kararı**: kontrat kazanır. `daily_review_limit` artık günün sert
+kotasıdır ve "bir tur daha" düğmesini de kapatır. Varsayılan limitte (1) düğme
+hiç görünmez; gün tek turla kapanır. `POST /review/again` uç sözleşmesi
+değişmez (kontratın açık kararı) — kapanan şey düğme, uç değil.
+
+## R-202 cihaz bulgusu (T004) — YAPILMADI
+
+Bu görev fiziksel bir telefon istiyor (iOS Safari + Chrome/Android, 375px).
+Uygulama ortamında cihaz yok, bu yüzden bulgu **kaydedilemedi**.
+
+Sonuç: R-202'nin 2. adımı (yükseklik zinciri, `env(safe-area-inset-bottom)`,
+kendi katman) tahmine değil, kök nedene oturduğu ölçüde uygulandı — bu adım
+yapısal değişiklik içermiyor ve geri alınması ucuz. R-202'nin **3. adımı
+(kabuğun `100dvh` flex sütun olarak yeniden kurulması, T022) uygulanmadı**:
+tetikleyicisi "2. adım cihazda yetmezse" ve o ölçüm yapılamadı. Karar, quickstart
+bölüm 3 gerçek cihazda yürütüldükten sonra verilmelidir.
 
 ## Açık kalan riskler
 

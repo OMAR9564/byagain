@@ -89,6 +89,13 @@ Telefonda `/review` aç ve karta gel:
 Bu adımı hem iOS Safari'de hem Chrome/Android'de yap — `touch-action`
 davranışı iki motorda ayrı.
 
+**Durum (2026-08-24): YÜRÜTÜLMEDİ.** Uygulama ortamında fiziksel telefon yok.
+Düzeltme iki parçalı olarak uygulandı (R-201): `app.css` kaydırma kutularına
+`touch-action: auto` verir, `review.js` dokunuş kaydırılabilir bir kutuda
+başladıysa jesti hiç kurmaz. Otomatik kapı `tests/Feature/Content/HighlightRenderTest.php`
+ile işaretleme ve CSS kuralı düzeyinde duruyor; **jestin kendisi doğrulanmadı**.
+Bu beş adım gerçek cihazda yürütülmeden #1 kapatılmamalıdır (Ana Yasa I).
+
 ---
 
 ## 3. Alt menü sabit kalır (issue #2)
@@ -105,6 +112,18 @@ davranışı iki motorda ayrı.
    kabuğa ait, tek ekrana değil.
 5. Geri alma çubuğu görünürken kaydır.
    **Beklenen**: çubuk menünün üstünde durur, ikisi üst üste binmez.
+
+**Durum (2026-08-24): YÜRÜTÜLMEDİ.** Fiziksel telefon yok. R-202'nin **2. adımı**
+uygulandı: `html.h-full` / `body.min-h-full` yükseklik zinciri kaldırıldı,
+menünün güvenli alan boşluğu ve gövdenin alt boşluğu tek bir değişkende
+(`--bottom-nav-space`, `app.css`) toplandı, menüye `translateZ(0)` ile kendi
+katmanı verildi. `100vh` hiçbir yerde kullanılmıyor.
+
+R-202'nin **3. adımı (T022) uygulanmadı**: tetikleyicisi "2. adım cihazda
+yetmezse" ve o ölçüm yapılamadı. Kabuğu `100dvh` flex sütuna çevirmenin bedeli
+var (adres çubuğu artık gizlenmez, dikey alan kaybedilir), tahminle ödenmez.
+Bu beş adım gerçek cihazda yürütülmeden #2 kapatılmamalıdır; kayma sürüyorsa
+T022 ayrı bir commit olarak yapılır.
 
 ---
 
@@ -161,6 +180,34 @@ Her biri ayrı ayrı denenir; hiçbirinde bildirim gitmemeli:
 Bildirim metninde pasaj içeriği **görünmemeli** (FR-148) — kilit ekranında
 kontrol et.
 
+**Durum (2026-08-24): YÜRÜTÜLMEDİ.** İki ayrı engel var ve ikisi de ortama ait:
+
+1. **Veritabanı yok.** Bu makinede MySQL çalışmıyor (`127.0.0.1:3306` kapalı,
+   `mysqld` ve Docker kurulu değil). `RefreshDatabase` kullanan tüm testler ve
+   `byagain:dispatch-daily`'nin gerçek çalıştırması bu yüzden koşturulamadı.
+2. **Cihaz yok.** Gerçek bir tarayıcıya push teslimi doğrulanamaz.
+
+Yazılan ama **koşturulmamış** testler:
+`tests/Feature/Push/PushSubscriptionTest.php`,
+`tests/Feature/Push/ReviewNudgeTest.php`,
+`tests/Unit/Push/PushDispatcherTest.php`,
+`tests/Feature/Console/DispatchDailyPushWindowTest.php`,
+`tests/Feature/Review/ReviewCompletionTest.php`,
+`tests/Unit/Review/ReviewBuilderTest.php`,
+`tests/Feature/Content/HighlightRenderTest.php`.
+
+MySQL bulunan bir makinede önce şunlar koşulmalı:
+
+```bash
+php artisan migrate
+php artisan test
+php artisan migrate:rollback --step=3   # üç yeni migration'ın down()'ı
+```
+
+`byagain:vapid-keys` çalıştığı doğrulandı (anahtar çifti üretildi). Windows'ta
+`OPENSSL_CONF` tanımlı değilse `openssl_pkey_new` başarısız olur; bu PHP kurulum
+sorunudur, komutun değil.
+
 ---
 
 ## Bitmiş sayılma kapıları
@@ -175,10 +222,20 @@ composer audit
 npm run build        # kullanıcı bundle'ı 150KB bütçesinin altında mı
 ```
 
+Kapıların 2026-08-24 durumu:
+
+| Kapı | Durum |
+|---|---|
+| `vendor/bin/pint --test` | ✅ temiz |
+| `vendor/bin/phpstan analyse` | ✅ temiz (level 6, baseline'a ekleme yok) |
+| `composer audit` | ✅ temiz |
+| `npm run build` | ✅ kullanıcı bundle'ı bütçe altında; `push.js` ayrı chunk |
+| `php artisan test` | ⛔ **koşturulamadı** — MySQL yok |
+
 Ek olarak:
 
-- [ ] Yeni davranışların testi var (tamamlanma matrisi, push dedupe, abonelik uçları)
-- [ ] Yeni migration'ların `down()`'ı çalışıyor (`php artisan migrate:rollback` ile dene)
-- [ ] Kullanıcıya görünen yeni metinlerin hepsi `lang/en/` içinde
-- [ ] `.env.example` ve README yeni VAPID anahtarlarıyla güncellendi
-- [ ] Dört issue de gerçek telefonda tekrar denendi ve kapanabilir durumda
+- [x] Yeni davranışların testi **yazıldı** (tamamlanma matrisi, push dedupe, abonelik uçları) — ama koşturulmadı
+- [ ] Yeni migration'ların `down()`'ı çalışıyor (`php artisan migrate:rollback` ile dene) — **doğrulanmadı**, veritabanı yok
+- [x] Kullanıcıya görünen yeni metinlerin hepsi `lang/en/` içinde (anahtarların çözüldüğü doğrulandı)
+- [x] `.env.example` ve README yeni VAPID anahtarlarıyla güncellendi
+- [ ] Dört issue de gerçek telefonda tekrar denendi ve kapanabilir durumda — **hiçbiri denenmedi**, cihaz yok

@@ -101,6 +101,9 @@ are product decisions and live in `config/byagain.php`.
 | `MAIL_MAILER` | `log` | `resend` in staging and production. |
 | `RESEND_API_KEY` | — | Required when `MAIL_MAILER=resend`. |
 | `RESEND_WEBHOOK_SECRET` | — | Verifies the open-tracking webhook. Empty rejects every call. |
+| `VAPID_PUBLIC_KEY` | — | Browser notifications. Generate with `php artisan byagain:vapid-keys`. Empty disables the feature. |
+| `VAPID_PRIVATE_KEY` | — | The other half of the pair. Rotating it orphans every subscription readers have granted. |
+| `VAPID_SUBJECT` | — | `mailto:` or `https:` URL identifying whoever runs this server, for the push service. |
 | `TRUSTED_PROXIES` | `127.0.0.1,::1` | Proxies whose `X-Forwarded-*` headers are believed. Required behind nginx or signed links break. |
 | `BYAGAIN_SOURCE_URL` | this repository | Shown in the footer to satisfy the AGPL. |
 | `BYAGAIN_DEMO_HIGHLIGHTS` | `400` | Set to `20000` to build the performance fixture. |
