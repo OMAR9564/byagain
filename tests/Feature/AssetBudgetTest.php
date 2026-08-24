@@ -84,6 +84,35 @@ final class AssetBudgetTest extends TestCase
     }
 
     #[Test]
+    public function the_notification_module_stays_on_the_settings_screen(): void
+    {
+        $manifest = $this->manifest();
+
+        // Its own entry point, so it is fetched by the one screen that offers
+        // the switch and never by the review (SC-006, R-208).
+        $this->assertArrayHasKey('resources/js/push.js', $manifest);
+
+        $this->assertNotSame(
+            $manifest['resources/js/push.js']['file'],
+            $manifest['resources/js/app.js']['file'],
+        );
+
+        // And nothing pulls it in as a side effect: the shell and the review
+        // must not list it among their imports.
+        foreach (['resources/js/app.js', 'resources/js/review.js'] as $entry) {
+            $this->assertNotContains(
+                'resources/js/push.js',
+                $manifest[$entry]['imports'] ?? [],
+                "{$entry} must not import the notification module.",
+            );
+        }
+
+        $review = (string) file_get_contents(resource_path('views/review/show.blade.php'));
+
+        $this->assertStringNotContainsString('push.js', $review);
+    }
+
+    #[Test]
     public function the_build_output_stays_in_the_repository(): void
     {
         $ignore = (string) file_get_contents(base_path('.gitignore'));
