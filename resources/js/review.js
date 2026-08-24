@@ -380,10 +380,46 @@ function start(root) {
             && card.dataset.verdict === ''
             && position === frontier;
 
+        /**
+         * Whether the touch landed inside something that scrolls sideways on
+         * its own — a code block, a wide table.
+         *
+         * Such a box belongs to the browser for the whole of that touch. CSS
+         * hands it back the horizontal axis, but the gesture would still be
+         * tracking the same finger and dragging the card along under the
+         * scrolling code, so it is not armed at all (R-201, FR-121).
+         *
+         * Deliberately not conditioned on how far the box has left to scroll:
+         * a reader who reaches the end of a line and keeps going is still
+         * reading, and a decision landing there is exactly the accident this
+         * fixes (FR-122).
+         *
+         * Asked of the element rather than of any particular tag, so it holds
+         * for whatever a card is made of, mastery cards included (FR-125).
+         */
+        const insideHorizontalScroller = (target) => {
+            let node = target instanceof Element ? target : target?.parentElement ?? null;
+
+            while (node !== null && node !== surface) {
+                const overflowX = window.getComputedStyle(node).overflowX;
+
+                // The extra pixel is sub-pixel rounding: a box laid out at a
+                // fractional width reports a scrollWidth a hair over its
+                // client width while having nothing to scroll.
+                if ((overflowX === 'auto' || overflowX === 'scroll') && node.scrollWidth > node.clientWidth + 1) {
+                    return true;
+                }
+
+                node = node.parentElement;
+            }
+
+            return false;
+        };
+
         surface.addEventListener(
             'touchstart',
             (event) => {
-                if (! decidable()) {
+                if (! decidable() || insideHorizontalScroller(event.target)) {
                     return;
                 }
 
