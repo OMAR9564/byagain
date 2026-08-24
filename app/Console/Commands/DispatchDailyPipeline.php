@@ -8,6 +8,7 @@ use App\Models\Review;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\Mail\MailDispatcher;
+use App\Services\Push\PushDispatcher;
 use App\Services\Review\ReviewBuilder;
 use App\Services\Time\LocalDayResolver;
 use Illuminate\Console\Command;
@@ -40,6 +41,7 @@ final class DispatchDailyPipeline extends Command
         LocalDayResolver $days,
         ReviewBuilder $builder,
         MailDispatcher $dispatcher,
+        PushDispatcher $push,
     ): int {
         $now = $this->resolveNow();
         $dryRun = (bool) $this->option('dry-run');
@@ -56,6 +58,7 @@ final class DispatchDailyPipeline extends Command
             'reviews_built' => 0,
             'daily_queued' => 0,
             'reminder_queued' => 0,
+            'push_queued' => 0,
             'skipped' => [],
         ];
 
@@ -70,6 +73,10 @@ final class DispatchDailyPipeline extends Command
 
             if ($days->isWithinSendWindow($user, $this->timeOf($user->reminder_email_at), $now)) {
                 $this->handleReminder($user, $localDay, $builder, $dispatcher, $dryRun, $tally);
+            }
+
+            if ($days->isWithinSendWindow($user, $this->pushTimeFor($user), $now)) {
+                $this->handleNudge($user, $days, $now, $push, $dryRun, $tally);
             }
         }
 
@@ -176,6 +183,64 @@ final class DispatchDailyPipeline extends Command
     }
 
     /**
+     * The browser nudge: an hour after the morning email, if the review is
+     * still unfinished (FR-141).
+     *
+     * @param  array<string, mixed>  $tally
+     */
+    private function handleNudge(
+        User $user,
+        LocalDayResolver $days,
+        Carbon $now,
+        PushDispatcher $push,
+        bool $dryRun,
+        array &$tally,
+    ): void {
+        // The day the *email* belonged to, which is not always the day the
+        // clock has reached. A reader whose email goes out at 23:30 is nudged
+        // at 00:30, and the delivery has to be filed against the day they were
+        // emailed — otherwise their local day could hold two nudges, one for
+        // each side of midnight (contracts/console-and-jobs.md).
+        $emailDay = $days->localDayFor($user, $now->copy()->subMinutes($this->nudgeDelay()));
+
+        if ($dryRun) {
+            // Ask the cheap questions anyway, so a dry run reports what would
+            // actually happen rather than just that it was a dry run.
+            $reason = $push->reasonNotToSend($user, $emailDay);
+
+            $this->note($tally, 'push:'.($reason ?? 'dry-run'));
+
+            return;
+        }
+
+        $reason = null;
+
+        if ($push->queueReviewNudge($user, $emailDay, $reason) !== null) {
+            $tally['push_queued']++;
+
+            return;
+        }
+
+        $this->note($tally, 'push:'.($reason ?? 'skipped'));
+    }
+
+    /**
+     * The reader's local wall-clock time for the nudge window: their email
+     * time plus the configured wait, wrapping past midnight if it has to.
+     */
+    private function pushTimeFor(User $user): string
+    {
+        return Carbon::createFromFormat('H:i', $this->timeOf($user->daily_email_at))
+            ->addMinutes($this->nudgeDelay())
+            ->format('H:i');
+    }
+
+    private function nudgeDelay(): int
+    {
+        return (int) config('byagain.push.nudge_delay_minutes');
+    }
+
+    /**
      * Active, verified accounts only. An unverified address never receives the
      * ritual mail (FR-007).
      *
@@ -223,11 +288,12 @@ final class DispatchDailyPipeline extends Command
         }
 
         $this->line(sprintf(
-            'users=%d reviews_built=%d daily_queued=%d reminder_queued=%d',
+            'users=%d reviews_built=%d daily_queued=%d reminder_queued=%d push_queued=%d',
             $tally['users'],
             $tally['reviews_built'],
             $tally['daily_queued'],
             $tally['reminder_queued'],
+            $tally['push_queued'],
         ));
 
         foreach ($tally['skipped'] as $reason => $count) {
