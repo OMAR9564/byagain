@@ -29,9 +29,14 @@ final class ReviewController extends Controller
      * Today's review, generated on first visit if the pipeline has not built
      * it already (FR-025).
      *
-     * Once the day's quota is finished this screen stops offering more. The
-     * ritual is meant to end — a screen that refills itself is a feed, and
-     * the whole point of the product is that you can be done.
+     * Round 1 is the only round this endpoint will ever open. A finished day
+     * stays finished however often it is reopened, and a further round comes
+     * only from `again()` (FR-101, FR-103).
+     *
+     * It used to top the day up here whenever the reader's own limit had room
+     * left, which meant leaving for the library and tapping back into Review
+     * dealt a fresh hand — the ritual could not end, and the ritual ending is
+     * the product (Constitution art. I).
      */
     public function show(Request $request): View
     {
@@ -43,14 +48,6 @@ final class ReviewController extends Controller
         }
 
         $review = $this->builder->latestFor($user, $day);
-
-        if ($review !== null && $review->isCompleted()) {
-            // Still inside what the reader asked for: open the next round
-            // without making them ask for it.
-            $review = $this->builder->roundsToday($user, $day) < $user->daily_review_limit
-                ? $this->builder->buildNextRound($user, $day)
-                : null;
-        }
 
         if ($review === null || $review->isCompleted()) {
             return view('review.done', $this->doneState($user, $day));
@@ -105,9 +102,17 @@ final class ReviewController extends Controller
             'streak' => $this->streaks->currentStreakFor($user, $day),
             'rounds' => $rounds,
             'limit' => $user->daily_review_limit,
-            // The reader may always insist, up to the point where insisting
-            // stops being a request and starts being a loop.
-            'canRepeat' => $rounds < (int) config('byagain.review.max_rounds_per_day'),
+            // The day the reader asked for, and the ceiling on any day at all.
+            // Both have to hold: the limit is what closes an ordinary day, the
+            // constant is what stops "one more" becoming a loop (FR-104,
+            // FR-108).
+            'canRepeat' => $rounds < (int) config('byagain.review.max_rounds_per_day')
+                && $rounds < $user->daily_review_limit,
+            // Asked outright rather than inferred. While `show()` opened
+            // rounds by itself, arriving here at all proved the day was out of
+            // material; now nothing has been attempted, so nothing is implied
+            // (contracts/review-completion.md).
+            'hasMaterial' => $this->builder->hasMaterialFor($user, $day),
         ];
     }
 

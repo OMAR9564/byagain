@@ -109,8 +109,49 @@
             />
         </section>
 
+        {{-- A second channel next to the email, and independent of it: either
+             can be off without the other (FR-151).
+
+             The switch carries everything push.js needs, because no
+             user-facing string may live in a JS file (Constitution). It is
+             rendered disabled where the server has no VAPID keys; push.js
+             disables it again where the browser cannot do this — most often
+             iOS before the app is on the home screen (R-206, FR-149). --}}
+        <section class="flex flex-col gap-4">
+            <h2 class="text-base font-semibold" style="color: var(--color-ink);">
+                {{ __('push.settings.legend') }}
+            </h2>
+
+            <x-toggle
+                name="push_enabled"
+                :label="__('push.settings.enabled')"
+                :help="__('push.settings.help')"
+                :checked="$user->push_enabled"
+                :disabled="! $pushConfigured"
+                data-push-toggle
+                data-csrf="{{ csrf_token() }}"
+                data-vapid-key="{{ $vapidPublicKey }}"
+                data-subscribe-url="{{ route('push.subscribe') }}"
+                data-unsubscribe-url="{{ route('push.unsubscribe') }}"
+                data-unsupported-text="{{ __('push.settings.unsupported') }}"
+                data-denied-text="{{ __('push.settings.denied') }}"
+                data-unconfigured-text="{{ __('push.settings.unconfigured') }}"
+            />
+
+            <p data-push-note class="text-sm" style="color: var(--color-ink-muted);"
+               @if ($pushConfigured) hidden @endif>
+                @unless ($pushConfigured)
+                    {{ __('push.settings.unconfigured') }}
+                @endunless
+            </p>
+        </section>
+
         <x-button type="submit">{{ __('actions.save') }}</x-button>
     </form>
+
+    {{-- Only here. The review screen's budget must not pay for a module it
+         never runs (SC-006, R-208). --}}
+    @vite('resources/js/push.js')
 
     <section class="mt-10 border-t pt-6" style="border-color: var(--color-border);">
         <h2 class="text-base font-semibold" style="color: var(--color-ink);">

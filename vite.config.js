@@ -20,6 +20,7 @@ export default defineConfig({
                 // first paint does not pay for the review or the editor.
                 'resources/js/review.js',
                 'resources/js/editor.js',
+                'resources/js/push.js',
 
                 'resources/css/admin.css',
             ],

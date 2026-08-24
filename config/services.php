@@ -29,6 +29,26 @@ return [
         'webhook_secret' => env('RESEND_WEBHOOK_SECRET', ''),
     ],
 
+    /*
+     * VAPID — the keypair that identifies this server to a browser's push
+     * service. Generate one with `php artisan byagain:vapid-keys` and paste
+     * the output into `.env` by hand; the command writes no files and nothing
+     * in the codebase writes `.env` (art. III).
+     *
+     * Absent, the feature is simply off: the subscription endpoint answers
+     * 503 and the settings toggle renders disabled. That is the right default
+     * for a key nobody has set yet.
+     */
+    'vapid' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+
+        // A `mailto:` or `https:` URL identifying whoever runs this server,
+        // so a push service has somebody to contact about it. Required by the
+        // VAPID spec.
+        'subject' => env('VAPID_SUBJECT'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

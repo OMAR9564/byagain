@@ -9,7 +9,7 @@
     "isEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-Xm8D8Rws.css",
+    "file": "assets/app-C4_TEAvB.css",
     "name": "app",
     "names": [
       "app.css"
@@ -29,8 +29,14 @@
     "src": "resources/js/editor.js",
     "isEntry": true
   },
+  "resources/js/push.js": {
+    "file": "assets/push-ZWFmLUv3.js",
+    "name": "push",
+    "src": "resources/js/push.js",
+    "isEntry": true
+  },
   "resources/js/review.js": {
-    "file": "assets/review-C-cHkJOp.js",
+    "file": "assets/review-DOFb9m7g.js",
     "name": "review",
     "src": "resources/js/review.js",
     "isEntry": true

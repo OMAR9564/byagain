@@ -10,6 +10,27 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/*
+ * Room for the fixed thumb bar.
+ *
+ * Layout, not design — so it lives here rather than in tokens.css, which is
+ * the design process's output and not ours to edit (art. V).
+ *
+ * Written once and read by both the bar and everything that has to clear it,
+ * because the failure mode when the two drift apart is the last line of a
+ * passage sitting behind the menu, and nothing about that says which of the
+ * two numbers is wrong (FR-132).
+ *
+ * `max()` guards the inset rather than trusting it: `env(safe-area-inset-*)`
+ * resolves to 0px where it is unsupported, but a browser reporting nothing at
+ * all would otherwise make the whole `calc()` invalid and drop the space
+ * entirely.
+ */
+:root {
+    --bottom-nav-inset: max(env(safe-area-inset-bottom), 0px);
+    --bottom-nav-space: calc(var(--size-bottom-nav) + var(--bottom-nav-inset));
+}
+
 @layer base {
     html {
         background-color: var(--color-canvas);
@@ -24,7 +45,7 @@
         font-size: var(--text-base);
         line-height: var(--leading-normal);
         /* The bottom nav is fixed; keep the last item reachable above it. */
-        padding-bottom: calc(var(--size-bottom-nav) + env(safe-area-inset-bottom));
+        padding-bottom: var(--bottom-nav-space);
     }
 
     /* One visible, consistent focus ring everywhere. Never removed — it is
@@ -53,8 +74,28 @@
  * screen moves.
  */
 @layer components {
+    /*
+     * The thumb bar, pinned for the whole scroll (FR-131, FR-133).
+     *
+     * `translateZ(0)` puts it on a layer of its own. The bar is `position:
+     * fixed` and has no transformed ancestor, so this is not the usual
+     * containing-block mistake — it is about who repaints: while the address
+     * bar collapses, a fixed element sharing the page's layer is re-rasterised
+     * against a viewport that is still moving, and it drags behind the scroll
+     * before catching up. Its own layer is composited instead.
+     *
+     * The padding grows into the safe area rather than the tabs shrinking into
+     * it: the bar gets taller on a device with a home indicator, and the
+     * targets inside stay the size they were drawn (FR-134).
+     */
+    [data-bottom-nav] {
+        padding-bottom: var(--bottom-nav-inset);
+        transform: translateZ(0);
+    }
+
     /* pan-y so the passage still scrolls under a vertical drag; only the
-     * horizontal axis belongs to the gesture. */
+     * horizontal axis belongs to the gesture — and only where nothing inside
+     * the card claims it back, which code blocks and tables do below. */
     [data-swipe-surface] {
         touch-action: pan-y;
     }
@@ -87,14 +128,14 @@
      * there, and they must never cover each other.
      */
     [data-review-undo] {
-        bottom: calc(var(--size-bottom-nav) + env(safe-area-inset-bottom) + 0.75rem);
+        bottom: calc(var(--bottom-nav-space) + 0.75rem);
         transition:
             transform var(--duration-card) var(--ease-out),
             opacity var(--duration-card) var(--ease-out);
     }
 
     body:has(#offline-banner:not([hidden])) [data-review-undo] {
-        bottom: calc(var(--size-bottom-nav) + env(safe-area-inset-bottom) + 3.5rem);
+        bottom: calc(var(--bottom-nav-space) + 3.5rem);
     }
 
     [data-review-undo][data-entering] {
@@ -174,12 +215,62 @@
         max-width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+
+        /*
+         * Take the horizontal axis back from the card gesture (R-201).
+         *
+         * `[data-swipe-surface]` above sets `touch-action: pan-y`, which is
+         * right for the card and wrong for everything inside it: a finger on a
+         * code block got no scroll from the browser and a swipe decision from
+         * `review.js` instead, so a 120-character line could not be read at all
+         * and trying discarded the passage (issue #1, FR-121).
+         *
+         * A touch that lands here pans this box, so the intersection walk stops
+         * at this element and the ancestor's `pan-y` does not apply.
+         */
+        touch-action: auto;
+
+        /*
+         * Says it scrolls, by shading the edge the content continues past
+         * (FR-124). Two pairs of layers: the flat ones are painted `local` so
+         * they travel with the content and cover the shadow once that end is
+         * reached, the shadows are painted `scroll` so they stay put. Nothing
+         * to measure, nothing to listen to — a scroll handler on the product's
+         * most-scrolled screen is a jank budget nobody needs.
+         */
+        background-repeat: no-repeat;
+        background-size:
+            2.5rem 100%,
+            2.5rem 100%,
+            0.9rem 100%,
+            0.9rem 100%;
+        background-position:
+            0 0,
+            100% 0,
+            0 0,
+            100% 0;
+        background-attachment: local, local, scroll, scroll;
     }
 
     .highlight-content .highlight-body pre {
         background-color: var(--color-surface-sunken);
         border-radius: var(--radius-md);
         padding: 0.9em 1em;
+        background-image:
+            linear-gradient(to right, var(--color-surface-sunken), transparent),
+            linear-gradient(to left, var(--color-surface-sunken), transparent),
+            radial-gradient(farthest-side at 0 50%, var(--color-border-strong), transparent),
+            radial-gradient(farthest-side at 100% 50%, var(--color-border-strong), transparent);
+    }
+
+    /* Tables sit straight on the card, so their masking layer is the card's
+     * own colour rather than the sunken one. */
+    .highlight-content .highlight-body table {
+        background-image:
+            linear-gradient(to right, var(--color-surface), transparent),
+            linear-gradient(to left, var(--color-surface), transparent),
+            radial-gradient(farthest-side at 0 50%, var(--color-border-strong), transparent),
+            radial-gradient(farthest-side at 100% 50%, var(--color-border-strong), transparent);
     }
 
     .highlight-content .highlight-body pre code {

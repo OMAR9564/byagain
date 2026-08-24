@@ -39,6 +39,7 @@ use Illuminate\Support\Carbon;
  * @property string $daily_email_at
  * @property bool $reminder_email_enabled
  * @property string $reminder_email_at
+ * @property bool $push_enabled
  * @property int $consecutive_unopened_emails
  * @property int $current_streak
  * @property int $longest_streak
@@ -58,6 +59,7 @@ use Illuminate\Support\Carbon;
     'daily_email_at',
     'reminder_email_enabled',
     'reminder_email_at',
+    'push_enabled',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail
@@ -97,6 +99,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'daily_email_at' => '08:00:00',
         'reminder_email_enabled' => true,
         'reminder_email_at' => '20:00:00',
+        // Off until the reader turns it on, and the browser will not grant
+        // permission without a tap either (FR-145).
+        'push_enabled' => false,
         'consecutive_unopened_emails' => 0,
         'current_streak' => 0,
         'longest_streak' => 0,
@@ -151,6 +156,22 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     }
 
     /**
+     * @return HasMany<PushSubscription, $this>
+     */
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
+    /**
+     * @return HasMany<PushDelivery, $this>
+     */
+    public function pushDeliveries(): HasMany
+    {
+        return $this->hasMany(PushDelivery::class);
+    }
+
+    /**
      * Role is granted out of band by `byagain:promote-admin`; there is no way
      * to become an administrator through the interface (FR-009).
      */
@@ -202,6 +223,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             'equal_source_weighting' => 'boolean',
             'daily_email_enabled' => 'boolean',
             'reminder_email_enabled' => 'boolean',
+            'push_enabled' => 'boolean',
             'consecutive_unopened_emails' => 'integer',
             'current_streak' => 'integer',
             'longest_streak' => 'integer',

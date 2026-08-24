@@ -18,9 +18,12 @@ use Tests\TestCase;
  * The day ends.
  *
  * The product's promise is that finishing is possible, so a finished review is
- * not quietly replaced by another one. A reader who wants more can ask, and a
- * reader who wants more every day can say so once in settings — but reopening
- * the app is never how it happens.
+ * not quietly replaced by another one. A reader who wants more can ask, every
+ * time — reopening the app is never how it happens.
+ *
+ * `daily_review_limit` says how many rounds a day may hold, and so how long the
+ * button stays on the done screen. It is not a standing order for rounds the
+ * reader has not asked for (contracts/review-completion.md).
  */
 final class ExtraRoundsTest extends TestCase
 {
@@ -36,7 +39,9 @@ final class ExtraRoundsTest extends TestCase
     #[Test]
     public function a_finished_day_shows_the_done_screen_rather_than_more_cards(): void
     {
-        $user = $this->reader();
+        // Two a day, so the day still has room in it and the button is a
+        // question about rounds rather than about the reader's limit.
+        $user = $this->reader(['daily_review_limit' => 2]);
 
         $this->finish(app(ReviewBuilder::class)->buildFor($user));
 
@@ -89,13 +94,27 @@ final class ExtraRoundsTest extends TestCase
     }
 
     #[Test]
-    public function a_reader_who_asked_for_two_a_day_gets_the_second_without_asking_again(): void
+    public function a_reader_who_asked_for_two_a_day_still_has_to_ask_for_the_second(): void
     {
         $user = $this->reader(['daily_review_limit' => 2]);
 
         $this->finish(app(ReviewBuilder::class)->buildFor($user));
 
-        $this->actingAs($user)->get('/review')->assertOk()->assertSee(__('review.action.keep'));
+        // This used to hand back cards. Having asked in settings for two
+        // reviews a day was read as having asked for the second one now, so
+        // the day reopened itself every time the tab was tapped and could not
+        // be finished at all (FR-101, issue #4).
+        $this->actingAs($user)
+            ->get('/review')
+            ->assertOk()
+            ->assertDontSee(__('review.action.keep'))
+            ->assertSee(__('review.done.again'));
+
+        $this->assertSame(1, Review::query()->where('user_id', $user->id)->count());
+
+        // The setting has not become decorative: it is what keeps the button
+        // on the screen, and a default reader's day closes after one round.
+        $this->actingAs($user)->post('/review/again')->assertRedirect(route('review.show'));
 
         $this->assertSame(2, Review::query()->where('user_id', $user->id)->count());
     }

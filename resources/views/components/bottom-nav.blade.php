@@ -40,10 +40,14 @@
 @endphp
 
 @if ($items->isNotEmpty())
+    {{-- Pinning and safe-area padding live in app.css against
+         `[data-bottom-nav]`, so the space the bar takes and the space the page
+         leaves for it are written once (issue #2, R-202). --}}
     <nav
+        data-bottom-nav
         aria-label="{{ __('nav.label') }}"
         class="fixed inset-x-0 bottom-0 border-t"
-        style="z-index: var(--z-bottom-nav); background-color: var(--color-surface); border-color: var(--color-border); padding-bottom: env(safe-area-inset-bottom);"
+        style="z-index: var(--z-bottom-nav); background-color: var(--color-surface); border-color: var(--color-border);"
     >
         <ul class="mx-auto flex max-w-md items-stretch">
             @foreach ($items as $item)

@@ -89,6 +89,34 @@ final class ReviewBuilder
     }
 
     /**
+     * Whether another round could be built today, without building it.
+     *
+     * The done screen needs this because `GET /review` no longer opens rounds
+     * on its own (FR-101): with nothing generated there is nothing to read the
+     * answer off, and offering a button that returns "nothing new to draw on"
+     * is worse than not offering it (R-205).
+     *
+     * Deliberately mirrors the one condition on which `generate()` gives up —
+     * both wells empty — so the button and the action cannot disagree. Writes
+     * nothing: no review, no item, no `last_shown_at`.
+     */
+    public function hasMaterialFor(User $user, CarbonImmutable $localDay): bool
+    {
+        // One row is the whole question. `exists()` stops at the first match
+        // rather than paying for the weighted ordering of a real draw.
+        if ($this->sampler->candidates($user, $localDay)->exists()) {
+            return true;
+        }
+
+        // Mastery cards only count when the ratio actually reserves room for
+        // them, because that is the only case in which `generate()` asks
+        // (FR-034).
+        $masteryQuota = (int) floor($user->review_size * ($user->mastery_ratio / 100));
+
+        return $masteryQuota > 0 && $this->mastery->dueCards($user, 1)->isNotEmpty();
+    }
+
+    /**
      * The most recent round of a local day — what the screen shows.
      */
     public function latestFor(User $user, CarbonImmutable $localDay): ?Review
