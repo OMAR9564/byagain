@@ -16,7 +16,11 @@
  * survives the service worker being evicted.
  */
 
-const VERSION = 'v1';
+// Bumped to v2 for the push listeners below. A service worker already
+// installed on somebody's phone keeps running the script it was installed
+// with, so without a version change their browser would never hear a push at
+// all (R-208).
+const VERSION = 'v2';
 const SHELL_CACHE = `byagain-shell-${VERSION}`;
 const PAGE_CACHE = `byagain-pages-${VERSION}`;
 
@@ -70,6 +74,70 @@ self.addEventListener('fetch', (event) => {
     if (request.mode === 'navigate') {
         event.respondWith(networkFirst(request, PAGE_CACHE));
     }
+});
+
+/**
+ * A notification arrived.
+ *
+ * Every word shown here comes down in the payload, resolved on the server from
+ * lang/en/ — this file holds no interface copy of its own, and translating it
+ * twice is how the two would drift apart.
+ *
+ * The payload carries no passage content either: what shows on a lock screen
+ * is that today's review is waiting, and nothing about what is in it (FR-148).
+ */
+self.addEventListener('push', (event) => {
+    let payload = {};
+
+    try {
+        payload = event.data?.json() ?? {};
+    } catch {
+        // Unreadable payload, and still worth showing something: the reader
+        // asked to be reminded, and silence would be the one wrong answer.
+        payload = {};
+    }
+
+    const title = payload.title ?? 'byagain';
+
+    event.waitUntil(
+        self.registration.showNotification(title, {
+            body: payload.body,
+            icon: '/icons/icon-192.png',
+            badge: '/icons/icon-192.png',
+            // Fixed per day by the server, so a second notification replaces
+            // the first on screen rather than stacking under it.
+            tag: payload.tag,
+            data: { url: payload.url ?? '/review' },
+        }),
+    );
+});
+
+/**
+ * The notification was tapped.
+ *
+ * Focus an open byagain tab if there is one rather than opening a second: two
+ * tabs of the same review is how a card gets decided twice.
+ */
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const target = event.notification.data?.url ?? '/review';
+
+    event.waitUntil(
+        self.clients
+            .matchAll({ type: 'window', includeUncontrolled: true })
+            .then((clientList) => {
+                for (const client of clientList) {
+                    if (new URL(client.url).origin === self.location.origin && 'focus' in client) {
+                        return client.focus().then((focused) =>
+                            'navigate' in focused ? focused.navigate(target) : focused,
+                        );
+                    }
+                }
+
+                return self.clients.openWindow(target);
+            }),
+    );
 });
 
 async function cacheFirst(request, cacheName) {

@@ -53,6 +53,10 @@ final class UpdateSettingsRequest extends FormRequest
             'daily_email_at' => ['required', 'date_format:H:i'],
             'reminder_email_enabled' => ['boolean'],
             'reminder_email_at' => ['required', 'date_format:H:i'],
+
+            // The channel, not the timing: how long the nudge waits is a
+            // product constant, not a preference (art. V).
+            'push_enabled' => ['boolean'],
         ];
     }
 
@@ -64,6 +68,7 @@ final class UpdateSettingsRequest extends FormRequest
             'equal_source_weighting' => $this->boolean('equal_source_weighting'),
             'daily_email_enabled' => $this->boolean('daily_email_enabled'),
             'reminder_email_enabled' => $this->boolean('reminder_email_enabled'),
+            'push_enabled' => $this->boolean('push_enabled'),
         ]);
     }
 

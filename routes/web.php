@@ -7,6 +7,7 @@ use App\Http\Controllers\HighlightController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MailWebhookController;
 use App\Http\Controllers\MasteryCardController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewItemActionController;
 use App\Http\Controllers\SettingsController;
@@ -95,6 +96,18 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
 
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
+
+    // Registering and forgetting a browser, either side of its own permission
+    // prompt. Throttled because a misbehaving client could otherwise call
+    // these on a loop; turning notifications on or off is not something anyone
+    // does twenty times a minute.
+    Route::post('/push/subscriptions', [PushSubscriptionController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('push.subscribe');
+
+    Route::delete('/push/subscriptions', [PushSubscriptionController::class, 'destroy'])
+        ->middleware('throttle:20,1')
+        ->name('push.unsubscribe');
 
     Route::delete('/account', [AccountController::class, 'destroy'])->name('account.destroy');
 });
