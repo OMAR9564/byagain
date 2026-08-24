@@ -8,8 +8,16 @@
 
      Deliberately loads only the user bundle. No Livewire, no Alpine, no
      Filament asset appears on this page (SC-018). --}}
+{{-- No height class on `html` or `body`, deliberately.
+
+     `h-full` / `min-h-full` tied both to the viewport height, which on a phone
+     is a moving number: the address bar collapses, the viewport grows, and a
+     shell pegged to it is relaid out mid-scroll while a `position: fixed` bar
+     is trying to stay still. The page is as tall as its content; the canvas
+     colour comes from `html` in app.css, so there is no white gap under a
+     short one (issue #2, R-202). --}}
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -41,7 +49,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-full">
+<body>
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:px-4 focus:py-2"
        style="background-color: var(--color-surface); color: var(--color-ink);">
         {{ __('actions.next') }}
@@ -77,7 +85,7 @@
     {{-- Offline banner. Hidden until app.js has something to say (SC-016). --}}
     <p id="offline-banner" hidden role="status"
        class="fixed inset-x-0 z-50 px-4 py-2 text-center text-sm"
-       style="bottom: calc(var(--size-bottom-nav) + env(safe-area-inset-bottom)); background-color: var(--color-caution); color: var(--color-canvas);">
+       style="bottom: var(--bottom-nav-space); background-color: var(--color-caution); color: var(--color-canvas);">
         {{ __('review.offline') }}
     </p>
 
