@@ -237,6 +237,35 @@ final class InlineCardsTest extends TestCase
         $this->assertDatabaseCount('mastery_cards', 0);
     }
 
+    #[Test]
+    public function a_card_row_that_is_not_an_array_is_rejected_not_a_server_error(): void
+    {
+        [$user, $source] = $this->library();
+
+        $response = $this->actingAs($user)->post(route('highlights.store'), [
+            'source_id' => $source->id,
+            'content_md' => 'A passage long enough to keep.',
+            'cards' => ['x'],
+        ]);
+
+        $response->assertSessionHasErrors('cards.0');
+        $this->assertSame(0, Highlight::query()->count());
+    }
+
+    #[Test]
+    public function a_question_of_zero_is_not_treated_as_blank(): void
+    {
+        [$user, $source] = $this->library();
+
+        $this->actingAs($user)->post(route('highlights.store'), [
+            'source_id' => $source->id,
+            'content_md' => 'A passage long enough to keep.',
+            'cards' => [['type' => MasteryCard::TYPE_QA, 'question' => '0', 'answer' => '0']],
+        ])->assertSessionDoesntHaveErrors();
+
+        $this->assertSame('0', MasteryCard::query()->sole()->question);
+    }
+
     /**
      * @return array{0: User, 1: Source}
      */

@@ -22,6 +22,7 @@ trait ValidatesCards
     {
         return [
             'cards' => ['nullable', 'array', 'max:10'],
+            'cards.*' => ['array'],
             'cards.*.type' => [
                 'required',
                 Rule::in([MasteryCard::TYPE_QA, MasteryCard::TYPE_CLOZE]),
@@ -38,13 +39,23 @@ trait ValidatesCards
 
     /**
      * Drop rows whose question and answer are both blank, so an
-     * added-then-ignored block does not block saving.
+     * added-then-ignored block does not block saving. Rows that are not
+     * arrays are kept, so `cards.*` rejects them with a 422 rather than the
+     * request crashing on them.
      */
     protected function prepareCardsForValidation(): void
     {
+        $cards = $this->input('cards', []);
+
+        if (! is_array($cards)) {
+            return;
+        }
+
         $cards = array_filter(
-            (array) $this->input('cards', []),
-            fn ($card) => ! empty($card['question'] ?? '') || ! empty($card['answer'] ?? ''),
+            $cards,
+            fn ($card) => ! is_array($card)
+                || $this->isFilled($card['question'] ?? null)
+                || $this->isFilled($card['answer'] ?? null),
         );
 
         // Re-index the array to avoid gaps after filtering.
@@ -77,5 +88,11 @@ trait ValidatesCards
                 }
             }
         });
+    }
+
+    /** A "0" is an answer; only an empty or whitespace-only value is blank. */
+    private function isFilled(mixed $value): bool
+    {
+        return is_scalar($value) && trim((string) $value) !== '';
     }
 }
