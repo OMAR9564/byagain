@@ -20,7 +20,7 @@
  *     shows what was chosen; it does not pretend to be a form.
  */
 
-const QUEUE_KEY = 'byagain.review.queue';
+import { readQueue, enqueue, flushQueue } from './queue.js';
 
 /** A gesture has to be this decisive to count, in pixels. */
 const SWIPE_DISTANCE = 60;
@@ -632,20 +632,16 @@ function bindExpand(card) {
     });
 }
 
-function jsonHeaders(csrf) {
-    return {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'X-CSRF-TOKEN': csrf,
-        'X-Requested-With': 'XMLHttpRequest',
-    };
-}
-
 async function send(url, body, csrf) {
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: jsonHeaders(csrf),
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': csrf,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
             body: JSON.stringify(body),
             // keepalive ensures that a decision committed when the reader
             // leaves the page (via the Done button or by closing the tab) still
@@ -675,39 +671,5 @@ async function send(url, body, csrf) {
     }
 }
 
-function readQueue() {
-    try {
-        return JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]');
-    } catch {
-        return [];
-    }
-}
-
-function enqueue(entry) {
-    const queue = readQueue();
-    queue.push(entry);
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-}
-
-/**
- * Replay whatever did not get through. Safe to run at any time because the
- * endpoint is idempotent: a card that was already dealt with keeps its first
- * action and reports current state.
- */
-async function flushQueue(csrf) {
-    const queue = readQueue();
-
-    if (queue.length === 0) {
-        return;
-    }
-
-    localStorage.removeItem(QUEUE_KEY);
-
-    for (const entry of queue) {
-        await send(entry.url, entry.body, csrf);
-    }
-}
-
-window.addEventListener('online', () => {
-    flushQueue(root?.dataset.csrf);
-});
+// Queue functions are now imported from queue.js. The app.js now handles
+// flushing the queue on every page load and on the online event (FR-086).
