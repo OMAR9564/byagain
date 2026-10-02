@@ -32,52 +32,13 @@ final class MixSampler
     public function draw(User $user): Collection
     {
         $batchSize = (int) config('byagain.mix.batch_size');
-        $masteryRatio = $user->mastery_ratio;
 
-        // Calculate how many cards vs passages to aim for, based on the user's
-        // mastery_ratio. For example, ratio 50 and batch_size 20 means 10 each.
-        $targetCards = (int) round($batchSize * $masteryRatio / 100);
-        $targetPassages = $batchSize - $targetCards;
-
-        $passages = $this->passageQuery($user)
-            ->limit($targetPassages)
-            ->get();
-
-        $cards = $this->cardQuery($user)
-            ->limit($targetCards)
-            ->get();
-
-        // If one kind is short, fill from the other so we always return
-        // a full batch if possible.
-        if ($passages->count() < $targetPassages) {
-            $cards = $cards->concat(
-                $this->cardQuery($user)
-                    ->whereNotIn('id', $cards->pluck('id'))
-                    ->limit($targetPassages - $passages->count())
-                    ->get()
-            );
-        }
-
-        if ($cards->count() < $targetCards) {
-            $passages = $passages->concat(
-                $this->passageQuery($user)
-                    ->whereNotIn('id', $passages->pluck('id'))
-                    ->limit($targetCards - $cards->count())
-                    ->get()
-            );
-        }
-
-        // Construct uniform items and shuffle them together.
-        return Collection::make()
-            ->concat($passages->map(fn (Highlight $h): array => [
-                'type' => 'highlight',
-                'model' => $h,
-            ]))
-            ->concat($cards->map(fn (MasteryCard $c): array => [
-                'type' => 'card',
-                'model' => $c,
-            ]))
-            ->shuffle();
+        return ItemMixer::mix(
+            $user,
+            $batchSize,
+            $this->passageQuery($user),
+            $this->cardQuery($user),
+        );
     }
 
     /**
