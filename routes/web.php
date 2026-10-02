@@ -7,6 +7,7 @@ use App\Http\Controllers\HighlightController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MailWebhookController;
 use App\Http\Controllers\MasteryCardController;
+use App\Http\Controllers\MixController;
 use App\Http\Controllers\PracticeController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReviewController;
@@ -118,6 +119,22 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::get('/mastery/{card}/edit', [MasteryCardController::class, 'edit'])->name('mastery.edit');
     Route::patch('/mastery/{card}', [MasteryCardController::class, 'update'])->name('mastery.update');
     Route::post('/mastery/{card}/retire', [MasteryCardController::class, 'retire'])->name('mastery.retire');
+
+    // Endless shuffled practice: all sources, all card types, no trace.
+    // Like source practice, Mix never touches the day's ritual, schedule, or
+    // streak; only explicit discard, favorite, and frequency changes persist
+    // (FR-203, R-305). The card list moved to the Library as a button.
+    Route::get('/mix', [MixController::class, 'show'])
+        ->middleware('throttle:120,1')
+        ->name('mix.show');
+
+    Route::post('/mix/highlights/{highlight}', [MixController::class, 'highlight'])
+        ->middleware('throttle:120,1')
+        ->name('mix.highlight');
+
+    Route::post('/mix/cards/{card}', [MixController::class, 'card'])
+        ->middleware('throttle:120,1')
+        ->name('mix.card');
 
     Route::get('/streak', [StreakController::class, 'show'])->name('streak.show');
 

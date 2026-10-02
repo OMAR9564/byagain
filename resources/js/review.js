@@ -405,12 +405,20 @@ function start(root) {
             streakLine.textContent = streak.current;
             streakLine.hidden = false;
         }
+
+        // Endless mode (Mix): reload the page to get a fresh batch instead of
+        // staying on the completion screen. The 1500ms commitment window applies
+        // the same way as for normal Done buttons (FR-043).
+        if (root.dataset.endlessUrl) {
+            window.location.assign(root.dataset.endlessUrl);
+        }
     }
 
     async function postCompletion() {
-        // Practice has no completion endpoint (data-complete-url is absent),
-        // so the completion screen shows locally only (R-302). Review does have
-        // one and calls it here.
+        // Practice and Mix have no completion endpoint (data-complete-url is
+        // absent), so the completion screen shows locally only (R-302). For Mix,
+        // data-endless-url triggers a reload instead. Review does have one and
+        // calls it here.
         if (!root.dataset.completeUrl) {
             return null;
         }

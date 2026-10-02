@@ -7,6 +7,26 @@
         </x-button>
     </x-slot:headerAction>
 
+    {{-- Link to the question cards list. Moved from the bottom navigation to
+         give more room to the new Mix tab. --}}
+    <a href="{{ route('mastery.index') }}" class="mb-3 block">
+        <x-card>
+            <div class="flex items-center justify-between">
+                <h2 class="text-base font-semibold" style="color: var(--color-ink);">
+                    {{ __('mastery.title') }}
+                </h2>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"
+                     style="color: var(--color-ink-muted);">
+                    <path d="M9.5 6.5 15 12l-5.5 5.5" />
+                </svg>
+            </div>
+            <p class="mt-1 text-sm" style="color: var(--color-ink-muted);">
+                {{ __('mastery.index_body') }}
+            </p>
+        </x-card>
+    </a>
+
     @forelse ($sources as $source)
         <a href="{{ route('sources.show', $source) }}" class="mb-3 block">
             <x-card>

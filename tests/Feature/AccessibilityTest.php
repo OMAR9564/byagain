@@ -28,7 +28,7 @@ final class AccessibilityTest extends TestCase
         $user = $this->reader();
         $practice = '/library/sources/'.$user->sources()->firstOrFail()->id.'/practice';
 
-        foreach (['/', '/library', '/settings', '/streak', '/mastery', $practice] as $path) {
+        foreach (['/', '/library', '/settings', '/streak', '/mix', '/mastery', $practice] as $path) {
             $html = (string) $this->actingAs($user)->get($path)->assertOk()->getContent();
 
             $this->assertStringContainsString('<html lang="en"', $html, "{$path} has no language");
@@ -42,7 +42,7 @@ final class AccessibilityTest extends TestCase
         $user = $this->reader();
         $practice = '/library/sources/'.$user->sources()->firstOrFail()->id.'/practice';
 
-        foreach (['/', '/library', '/settings', '/streak', $practice] as $path) {
+        foreach (['/', '/library', '/settings', '/streak', '/mix', $practice] as $path) {
             $html = (string) $this->actingAs($user)->get($path)->assertOk()->getContent();
 
             $this->assertSame(

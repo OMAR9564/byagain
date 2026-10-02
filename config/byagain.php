@@ -340,4 +340,19 @@ return [
         // existing reader, which on a development machine is yours.
         'email' => env('BYAGAIN_SEED_EMAIL'),
     ],
+
+    /*
+    |------------------------------------------------------------------------
+    | Mix — Endless shuffled practice
+    |------------------------------------------------------------------------
+    |
+    | Mix is an endless, shuffled practice that draws from all sources and
+    | mixes passages with active mastery cards, leaving no trace in the user's
+    | schedule or streak. Constant here (SC-011).
+    */
+
+    'mix' => [
+        // Number of items (passages + cards combined) to draw in each batch.
+        'batch_size' => 20,
+    ],
 ];

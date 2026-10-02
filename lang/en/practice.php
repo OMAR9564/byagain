@@ -17,6 +17,15 @@ return [
         'another_set' => 'Another set',
         'back_to_source' => 'Back to source',
     ],
+
+    'mix' => [
+        'title' => 'Mix',
+        'banner' => 'Endless and shuffled. Nothing here counts toward your day.',
+        'next' => 'Next',
+        'loading' => 'Shuffling more…',
+        'empty_title' => 'No passages or cards yet',
+        'empty_body' => 'Create some passages or question cards to get started.',
+    ],
     'export' => [
         'title' => 'Study with an AI',
         'start' => 'Study with an AI',

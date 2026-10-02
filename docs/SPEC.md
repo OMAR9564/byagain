@@ -57,6 +57,9 @@ by the ownership scope, so another account's id produces **404, not 403** — a
 | POST | `/library/sources/{source}/practice/{highlight}` | `practice.action` |
 | GET | `/library/sources/{source}/export` | `sources.export` |
 | GET | `/library/sources/{source}/export/download` | `sources.export.download` |
+| GET | `/mix` | `mix.show` |
+| POST | `/mix/highlights/{card}` | `mix.highlight` |
+| POST | `/mix/cards/{card}` | `mix.card` |
 | GET | `/add` | `highlights.create` |
 | POST | `/highlights/preview` | `highlights.preview` |
 | POST | `/highlights` | `highlights.store` |
@@ -328,6 +331,22 @@ or mastery cards are written.
 The practice screen reuses `review.js` from the daily flow. Each passage card
 carries its own action URL (`POST /library/sources/{source}/practice/{highlight}`),
 and the page has no completion endpoint — the completion screen stays local.
+
+### Mix: endless shuffled practice
+
+A reader can also practice endlessly across all sources and question cards at
+once, in a shuffled order. `MixSampler` draws up to `config('byagain.mix.batch_size')`
+items (passages + cards together) every time the page loads, mixing them by the
+user's `mastery_ratio` (the percentage of cards vs. passages they want to practice).
+Passages are drawn from non-archived sources with frequency != `never`, and cards
+are active mastery cards only. When one type runs short, the batch is filled from
+the other.
+
+Mix is pure practice: no review records, no streak recording, no mastery scheduling.
+Explicit choices persist — discard, favorite, and source frequency — but card
+schedules never move. Cards in Mix show a single "Next" button instead of the four
+scheduling choices, signalling this is not review. The completion screen triggers
+a fresh batch load (via `data-endless-url` in `review.js`) rather than navigating away.
 
 The editor stays on the form after saving a passage, and the chosen source
 remains selected. The `GET /add` route accepts an optional `?source=` parameter

@@ -7,6 +7,8 @@ declare(strict_types=1);
 return [
     'title' => 'Cards',
 
+    'index_body' => 'Your question cards and scheduled practice.',
+
     'create' => [
         'title' => 'Make a card',
         'action' => 'Make a card',

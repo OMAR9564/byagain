@@ -39,7 +39,7 @@ final class NavigationTest extends TestCase
     {
         $html = (string) $this->actingAs(User::factory()->create())->get('/')->getContent();
 
-        foreach (['review', 'library', 'add', 'mastery', 'streak'] as $key) {
+        foreach (['review', 'library', 'add', 'mix', 'streak'] as $key) {
             $this->assertStringContainsString(__("nav.{$key}"), $html);
         }
     }
