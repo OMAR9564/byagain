@@ -100,6 +100,38 @@ function start(root) {
     back?.addEventListener('click', () => showCard(viewing - 1));
     undoButton?.addEventListener('click', undoPending);
 
+    // Done button(s): commit any pending action before leaving, with a timeout
+    // so a slow or offline network never traps the reader. The offline queue
+    // will retry if needed (FR-042, FR-043).
+    document.querySelectorAll('[data-review-done]').forEach((button) => {
+        button.addEventListener('click', async (event) => {
+            event.preventDefault();
+
+            const href = button.getAttribute('href');
+            if (!href) {
+                return;
+            }
+
+            const pending = commitPending();
+
+            if (pending === null) {
+                // Nothing was pending, navigate at once.
+                window.location.assign(href);
+
+                return;
+            }
+
+            // Wait for the pending action to reach the server, with a 1500ms
+            // timeout so we never trap the reader on a slow connection.
+            await Promise.race([
+                pending,
+                new Promise((resolve) => window.setTimeout(resolve, 1500)),
+            ]);
+
+            window.location.assign(href);
+        });
+    });
+
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && pending !== null) {
             undoPending();
@@ -165,10 +197,14 @@ function start(root) {
     /**
      * Send the held decision. From here it is the server's, and the interface
      * stops offering to take it back.
+     *
+     * Returns the send promise so callers can wait for it, or null if there
+     * was nothing pending. This enables the Done button to wait for the
+     * last card's action to reach the server before navigating (FR-043).
      */
     function commitPending() {
         if (pending === null) {
-            return;
+            return null;
         }
 
         const held = pending;
@@ -199,6 +235,8 @@ function start(root) {
         if (held.index === cards.length - 1) {
             sent.then((payload) => completeReview(payload));
         }
+
+        return sent;
     }
 
     function undoPending() {
@@ -609,6 +647,12 @@ async function send(url, body, csrf) {
             method: 'POST',
             headers: jsonHeaders(csrf),
             body: JSON.stringify(body),
+            // keepalive ensures that a decision committed when the reader
+            // leaves the page (via the Done button or by closing the tab) still
+            // reaches the server, so the undo window can stay and the action is
+            // never lost. The offline queue still catches network failures
+            // (FR-042, FR-043).
+            keepalive: true,
         });
 
         // 4xx other than 409 means the payload is wrong and retrying will not

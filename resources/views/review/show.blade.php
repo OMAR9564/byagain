@@ -81,6 +81,15 @@
             </p>
 
             <p class="mt-6 text-3xl font-semibold" style="color: var(--color-accent);" data-review-streak hidden></p>
+
+            <x-button
+                href="{{ route('home') }}"
+                data-review-done
+                class="mt-8 w-full"
+                style="min-height: var(--size-touch-lg);"
+            >
+                {{ __('review.complete.done') }}
+            </x-button>
         </div>
 
         @include('review.partials.undo-bar')

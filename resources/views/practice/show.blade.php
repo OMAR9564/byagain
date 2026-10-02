@@ -84,6 +84,7 @@
             <div class="mt-6 flex flex-col gap-3">
                 <x-button
                     href="{{ route('practice.show', $source) }}"
+                    data-review-done
                     style="min-height: var(--size-touch-lg);"
                 >
                     {{ __('practice.practice.another_set') }}
@@ -92,6 +93,7 @@
                 <x-button
                     variant="secondary"
                     href="{{ route('sources.show', $source) }}"
+                    data-review-done
                     style="min-height: var(--size-touch-lg);"
                 >
                     {{ __('practice.practice.back_to_source') }}

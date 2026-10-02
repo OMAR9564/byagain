@@ -193,6 +193,14 @@ middle one is asked as a question — `ReviewBuilder::hasMaterialFor()`, which
 reads and writes nothing — rather than deduced from a round having failed to
 appear.
 
+The completion screen carries a Done button that commits any held decision
+(within the undo window) and navigates home without making the reader wait.
+The button uses `keepalive: true` on its fetch, so a decision sent on
+`pagehide` or `visibilitychange` (when the reader leaves via nav or closes the
+tab) still reaches the server; offline actions queue as always. The undo window
+stays — only the final decision can be committed early, not all of them
+(FR-042, FR-043).
+
 There is no way back into a finished round. The completion screen is the last
 stop; a reader who wants to see what they decided opens the passage from the
 library.
