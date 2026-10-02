@@ -34,6 +34,31 @@
     >
         {{ $card->answer }}
     </p>
+
+    @if ($card->highlight !== null)
+        <button
+            type="button"
+            class="mt-4 inline-flex min-h-11 items-center text-sm font-medium"
+            style="color: var(--color-accent);"
+            data-mastery-passage-toggle
+            aria-expanded="false"
+            aria-controls="mastery-passage-{{ $item->id }}"
+            data-show-label="{{ __('mastery.card.show_passage') }}"
+            data-hide-label="{{ __('mastery.card.hide_passage') }}"
+            @if ($card->type === \App\Models\MasteryCard::TYPE_CLOZE) hidden @endif
+        >
+            {{ __('mastery.card.show_passage') }}
+        </button>
+
+        <div
+            id="mastery-passage-{{ $item->id }}"
+            data-mastery-passage
+            hidden
+            class="mt-4"
+        >
+            <x-highlight-content :highlight="$card->highlight" :collapsible="false" />
+        </div>
+    @endif
 </x-card>
 
 {{-- Four answers, none of them "wrong". The reader is choosing when to see

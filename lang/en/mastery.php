@@ -21,6 +21,8 @@ return [
         'question' => 'Question',
         'answer' => 'Answer',
         'show_answer' => 'Show answer',
+        'show_passage' => 'Show passage',
+        'hide_passage' => 'Hide passage',
         'cloze_hint' => 'Wrap the hidden part in {{curly braces}}.',
     ],
 

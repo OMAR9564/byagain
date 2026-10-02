@@ -628,6 +628,8 @@ function bindMastery(card, onFeedback) {
     const reveal = card.querySelector('[data-mastery-reveal]');
     const answer = card.querySelector('[data-mastery-answer]');
     const choices = card.querySelector('[data-mastery-feedback]');
+    const passageToggle = card.querySelector('[data-mastery-passage-toggle]');
+    const passageBlock = card.querySelector('[data-mastery-passage]');
 
     if (reveal === null || answer === null || choices === null) {
         return;
@@ -638,7 +640,23 @@ function bindMastery(card, onFeedback) {
         choices.hidden = false;
         reveal.setAttribute('aria-expanded', 'true');
         reveal.hidden = true;
+
+        // For cloze cards, reveal the passage toggle when the answer is shown
+        if (passageToggle !== null && passageToggle.hidden) {
+            passageToggle.hidden = false;
+        }
     });
+
+    if (passageToggle !== null && passageBlock !== null) {
+        passageToggle.addEventListener('click', () => {
+            const isExpanded = passageToggle.getAttribute('aria-expanded') === 'true';
+            passageToggle.setAttribute('aria-expanded', String(!isExpanded));
+            passageBlock.hidden = isExpanded;
+            passageToggle.textContent = isExpanded
+                ? passageToggle.dataset.showLabel
+                : passageToggle.dataset.hideLabel;
+        });
+    }
 
     choices.querySelectorAll('[data-mastery-choice]').forEach((button) => {
         button.addEventListener('click', () => onFeedback(button.dataset.masteryChoice));
