@@ -7,6 +7,7 @@ use App\Http\Controllers\HighlightController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MailWebhookController;
 use App\Http\Controllers\MasteryCardController;
+use App\Http\Controllers\PracticeController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewItemActionController;
@@ -70,6 +71,18 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::get('/library/sources/{source}', [SourceController::class, 'show'])->name('sources.show');
     Route::get('/library/sources/{source}/edit', [SourceController::class, 'edit'])->name('sources.edit');
     Route::patch('/library/sources/{source}', [SourceController::class, 'update'])->name('sources.update');
+
+    // Practice one source without touching the day: no review record, no
+    // streak recording, no mastery scheduling. Only explicit decisions
+    // (discard, favorite, frequency) persist (FR-201, FR-206, R-305).
+    Route::get('/library/sources/{source}/practice', [PracticeController::class, 'show'])
+        ->middleware('throttle:30,1')
+        ->name('practice.show');
+
+    Route::post('/library/sources/{source}/practice/{highlight}', [PracticeController::class, 'action'])
+        ->middleware('throttle:120,1')
+        ->scopeBindings()
+        ->name('practice.action');
 
     Route::get('/add', [HighlightController::class, 'create'])->name('highlights.create');
 
