@@ -3,6 +3,7 @@
     'action',
     'highlight' => null,
     'method' => 'POST',
+    'selectedSourceId' => null,
 ])
 
 {{-- The editor. Built for one hand: the passage field is the first thing under
@@ -38,7 +39,11 @@
             required
         >
             @foreach ($sources as $source)
-                <option value="{{ $source->id }}" @selected(old('source_id', $highlight?->source_id) === $source->id)>
+                {{-- Cast old() to int: it returns a string from the session, and
+                     strict comparison will never match the integer $source->id.
+                     Without this cast, a validation error loses the source
+                     selection (FR-216). --}}
+                <option value="{{ $source->id }}" @selected((int) old('source_id', $highlight?->source_id ?? $selectedSourceId) === $source->id)>
                     {{ $source->title }}
                 </option>
             @endforeach
