@@ -68,7 +68,7 @@
 
     --color-ink: #1c1a17; /* body text — 15.8:1 on canvas */
     --color-ink-muted: #5f5a52; /* metadata — 6.9:1 on canvas */
-    --color-ink-subtle: #837c72; /* placeholders — 4.6:1 on canvas */
+    --color-ink-subtle: #6c685f; /* placeholders — 4.74:1 on accent-wash */
 
     --color-accent: #8a5a2b; /* the single brand colour: worn leather */
     --color-accent-hover: #6f4721;
@@ -121,7 +121,7 @@
 
         --color-ink: #ece8e1;
         --color-ink-muted: #a8a299;
-        --color-ink-subtle: #837d74;
+        --color-ink-subtle: #909088;
 
         --color-accent: #d2a06a;
         --color-accent-hover: #e0b183;
@@ -148,7 +148,7 @@
 
     --color-ink: #ece8e1;
     --color-ink-muted: #a8a299;
-    --color-ink-subtle: #837d74;
+    --color-ink-subtle: #909088;
 
     --color-accent: #d2a06a;
     --color-accent-hover: #e0b183;
