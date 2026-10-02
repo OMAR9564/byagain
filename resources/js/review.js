@@ -20,7 +20,7 @@
  *     shows what was chosen; it does not pretend to be a form.
  */
 
-import { readQueue, enqueue, flushQueue } from './queue.js';
+import { send, flushQueue, jsonHeaders } from './queue.js';
 
 /** A gesture has to be this decisive to count, in pixels. */
 const SWIPE_DISTANCE = 60;
@@ -661,48 +661,6 @@ function bindExpand(card) {
         button.remove();
     });
 }
-
-async function send(url, body, csrf) {
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'X-CSRF-TOKEN': csrf,
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: JSON.stringify(body),
-            // keepalive ensures that a decision committed when the reader
-            // leaves the page (via the Done button or by closing the tab) still
-            // reaches the server, so the undo window can stay and the action is
-            // never lost. The offline queue still catches network failures
-            // (FR-042, FR-043).
-            keepalive: true,
-        });
-
-        // 4xx other than 409 means the payload is wrong and retrying will not
-        // help; drop it rather than poisoning the queue forever.
-        if (!response.ok && response.status !== 409 && response.status < 500) {
-            return null;
-        }
-
-        if (!response.ok) {
-            enqueue({ url, body });
-
-            return null;
-        }
-
-        return await response.json();
-    } catch {
-        enqueue({ url, body });
-
-        return null;
-    }
-}
-
-// Queue functions are now imported from queue.js. The app.js now handles
-// flushing the queue on every page load and on the online event (FR-086).
 
 /**
  * Cards decided on this device for one review, as { itemId: action }.

@@ -48,7 +48,7 @@ export function enqueue(entry) {
  * @param {string} csrf
  * @return {Promise<object|null>}
  */
-async function send(url, body, csrf) {
+export async function send(url, body, csrf) {
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -125,7 +125,7 @@ export async function flushQueue(csrf) {
  *   'X-Requested-With': string,
  * }}
  */
-function jsonHeaders(csrf) {
+export function jsonHeaders(csrf) {
     return {
         'Content-Type': 'application/json',
         Accept: 'application/json',
