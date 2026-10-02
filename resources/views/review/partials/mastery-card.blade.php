@@ -87,11 +87,15 @@ if ($item !== null && $card === null) {
 @else
     {{-- In Mix, only a single "Next" button; the card's schedule never changes.
          The action payload sent is ignored (FR-203). --}}
-    <x-button
-        class="mt-4 w-full"
-        data-mastery-choice="later"
-        style="min-height: var(--size-touch-lg);"
-    >
-        {{ __('practice.mix.next') }}
-    </x-button>
+    {{-- Same hidden wrapper as the review, so "Next" shows up only after the
+         answer does and bindMastery wires the card the same way. --}}
+    <div class="mt-4" data-mastery-feedback hidden>
+        <x-button
+            class="w-full"
+            data-mastery-choice="later"
+            style="min-height: var(--size-touch-lg);"
+        >
+            {{ __('practice.mix.next') }}
+        </x-button>
+    </div>
 @endif

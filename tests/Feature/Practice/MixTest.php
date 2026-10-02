@@ -108,7 +108,14 @@ final class MixTest extends TestCase
         // One "Next" per card item, and the scheduling choices exist nowhere.
         $this->assertSame($cardItems, substr_count($content, 'data-mastery-choice="later"'));
         $this->assertStringContainsString(__('practice.mix.next'), $content);
-        $this->assertStringNotContainsString('data-mastery-feedback', $content);
+
+        // "Next" sits inside the feedback wrapper, or the card script never
+        // wires the card and Mix gets stuck on its first question.
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($content);
+        $xpath = new \DOMXPath($dom);
+        $this->assertSame($cardItems, $xpath->query('//*[@data-mastery-feedback]')->length);
+        $this->assertSame($cardItems, $xpath->query('//*[@data-mastery-feedback]//*[@data-mastery-choice="later"]')->length);
         foreach (['sooner', 'later', 'someday', 'learned'] as $feedback) {
             $this->assertStringNotContainsString(__('mastery.feedback.'.$feedback), $content);
         }
