@@ -7,6 +7,7 @@ namespace App\Services\Practice;
 use App\Models\Highlight;
 use App\Models\MasteryCard;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
@@ -38,62 +39,32 @@ final class MixSampler
         $targetCards = (int) round($batchSize * $masteryRatio / 100);
         $targetPassages = $batchSize - $targetCards;
 
-        // Fetch candidates. Passages: non-discarded, from non-archived sources
-        // with frequency != never. Cards: status = active only.
-        $passages = Highlight::query()
-            ->whereHas('source', fn ($q) => $q
-                ->where('is_archived', false)
-                ->where('frequency', '!=', config('byagain.sampling.excluded_source_frequency'))
-            )
-            ->where('is_discarded', false)
-            ->where('user_id', $user->id)
-            ->inRandomOrder()
+        $passages = $this->passageQuery($user)
             ->limit($targetPassages)
-            ->with('source')
             ->get();
 
-        $cards = MasteryCard::query()
-            ->where('status', MasteryCard::STATUS_ACTIVE)
-            ->where('user_id', $user->id)
-            ->whereHas('highlight', fn ($q) => $q->where('is_discarded', false))
-            ->inRandomOrder()
+        $cards = $this->cardQuery($user)
             ->limit($targetCards)
-            ->with('highlight.source')
             ->get();
 
         // If one kind is short, fill from the other so we always return
         // a full batch if possible.
         if ($passages->count() < $targetPassages) {
-            $shortfall = $targetPassages - $passages->count();
-            $additional = MasteryCard::query()
-                ->where('status', MasteryCard::STATUS_ACTIVE)
-                ->where('user_id', $user->id)
-                ->whereHas('highlight', fn ($q) => $q->where('is_discarded', false))
-                ->whereNotIn('id', $cards->pluck('id'))
-                ->inRandomOrder()
-                ->limit($shortfall)
-                ->with('highlight.source')
-                ->get();
-
-            $cards = $cards->concat($additional);
+            $cards = $cards->concat(
+                $this->cardQuery($user)
+                    ->whereNotIn('id', $cards->pluck('id'))
+                    ->limit($targetPassages - $passages->count())
+                    ->get()
+            );
         }
 
         if ($cards->count() < $targetCards) {
-            $shortfall = $targetCards - $cards->count();
-            $additional = Highlight::query()
-                ->whereHas('source', fn ($q) => $q
-                    ->where('is_archived', false)
-                    ->where('frequency', '!=', config('byagain.sampling.excluded_source_frequency'))
-                )
-                ->where('is_discarded', false)
-                ->where('user_id', $user->id)
-                ->whereNotIn('id', $passages->pluck('id'))
-                ->inRandomOrder()
-                ->limit($shortfall)
-                ->with('source')
-                ->get();
-
-            $passages = $passages->concat($additional);
+            $passages = $passages->concat(
+                $this->passageQuery($user)
+                    ->whereNotIn('id', $passages->pluck('id'))
+                    ->limit($targetCards - $cards->count())
+                    ->get()
+            );
         }
 
         // Construct uniform items and shuffle them together.
@@ -107,5 +78,40 @@ final class MixSampler
                 'model' => $c,
             ]))
             ->shuffle();
+    }
+
+    /**
+     * Passages eligible for Mix: non-discarded, from non-archived sources
+     * whose frequency is not "never". Scoped to the user explicitly as well as
+     * by the model's global scope, so the query stays safe if that ever moves.
+     *
+     * @return Builder<Highlight>
+     */
+    private function passageQuery(User $user): Builder
+    {
+        return Highlight::query()
+            ->whereHas('source', fn ($q) => $q
+                ->where('is_archived', false)
+                ->where('frequency', '!=', config('byagain.sampling.excluded_source_frequency'))
+            )
+            ->where('is_discarded', false)
+            ->where('user_id', $user->id)
+            ->inRandomOrder()
+            ->with('source');
+    }
+
+    /**
+     * Cards eligible for Mix: active, and whose passage was not discarded.
+     *
+     * @return Builder<MasteryCard>
+     */
+    private function cardQuery(User $user): Builder
+    {
+        return MasteryCard::query()
+            ->where('status', MasteryCard::STATUS_ACTIVE)
+            ->where('user_id', $user->id)
+            ->whereHas('highlight', fn ($q) => $q->where('is_discarded', false))
+            ->inRandomOrder()
+            ->with('highlight.source');
     }
 }
