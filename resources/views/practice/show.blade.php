@@ -66,7 +66,9 @@
                 data-verdict=""
                 @if ($index !== 0) hidden @endif
             >
-                @include('review.partials.highlight-card', ['item' => (object)['highlight' => $highlight, 'is_favorite' => false]])
+                @include('review.partials.highlight-card', ['highlight' => $highlight])
+
+                @include('review.partials.verdict')
             </article>
         @endforeach
 

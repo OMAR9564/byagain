@@ -62,8 +62,10 @@
             @if ($item->item_type === \App\Models\ReviewItem::TYPE_MASTERY)
                 @include('review.partials.mastery-card', ['item' => $item])
             @else
-                @include('review.partials.highlight-card', ['item' => $item])
+                @include('review.partials.highlight-card', ['highlight' => $item->highlight])
             @endif
+
+                @include('review.partials.verdict')
             </article>
         @endforeach
 
