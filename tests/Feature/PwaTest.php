@@ -110,6 +110,29 @@ final class PwaTest extends TestCase
     }
 
     #[Test]
+    public function the_offline_review_page_stands_alone(): void
+    {
+        $html = (string) file_get_contents(public_path('offline-review.html'));
+
+        // It is shown when today's cached review has expired, so it has to
+        // render without fetching anything. No build assets, no external URLs.
+        $this->assertStringNotContainsString('/build/', $html);
+        $this->assertStringNotContainsString('<link rel="stylesheet"', $html);
+        $this->assertStringNotContainsString('{{', $html, 'Blade syntax would be served literally here');
+    }
+
+    #[Test]
+    public function the_service_worker_precaches_the_offline_review_page(): void
+    {
+        $sw = (string) file_get_contents(public_path('sw.js'));
+
+        // The service worker installs both offline pages so they are available
+        // when the network is absent (FR-086, FR-087).
+        $this->assertStringContainsString('offline-review.html', $sw);
+        $this->assertStringContainsString('offline.html', $sw);
+    }
+
+    #[Test]
     public function the_service_worker_never_caches_a_review(): void
     {
         $sw = (string) file_get_contents(public_path('sw.js'));

@@ -218,6 +218,25 @@ missed.
 Days are resolved when the review is completed, so moving country changes what
 tomorrow means without rewriting what yesterday was.
 
+## 5.5 Offline
+
+The app is installable as a PWA and works offline. When the reader opens any
+page while online, the app downloads today's review in the background with
+`X-Byagain-Prefetch: 1`, which caches the page without marking it as started.
+This ensures offline use is possible without advancing the ritual.
+
+Cached pages carry an `X-Byagain-Expires` header set to the end of the user's
+local day (the next 04:00 boundary in UTC). The service worker checks this
+header: an expired review is never served offline. Instead, the offline page
+explains that the reader should connect to download today's review.
+
+Card actions that fail to reach the server are queued in localStorage and
+replayed when the connection returns or any page loads, whichever comes first.
+
+The service worker uses a network-first strategy with a ~4-second timeout for
+navigations. If the network is slow or absent, the app falls back to the cache.
+If the network eventually responds, the cache is updated in the background.
+
 ## 6. Mastery
 
 Half-life scheduling. Recall probability is `p(t) = 2^(−Δt / H)`.

@@ -7,28 +7,37 @@
  *     cached on first use and served from cache forever. A new deploy produces
  *     new filenames.
  *
- *   - Everything else is network-first. A review is a thing about *today*;
- *     serving yesterday's from a cache would be worse than an error page,
- *     because it would look right (FR-086, FR-087).
+ *   - Everything else is network-first with a timeout: the app tries to fetch
+ *     the latest from the network, but falls back to the cache after ~4 seconds
+ *     if the connection is slow or absent. A review is a thing about *today*:
+ *     the cached review is checked against its X-Byagain-Expires header, and
+ *     an expired review is never served offline — we show the offline page
+ *     instead, which explains why and asks the reader to connect (FR-086,
+ *     FR-087).
  *
- * Card actions are not handled here at all. review.js keeps its own
- * localStorage queue and replays it when the connection returns, which
- * survives the service worker being evicted.
+ * Card actions are not handled here at all. The app keeps its own localStorage
+ * queue and replays it when the connection returns, which survives the service
+ * worker being evicted.
+ *
+ * The app can ask this worker to prefetch today's review in the background
+ * with X-Byagain-Prefetch: 1, which marks the download without marking the
+ * review as started, so offline use is possible without advancing the ritual.
  */
 
-// Bumped to v2 for the push listeners below. A service worker already
+// Bumped to v3 for offline review expiry enforcement. A service worker already
 // installed on somebody's phone keeps running the script it was installed
-// with, so without a version change their browser would never hear a push at
-// all (R-208).
-const VERSION = 'v2';
+// with, so without a version change their browser would never hear the new
+// logic (R-208, FR-086).
+const VERSION = 'v3';
 const SHELL_CACHE = `byagain-shell-${VERSION}`;
 const PAGE_CACHE = `byagain-pages-${VERSION}`;
 
 const OFFLINE_URL = '/offline.html';
+const OFFLINE_REVIEW_URL = '/offline-review.html';
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(SHELL_CACHE).then((cache) => cache.addAll([OFFLINE_URL])),
+        caches.open(SHELL_CACHE).then((cache) => cache.addAll([OFFLINE_URL, OFFLINE_REVIEW_URL])),
     );
 
     self.skipWaiting();
@@ -140,6 +149,78 @@ self.addEventListener('notificationclick', (event) => {
     );
 });
 
+/**
+ * A client asked us to prefetch today's review.
+ *
+ * Download it with X-Byagain-Prefetch: 1 (which tells the server not to mark
+ * it as started), and cache it along with its build assets for offline use
+ * without advancing the ritual.
+ *
+ * Swallow errors silently: prefetch is best-effort.
+ */
+self.addEventListener('message', (event) => {
+    if (event.data?.type === 'prefetch-review') {
+        event.waitUntil(prefetchReview());
+    }
+});
+
+async function prefetchReview() {
+    try {
+        const response = await fetch('/review', {
+            credentials: 'same-origin',
+            headers: { 'X-Byagain-Prefetch': '1' },
+        });
+
+        // Check if the request was redirected (e.g., to login). We only cache
+        // a direct response from /review.
+        if (!response.ok || response.redirected || !response.url.endsWith('/review')) {
+            return;
+        }
+
+        // Cache the review page.
+        const cache = await caches.open(PAGE_CACHE);
+        cache.put('/review', response.clone());
+
+        // Extract and cache build assets from the page.
+        try {
+            const html = await response.text();
+
+            // Find all same-origin /build/… asset URLs in src and href attributes.
+            const assetRegex = /(src|href)="(\/build\/[^"]+)"/g;
+            const assets = new Set();
+            let match;
+
+            while ((match = assetRegex.exec(html)) !== null) {
+                assets.add(match[2]);
+            }
+
+            // Fetch and cache each asset.
+            const shellCache = await caches.open(SHELL_CACHE);
+
+            for (const assetUrl of assets) {
+                try {
+                    // Skip if already cached.
+                    const cached = await shellCache.match(assetUrl);
+                    if (cached) {
+                        continue;
+                    }
+
+                    const assetResponse = await fetch(assetUrl);
+                    if (assetResponse.ok) {
+                        shellCache.put(assetUrl, assetResponse);
+                    }
+                } catch {
+                    // Swallow individual asset errors.
+                }
+            }
+        } catch {
+            // Swallow HTML parsing errors.
+        }
+    } catch {
+        // Swallow all errors; prefetch is best-effort.
+    }
+}
+
 async function cacheFirst(request, cacheName) {
     const cached = await caches.match(request);
 
@@ -157,19 +238,73 @@ async function cacheFirst(request, cacheName) {
     return response;
 }
 
+/**
+ * Network-first strategy with a ~4 second timeout for navigations.
+ *
+ * Try to get the latest from the network, but fall back to the cache if the
+ * network is slow or absent. If the cached response has an X-Byagain-Expires
+ * header in the past, do not serve it — serve the offline page instead, which
+ * explains why and asks the reader to connect.
+ *
+ * If the network eventually responds, update the cache even if we already
+ * served from cache.
+ *
+ * @param {Request} request
+ * @param {string} cacheName
+ * @return {Promise<Response>}
+ */
 async function networkFirst(request, cacheName) {
-    try {
-        const response = await fetch(request);
+    let networkResponse = null;
 
-        if (response.ok) {
+    try {
+        // Race the network against a timeout.
+        networkResponse = await Promise.race([
+            fetch(request),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('timeout')), 4000),
+            ),
+        ]);
+
+        if (networkResponse.ok) {
             const cache = await caches.open(cacheName);
-            cache.put(request, response.clone());
+            cache.put(request, networkResponse.clone());
         }
 
-        return response;
+        return networkResponse;
     } catch {
+        // Network failed or timed out. Try the cache.
         const cached = await caches.match(request);
 
-        return cached ?? caches.match(OFFLINE_URL);
+        if (cached !== undefined) {
+            // Check the X-Byagain-Expires header. If the cached response is
+            // expired, serve the offline page instead (FR-086, FR-087).
+            const expiresHeader = cached.headers.get('X-Byagain-Expires');
+            if (expiresHeader) {
+                const expiresAt = new Date(expiresHeader);
+                if (expiresAt <= new Date()) {
+                    // Expired. Serve the offline page.
+                    return caches.match(OFFLINE_REVIEW_URL);
+                }
+            }
+
+            return cached;
+        }
+
+        return caches.match(OFFLINE_URL);
+    } finally {
+        // If the network eventually succeeded and we haven't stored it yet,
+        // update the cache in the background.
+        if (networkResponse?.ok) {
+            try {
+                const cache = await caches.open(cacheName);
+                const cached = await cache.match(request);
+
+                if (!cached) {
+                    cache.put(request, networkResponse.clone());
+                }
+            } catch {
+                // Swallow background update errors.
+            }
+        }
     }
 }
