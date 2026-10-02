@@ -128,7 +128,7 @@ soru sormaya başlamalı.
 - **Aktif pasajı olmayan kaynak** (hiç pasaj yok ya da hepsi çöpe atılmış): pratik ve LLM eylemleri sunulmaz; yerine neden sunulmadığı kısaca söylenir.
 - **Arşivlenmiş kaynak**: pratik ve LLM dışa aktarma yine sunulur — kullanıcı açıkça bu kaynağı seçmiştir. Ekleme formu arşivlenmiş kaynağı listelemediği için "bu kaynağa pasaj ekle" arşivlenmiş kaynakta sunulmaz.
 - **Sıklığı "hiç gösterme" olan kaynak**: pratik ve dışa aktarma sunulur; bu ayar yalnız günlük seçkiyi yönetir.
-- **Başka bir hesabın kaynağı**: pratik, dışa aktarma ve ön seçimli ekleme formu, var olmayan bir kayıtla aynı yanıtı verir (404); kaydın varlığı ele verilmez.
+- **Başka bir hesabın kaynağı**: pratik ve dışa aktarma, var olmayan bir kayıtla aynı yanıtı verir (404); ön seçimli ekleme formu ise var olmayan kaynakla aynı davranır (aşağıda). İki durumda da kaydın varlığı ele verilmez.
 - **Ön seçim için geçersiz kaynak** (başka hesabın, arşivlenmiş ya da var olmayan): ekleme formu hata vermeden kaynak seçilmemiş olarak açılır.
 - **Pratik sırasında sayfa yenilenir veya uygulama kapanır**: pratik kaydedilmediği için kaldığı yerden devam etmez; yeniden başlatılınca yeni bir set çekilir. Önceki kartlarda verilen kalıcı kararlar (çöpe at, favori) korunur.
 - **Pratikte çöpe atılan pasaj**: aynı oturumda çekilen yeni sette yer almaz.
@@ -178,7 +178,7 @@ soru sormaya başlamalı.
 
 **Ortak**
 
-- **FR-227**: Pratik, dışa aktarma ve ön seçimli ekleme, başka bir hesabın kaynağı için var olmayan kayıtla aynı yanıtı (404) vermelidir.
+- **FR-227**: Pratik ve dışa aktarma, başka bir hesabın kaynağı için var olmayan kayıtla aynı yanıtı (404) vermelidir. Ön seçimli ekleme formu ise FR-215 gereği hata vermez; başka hesabın kaynağına da var olmayan kaynağa da aynı davranır (kaynak seçilmemiş form), böylece kaydın varlığı yine ele verilmez.
 - **FR-228**: Bu özelliğin eklediği kullanıcıya görünen bütün metinler arayüz dilinde (İngilizce) ve çeviri dosyalarında olmalıdır; dışa aktarılan talimat da İngilizcedir.
 - **FR-229**: Eklenen her ekran 375px genişlikte yatay kaydırma olmadan kullanılabilmeli ve dokunma hedefleri mobil ölçütleri karşılamalıdır.
 
@@ -199,7 +199,7 @@ soru sormaya başlamalı.
 - **SC-203**: Aynı kaynağa art arda beş pasaj eklemek, ilkinden sonra sıfır kaynak seçimi gerektirir.
 - **SC-204**: Dışa aktarılan metin, kaynağın aktif pasajlarının ve aktif kartlarının %100'ünü, çöpe atılmış pasajların ve emekli kartların %0'ını içerir.
 - **SC-205**: Kopyalama ve indirme, iOS Safari ve Chrome/Android'de 375px genişlikte çalışır.
-- **SC-206**: Başka bir hesabın kaynağına yönelik pratik, dışa aktarma ve ön seçimli ekleme isteklerinin tamamı 404 ile sonuçlanır.
+- **SC-206**: Başka bir hesabın kaynağına yönelik pratik ve dışa aktarma isteklerinin tamamı 404 ile sonuçlanır; ön seçimli ekleme formu o kaynağı hiçbir durumda seçili göstermez.
 - **SC-207**: Kullanıcı tarafındaki toplam varlık bütçesi 150KB sınırının altında kalır.
 - **SC-208**: Yeni ekranlar mobil erişilebilirlik denetiminde 95 ve üstü alır.
 
