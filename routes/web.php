@@ -76,8 +76,10 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     // Practice one source without touching the day: no review record, no
     // streak recording, no mastery scheduling. Only explicit decisions
     // (discard, favorite, frequency) persist (FR-201, FR-206, R-305).
+    // Throttled generously to allow readers to draw multiple sets quickly
+    // without hitting rate limits on normal use (FR-202).
     Route::get('/library/sources/{source}/practice', [PracticeController::class, 'show'])
-        ->middleware('throttle:30,1')
+        ->middleware('throttle:120,1')
         ->name('practice.show');
 
     Route::post('/library/sources/{source}/practice/{highlight}', [PracticeController::class, 'action'])

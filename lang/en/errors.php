@@ -28,6 +28,11 @@ return [
         'body' => 'Get in touch if you think this is a mistake.',
     ],
 
+    'throttled' => [
+        'title' => 'Slow down a little',
+        'body' => 'Too many requests in a short time. Wait a minute and try again.',
+    ],
+
     'signature_invalid' => 'That link is no longer valid.',
     'offline' => 'You are offline.',
 ];
