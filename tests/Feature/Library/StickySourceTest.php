@@ -34,109 +34,96 @@ final class StickySourceTest extends TestCase
     #[Test]
     public function the_source_parameter_pre_selects_the_dropdown_option(): void
     {
-        [$user, $source] = $this->library();
+        [$user, $first, $second] = $this->library();
 
         $response = $this->actingAs($user)
-            ->get(route('highlights.create', ['source' => $source->id]));
+            ->get(route('highlights.create', ['source' => $second->id]));
 
         $response->assertOk();
+        $this->assertFormRenders($response->getContent());
 
-        // The option for this source is selected.
-        $this->assertStringContainsString(
-            'value="'.$source->id.'" selected',
-            $response->getContent(),
-        );
-
-        // But options for other sources are not.
-        $other = Source::factory()->for($user)->create();
-        $response2 = $this->actingAs($user)
-            ->get(route('highlights.create', ['source' => $source->id]));
-
-        $response2->assertOk();
-        $this->assertStringNotContainsString(
-            'value="'.$other->id.'" selected',
-            $response2->getContent(),
-        );
+        // Only the requested source is selected, not its neighbour.
+        $this->assertSame([$second->id], $this->selectedOptionIds($response->getContent()));
+        $this->assertNotContains($first->id, $this->selectedOptionIds($response->getContent()));
     }
 
     #[Test]
     public function an_archived_source_is_not_selected_by_the_source_parameter(): void
     {
-        [$user, $source] = $this->library();
-        $source->update(['is_archived' => true]);
+        [$user, $first] = $this->library();
+        $first->update(['is_archived' => true]);
 
         $response = $this->actingAs($user)
-            ->get(route('highlights.create', ['source' => $source->id]));
+            ->get(route('highlights.create', ['source' => $first->id]));
 
         $response->assertOk();
+        $this->assertFormRenders($response->getContent());
 
         // Nothing is selected.
-        $this->assertStringNotContainsString('selected', $response->getContent());
+        $this->assertSame([], $this->selectedOptionIds($response->getContent()));
     }
 
     #[Test]
     public function another_readers_source_is_not_selected_and_not_visible(): void
     {
-        $user = User::factory()->create();
+        [$user] = $this->library();
         $theirSource = Source::factory()->for(User::factory())->create();
 
         $response = $this->actingAs($user)
             ->get(route('highlights.create', ['source' => $theirSource->id]));
 
         $response->assertOk();
+        $this->assertFormRenders($response->getContent());
 
         // Nothing is selected.
-        $this->assertStringNotContainsString('selected', $response->getContent());
+        $this->assertSame([], $this->selectedOptionIds($response->getContent()));
 
         // And the source title is not visible (FR-227).
-        $this->assertStringNotContainsString($theirSource->title, $response->getContent());
+        $this->assertStringNotContainsString(e($theirSource->title), $response->getContent());
     }
 
     #[Test]
     public function invalid_source_parameters_are_ignored(): void
     {
-        $user = User::factory()->create();
+        [$user] = $this->library();
 
-        $response1 = $this->actingAs($user)
-            ->get(route('highlights.create', ['source' => '999999']));
-        $response1->assertOk();
-        $this->assertStringNotContainsString('selected', $response1->getContent());
+        foreach (['999999', 'abc', '0', '-1'] as $value) {
+            $response = $this->actingAs($user)
+                ->get(route('highlights.create', ['source' => $value]));
 
-        $response2 = $this->actingAs($user)
-            ->get(route('highlights.create', ['source' => 'abc']));
-        $response2->assertOk();
-        $this->assertStringNotContainsString('selected', $response2->getContent());
+            $response->assertOk();
+            $this->assertFormRenders($response->getContent());
+            $this->assertSame([], $this->selectedOptionIds($response->getContent()), "source={$value}");
+        }
     }
 
     #[Test]
     public function a_source_remains_selected_after_a_validation_error(): void
     {
-        [$user, $source] = $this->library();
+        [$user, , $second] = $this->library();
 
-        // Send source_id as string (as a browser would) and empty content.
+        // Send source_id as a string (as a browser would) and empty content,
+        // from the bare form: only old() can carry the choice across.
         $response = $this->actingAs($user)
-            ->from(route('highlights.create', ['source' => $source->id]))
+            ->from(route('highlights.create'))
             ->post(route('highlights.store'), [
-                'source_id' => (string) $source->id,
+                'source_id' => (string) $second->id,
                 'content_md' => '',
             ]);
 
-        $response->assertRedirect(route('highlights.create', ['source' => $source->id]))
+        $response->assertRedirect(route('highlights.create'))
             ->assertSessionHasErrors('content_md');
 
-        // Get the form again with the source parameter.
+        // Follow the redirect, again without the source parameter.
         $formResponse = $this->actingAs($user)
-            ->get(route('highlights.create', ['source' => $source->id]));
+            ->get(route('highlights.create'));
 
         $formResponse->assertOk();
+        $this->assertFormRenders($formResponse->getContent());
 
-        // The source is still selected.
-        // This is the bugfix: old() returns a string from the session, and the
-        // comparison must be (int) to match the integer $source->id (FR-216).
-        $this->assertStringContainsString(
-            'value="'.$source->id.'" selected',
-            $formResponse->getContent(),
-        );
+        // old() returns a string from the session, and the comparison must
+        // cast it to match the integer $source->id (FR-216).
+        $this->assertSame([$second->id], $this->selectedOptionIds($formResponse->getContent()));
     }
 
     #[Test]
@@ -205,21 +192,55 @@ final class StickySourceTest extends TestCase
 
         $response->assertOk();
 
-        // The link to the saved source is present.
+        // The block naming the saved source, with a link to it, is present.
+        $this->assertStringContainsString(
+            e(__('editor.saved_to', ['source' => $source->title])),
+            $response->getContent(),
+        );
         $this->assertStringContainsString(
             route('sources.show', $source->id),
             $response->getContent(),
         );
+
+        // It is shown once: the next visit does not repeat it.
+        $this->actingAs($user)
+            ->get(route('highlights.create'))
+            ->assertDontSee(e(__('editor.saved_to', ['source' => $source->title])), false);
     }
 
     /**
-     * @return array{0: User, 1: Source}
+     * @return array{0: User, 1: Source, 2: Source}
      */
     private function library(): array
     {
         $user = User::factory()->create();
-        $source = Source::factory()->for($user)->create();
+        $first = Source::factory()->for($user)->create(['title' => 'Alpha']);
+        $second = Source::factory()->for($user)->create(['title' => 'Beta']);
 
-        return [$user, $source];
+        return [$user, $first, $second];
+    }
+
+    private function assertFormRenders(string $html): void
+    {
+        $this->assertStringContainsString('name="source_id"', $html);
+    }
+
+    /**
+     * Ids of the <option> tags that carry the selected attribute.
+     *
+     * @return list<int>
+     */
+    private function selectedOptionIds(string $html): array
+    {
+        preg_match_all('/<option\b[^>]*>/', $html, $matches);
+
+        $ids = [];
+        foreach ($matches[0] as $tag) {
+            if (preg_match('/\sselected(\s|=|>)/', $tag) === 1 && preg_match('/value="(\d+)"/', $tag, $m) === 1) {
+                $ids[] = (int) $m[1];
+            }
+        }
+
+        return $ids;
     }
 }

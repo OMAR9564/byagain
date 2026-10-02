@@ -26,25 +26,17 @@ final class HighlightController extends Controller
             ->orderBy('title')
             ->get();
 
-        // Allow pre-selecting a source from the query parameter. If it's not
-        // a valid non-archived source for this user, silently ignore it (FR-215).
-        $selectedSourceId = null;
-        if ($request->has('source')) {
-            $sourceId = $request->integer('source');
-            if ($sourceId > 0) {
-                $validSource = Source::query()
-                    ->where('is_archived', false)
-                    ->whereKey($sourceId)
-                    ->value('id');
-                if ($validSource !== null) {
-                    $selectedSourceId = $validSource;
-                }
-            }
-        }
+        // A ?source= that is not one of this reader's non-archived sources is
+        // silently ignored (FR-215).
+        $sourceId = $request->integer('source');
+        $selectedSourceId = $sourceId > 0
+            ? Source::query()->where('is_archived', false)->whereKey($sourceId)->value('id')
+            : null;
 
         return view('editor.create', [
             'sources' => $sources,
             'selectedSourceId' => $selectedSourceId,
+            'savedSource' => $sources->firstWhere('id', session('saved_source_id')),
         ]);
     }
 
