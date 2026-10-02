@@ -13,11 +13,16 @@
 
     {{-- Practice works on archived sources too: archiving only stops a
          source feeding the daily review (FR-201). The button needs a passage
-         to practise, so it hides when none is active. --}}
+         to practise, so it hides when none is active. Export also requires
+         active passages and works on archived sources (R-309). --}}
     <div class="mb-4 flex flex-wrap items-center gap-3">
         @if ($highlights->total() > 0)
             <x-button :href="route('practice.show', $source)">
                 {{ __('practice.practice.start') }}
+            </x-button>
+
+            <x-button :href="route('sources.export', $source)" variant="secondary">
+                {{ __('practice.export.start') }}
             </x-button>
         @endif
 

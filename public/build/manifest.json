@@ -23,6 +23,12 @@
     "src": "resources/js/app.js",
     "isEntry": true
   },
+  "resources/js/copy.js": {
+    "file": "assets/copy-CBfw2MM0.js",
+    "name": "copy",
+    "src": "resources/js/copy.js",
+    "isEntry": true
+  },
   "resources/js/editor.js": {
     "file": "assets/editor-eppIzNxU.js",
     "name": "editor",

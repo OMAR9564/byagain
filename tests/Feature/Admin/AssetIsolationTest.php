@@ -32,7 +32,7 @@ final class AssetIsolationTest extends TestCase
         $source = Source::factory()->for($user)->create();
         Highlight::factory()->for($user)->for($source)->count(3)->create();
 
-        $paths = ['/', '/library', "/library/sources/{$source->id}", "/library/sources/{$source->id}/practice", '/add', '/mastery', '/streak', '/settings', '/review'];
+        $paths = ['/', '/library', "/library/sources/{$source->id}", "/library/sources/{$source->id}/practice", "/library/sources/{$source->id}/export", '/add', '/mastery', '/streak', '/settings', '/review'];
 
         foreach ($paths as $path) {
             $html = $this->actingAs($user)->get($path)->assertOk()->getContent();

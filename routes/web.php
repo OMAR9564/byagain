@@ -14,6 +14,7 @@ use App\Http\Controllers\ReviewItemActionController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SourceController;
 use App\Http\Controllers\StreakController;
+use App\Http\Controllers\StudyExportController;
 use App\Http\Controllers\UnsubscribeController;
 use Illuminate\Support\Facades\Route;
 
@@ -83,6 +84,16 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
         ->middleware('throttle:120,1')
         ->scopeBindings()
         ->name('practice.action');
+
+    // Export a source's passages and cards as study text for an LLM. Throttled
+    // because the export request samples passages (FR-211, R-309).
+    Route::get('/library/sources/{source}/export', [StudyExportController::class, 'show'])
+        ->middleware('throttle:30,1')
+        ->name('sources.export');
+
+    Route::get('/library/sources/{source}/export/download', [StudyExportController::class, 'download'])
+        ->middleware('throttle:30,1')
+        ->name('sources.export.download');
 
     Route::get('/add', [HighlightController::class, 'create'])->name('highlights.create');
 
