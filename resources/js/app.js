@@ -11,6 +11,16 @@ import { flushQueue } from './queue.js';
 
 const THEME_KEY = 'byagain.theme';
 
+const PREFETCH_KEY = 'byagain.review.prefetchedAt';
+
+/**
+ * How often a page load may ask for today's review to be downloaded, in ms.
+ * Every page view used to cost a /review request that could build the
+ * review; the copy only needs to be fresh enough to survive going offline,
+ * so a few minutes is plenty.
+ */
+const PREFETCH_INTERVAL_MS = 10 * 60 * 1000;
+
 /**
  * Theme override. The inline script in the layout has already applied the
  * stored value before first paint; this only handles changing it.
@@ -120,6 +130,20 @@ function prefetchReviewIfOnline() {
     // Only prefetch if we are online.
     if (!navigator.onLine) {
         return;
+    }
+
+    // Too soon after the last one. Storage may be unavailable, in which case
+    // we simply do not throttle.
+    try {
+        const last = Number(localStorage.getItem(PREFETCH_KEY));
+
+        if (last > 0 && Date.now() - last < PREFETCH_INTERVAL_MS) {
+            return;
+        }
+
+        localStorage.setItem(PREFETCH_KEY, String(Date.now()));
+    } catch {
+        // Unthrottled is better than no offline copy.
     }
 
     // Wait for the service worker to be ready, then send the prefetch message.
