@@ -8,13 +8,17 @@ use App\Http\Requests\StoreMasteryCardRequest;
 use App\Http\Requests\UpdateMasteryCardRequest;
 use App\Models\Highlight;
 use App\Models\MasteryCard;
+use App\Services\Mastery\MasteryCardWriter;
 use App\Services\Mastery\MasteryScheduler;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 final class MasteryCardController extends Controller
 {
-    public function __construct(private readonly MasteryScheduler $scheduler) {}
+    public function __construct(
+        private readonly MasteryCardWriter $writer,
+        private readonly MasteryScheduler $scheduler,
+    ) {}
 
     public function index(): View
     {
@@ -43,19 +47,7 @@ final class MasteryCardController extends Controller
      */
     public function store(StoreMasteryCardRequest $request, Highlight $highlight): RedirectResponse
     {
-        $data = $request->validated();
-
-        $card = new MasteryCard;
-        $card->fill([
-            'highlight_id' => $highlight->id,
-            'type' => $data['type'],
-            'question' => $data['question'],
-            'answer' => $this->answerFor($data),
-        ]);
-
-        // Left unscheduled on purpose: the first feedback sets the half-life
-        // outright, so there is nothing meaningful to guess at now (FR-047).
-        $card->save();
+        $this->writer->create($highlight, $request->validated());
 
         // Redirect back to the source page: the reader came from there
         // (FR-044 entry point). Returning to the passage source keeps the
@@ -77,7 +69,7 @@ final class MasteryCardController extends Controller
         $card->fill([
             'type' => $data['type'],
             'question' => $data['question'],
-            'answer' => $this->answerFor($data),
+            'answer' => $this->writer->answerFor($data),
         ]);
 
         $card->status = $data['status'];
@@ -96,23 +88,5 @@ final class MasteryCardController extends Controller
         $this->scheduler->retire($card);
 
         return back()->with('status', __('settings.saved'));
-    }
-
-    /**
-     * A cloze carries its answer inside the question, so it is derived rather
-     * than asked for twice — two fields that must agree are two fields that
-     * will eventually disagree.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function answerFor(array $data): string
-    {
-        if ($data['type'] !== MasteryCard::TYPE_CLOZE) {
-            return (string) $data['answer'];
-        }
-
-        preg_match_all(StoreMasteryCardRequest::CLOZE_PATTERN, (string) $data['question'], $matches);
-
-        return implode(', ', $matches[1]);
     }
 }
