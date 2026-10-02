@@ -212,12 +212,15 @@ final class UnverifiedAndUnsubscribeTest extends TestCase
         $user = $this->reader(['mastery_ratio' => 50]);
         $this->actingAs($user);
 
+        // The clock is set before the card is made: `due()` is relative to
+        // now, and a card made "yesterday" by the real clock is not yet due
+        // on the 22nd of August.
+        Carbon::setTestNow(Carbon::parse('2026-08-22 08:00', 'UTC'));
+
         \App\Models\MasteryCard::factory()->for($user)->due()->create([
             'question' => 'What stands in the way?',
             'answer' => 'A secret that belongs in the app.',
         ]);
-
-        Carbon::setTestNow(Carbon::parse('2026-08-22 08:00', 'UTC'));
 
         $review = app(ReviewBuilder::class)->buildFor($user);
         $delivery = EmailDelivery::factory()->for($user)->create(['recipient' => $user->email]);
