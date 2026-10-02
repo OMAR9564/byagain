@@ -1,6 +1,6 @@
 {
-  "_queue-0IDK7RF8.js": {
-    "file": "assets/queue-0IDK7RF8.js",
+  "_queue-DxmmBIT2.js": {
+    "file": "assets/queue-DxmmBIT2.js",
     "name": "queue"
   },
   "resources/css/admin.css": {
@@ -22,12 +22,12 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-1z237akr.js",
+    "file": "assets/app-DwMzvzmf.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "imports": [
-      "_queue-0IDK7RF8.js"
+      "_queue-DxmmBIT2.js"
     ]
   },
   "resources/js/copy.js": {
@@ -49,12 +49,12 @@
     "isEntry": true
   },
   "resources/js/review.js": {
-    "file": "assets/review-BQGE8WQo.js",
+    "file": "assets/review-4sLo7El-.js",
     "name": "review",
     "src": "resources/js/review.js",
     "isEntry": true,
     "imports": [
-      "_queue-0IDK7RF8.js"
+      "_queue-DxmmBIT2.js"
     ]
   }
 }
