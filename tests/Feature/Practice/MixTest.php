@@ -87,22 +87,31 @@ final class MixTest extends TestCase
     #[Test]
     public function mastery_cards_in_mix_show_next_button_not_feedback_buttons(): void
     {
-        $user = User::factory()->create();
+        // A 50/50 ratio and plenty of both kinds, so the page really holds
+        // passage items and card items side by side.
+        $user = User::factory()->create(['mastery_ratio' => 50]);
         $source = Source::factory()->for($user)->create();
-        $highlight = Highlight::factory()->for($user)->for($source)->create();
-        MasteryCard::factory()->for($user)->for($highlight)->create();
+        Highlight::factory(12)->for($user)->for($source)->create();
+        foreach (range(1, 12) as $unused) {
+            MasteryCard::factory()->for($user)->for(
+                Highlight::factory()->for($user)->for($source)->create()
+            )->create();
+        }
 
-        $response = $this->actingAs($user)->get(route('mix.show'));
+        $content = $this->actingAs($user)->get(route('mix.show'))->assertOk()->getContent();
 
-        $content = $response->getContent();
-        // Should have the "Next" button for Mix
+        $cardItems = substr_count($content, 'data-item-type="card"');
+        $passageItems = substr_count($content, 'data-item-type="highlight"');
+        $this->assertGreaterThan(0, $cardItems);
+        $this->assertGreaterThan(0, $passageItems);
+
+        // One "Next" per card item, and the scheduling choices exist nowhere.
+        $this->assertSame($cardItems, substr_count($content, 'data-mastery-choice="later"'));
         $this->assertStringContainsString(__('practice.mix.next'), $content);
-
-        // Should NOT have the four feedback buttons
-        $this->assertStringNotContainsString(__('mastery.feedback.sooner'), $content);
-        $this->assertStringNotContainsString(__('mastery.feedback.later'), $content);
-        $this->assertStringNotContainsString(__('mastery.feedback.someday'), $content);
-        $this->assertStringNotContainsString(__('mastery.feedback.learned'), $content);
+        $this->assertStringNotContainsString('data-mastery-feedback', $content);
+        foreach (['sooner', 'later', 'someday', 'learned'] as $feedback) {
+            $this->assertStringNotContainsString(__('mastery.feedback.'.$feedback), $content);
+        }
     }
 
     #[Test]
