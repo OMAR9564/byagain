@@ -18,7 +18,9 @@
 
     {{-- Readonly textarea containing the export text --}}
     <div class="mb-4">
+        <label for="export-textarea" class="sr-only">{{ __('practice.export.title') }}</label>
         <textarea
+            id="export-textarea"
             readonly
             data-copy-source
             rows="12"
