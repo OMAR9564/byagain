@@ -12,7 +12,7 @@ use App\Models\MasteryCard;
  *
  * Centralizes card-building logic so there is exactly one path by which
  * a card is created — from the dedicated form or inline during passage
- * creation (FR-044, FR-208).
+ * creation (FR-044).
  */
 final class MasteryCardWriter
 {

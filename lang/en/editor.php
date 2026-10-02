@@ -43,5 +43,5 @@ return [
 
     'saved_to' => 'Saved to :source.',
     'view_source' => 'Open source',
-    'saved_with_cards' => 'Saved. {1} 1 card created.|[2,*] :count cards created.',
+    'saved_with_cards' => '{1} Saved. 1 card created.|[2,*] Saved. :count cards created.',
 ];
