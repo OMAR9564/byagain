@@ -7,6 +7,14 @@ declare(strict_types=1);
 return [
     'title' => 'Cards',
 
+    'create' => [
+        'title' => 'Make a card',
+        'action' => 'Make a card',
+        'submit' => 'Create card',
+        'card_count' => '{0} Make a card|{1} 1 card|[2,*] :count cards',
+        'help' => 'Question and answer, or wrap the answer in {{curly braces}}.',
+    ],
+
     'card' => [
         'question' => 'Question',
         'answer' => 'Answer',

@@ -28,6 +28,16 @@ final class MasteryCardController extends Controller
     }
 
     /**
+     * Render the create form for a mastery card from a highlight (FR-044).
+     */
+    public function create(Highlight $highlight): View
+    {
+        return view('mastery.create', [
+            'highlight' => $highlight->load('source'),
+        ]);
+    }
+
+    /**
      * Build a card from a highlight the reader wants to actually hold on to,
      * rather than merely meet again (FR-044).
      */
@@ -47,8 +57,11 @@ final class MasteryCardController extends Controller
         // outright, so there is nothing meaningful to guess at now (FR-047).
         $card->save();
 
+        // Redirect back to the source page: the reader came from there
+        // (FR-044 entry point). Returning to the passage source keeps the
+        // workflow intact, rather than jumping to the cards index (FR-036).
         return redirect()
-            ->route('mastery.index')
+            ->route('sources.show', $highlight->source)
             ->with('status', __('settings.saved'));
     }
 

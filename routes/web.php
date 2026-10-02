@@ -110,6 +110,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::post('/highlights/{highlight}/discard', [HighlightController::class, 'discard'])->name('highlights.discard');
     Route::post('/highlights/{highlight}/favorite', [HighlightController::class, 'favorite'])->name('highlights.favorite');
 
+    Route::get('/highlights/{highlight}/mastery/create', [MasteryCardController::class, 'create'])->name('mastery.create');
     Route::post('/highlights/{highlight}/mastery', [MasteryCardController::class, 'store'])->name('mastery.store');
     Route::get('/mastery', [MasteryCardController::class, 'index'])->name('mastery.index');
     Route::get('/mastery/{card}/edit', [MasteryCardController::class, 'edit'])->name('mastery.edit');

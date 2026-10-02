@@ -43,6 +43,7 @@ final class SourceController extends Controller
     {
         $highlights = $source->highlights()
             ->where('is_discarded', false)
+            ->withCount(['masteryCards as active_mastery_cards_count' => fn ($q) => $q->where('status', '!=', 'retired')])
             ->latest('id')
             ->paginate(20);
 

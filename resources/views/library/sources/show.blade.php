@@ -37,7 +37,7 @@
         <x-card class="mb-3">
             <x-highlight-content :highlight="$highlight" />
 
-            <div class="mt-4 flex items-center gap-2">
+            <div class="mt-4 flex flex-wrap items-center gap-2">
                 <x-button :href="route('highlights.edit', $highlight)" variant="ghost" class="!px-3 text-sm">
                     {{ __('actions.edit') }}
                 </x-button>
@@ -48,6 +48,18 @@
                         {{ $highlight->is_favorite ? __('actions.unfavorite') : __('actions.favorite') }}
                     </x-button>
                 </form>
+
+                {{-- Show "Make a card" link or card count depending on whether
+                     cards exist (FR-044). --}}
+                @if ($highlight->active_mastery_cards_count === 0)
+                    <x-button :href="route('mastery.create', $highlight)" variant="ghost" class="!px-3 text-sm">
+                        {{ __('mastery.create.action') }}
+                    </x-button>
+                @else
+                    <x-button :href="route('mastery.index')" variant="ghost" class="!px-3 text-sm">
+                        {{ trans_choice('mastery.create.card_count', $highlight->active_mastery_cards_count) }}
+                    </x-button>
+                @endif
 
                 {{-- Discard hides it from future reviews. It is never a
                      delete, and today's review keeps showing it (FR-013). --}}
