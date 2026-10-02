@@ -168,8 +168,8 @@ aktif kartlar var, çöpe atılmış/emekli yok (quickstart §3).
 - [X] T041 [P] `README.md` — yalnız gerekiyorsa (yeni ortam değişkeni yok; büyük olasılıkla değişiklik yok — kontrol et, gereksizse dokunma)
 - [X] T042 Son kapı: `php artisan test` (tam), `vendor/bin/pint --test`, `vendor/bin/phpstan analyse`, `composer audit`, `npm run build` (bütçe < 150KB, SC-207)
 - [X] T043 Lighthouse mobil: `practice.show` ve `sources.export` ekranlarında performans ≥ 90, erişilebilirlik ≥ 95 (SC-208); bulguları düzelt — token değişikliği gerekiyorsa **dur ve sor** (Ana Yasa V)
-- [ ] T044 `specs/003-source-practice/quickstart.md` — §1–§5'i 375px gerçek cihazda (iOS Safari, Chrome/Android) yürüt, sonucu belgeye işle (SC-202, SC-205, FR-229). Cihaz yoksa görev açık kalır ve nedeni yazılır
-- [ ] T045 PR: `003-source-practice` → `main`; "ne değişti / neden / nasıl test edildi" doldurulur; bulunan iki hata (editör kaynak kaybı, `review.js` `fetch("undefined")`) ayrıca belirtilir
+- [ ] T044 `specs/003-source-practice/quickstart.md` — §1–§5'i 375px gerçek cihazda (iOS Safari, Chrome/Android) yürüt, sonucu belgeye işle (SC-202, SC-205, FR-229). Cihaz yoksa görev açık kalır ve nedeni yazılır — **2026-10-02: açık.** Fiziksel telefon yok; otomatik testler ve Lighthouse geçti, kopyala/indir cihazda denenmedi.
+- [X] T045 PR: `003-source-practice` → `main`; "ne değişti / neden / nasıl test edildi" doldurulur; bulunan iki hata (editör kaynak kaybı, `review.js` `fetch("undefined")`) ayrıca belirtilir
 
 ---
 
