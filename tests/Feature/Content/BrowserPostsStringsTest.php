@@ -39,7 +39,7 @@ final class BrowserPostsStringsTest extends TestCase
                 'content_md' => 'Bir pasaj.',
                 'location' => 's. 41',
             ])
-            ->assertRedirect(route('sources.show', $source->id))
+            ->assertRedirect(route('highlights.create', ['source' => $source->id]))
             ->assertSessionHasNoErrors();
 
         $this->assertSame(1, $user->highlights()->count());

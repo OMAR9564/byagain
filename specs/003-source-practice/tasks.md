@@ -50,8 +50,8 @@ Laravel monolit, depo kökü: `app/`, `resources/`, `routes/`, `lang/en/`,
 
 **Purpose**: Başlangıç durumunun yeşil olduğunu görmek ve ortak dil dosyasını açmak
 
-- [ ] T001 Başlangıç kapısı: `php artisan test`, `vendor/bin/pint --test`, `vendor/bin/phpstan analyse` — üçü de yeşil olmalı; değilse iş durur ve rapor edilir
-- [ ] T002 [P] `lang/en/practice.php` — boş iskeletle oluştur (`declare(strict_types=1);`, dosya başı yorum: "Practising one source and exporting it for an LLM — outside the daily ritual (spec 003)."), `return ['practice' => [], 'export' => []];` biçiminde; anahtarlar story'lerde eklenir
+- [x] T001 Başlangıç kapısı: `php artisan test`, `vendor/bin/pint --test`, `vendor/bin/phpstan analyse` — üçü de yeşil olmalı; değilse iş durur ve rapor edilir
+- [x] T002 [P] `lang/en/practice.php` — boş iskeletle oluştur (`declare(strict_types=1);`, dosya başı yorum: "Practising one source and exporting it for an LLM — outside the daily ritual (spec 003)."), `return ['practice' => [], 'export' => []];` biçiminde; anahtarlar story'lerde eklenir
 
 ---
 
@@ -72,7 +72,7 @@ seçili; ikinci pasajı kaynağa dokunmadan kaydet → ikisi de aynı kaynakta.
 
 ### Tests for User Story 2 ⚠️ önce yaz, kırmızı gör
 
-- [ ] T003 [US2] `tests/Feature/Library/StickySourceTest.php` — yeni dosya, `RefreshDatabase`. Testler:
+- [x] T003 [US2] `tests/Feature/Library/StickySourceTest.php` — yeni dosya, `RefreshDatabase`. Testler:
   (a) `POST /highlights` başarıda `route('highlights.create', ['source' => $source->id])`'ye yönlenir, oturumda `status` ve `saved_source_id` (= kaynak id) var;
   (b) `GET /add?source={id}` cevabında o kaynağın `<option>`'ı `selected`, diğerleri değil;
   (c) `?source=` arşivlenmiş kaynak → 200, hiçbir option `selected` değil;
@@ -82,16 +82,16 @@ seçili; ikinci pasajı kaynağa dokunmadan kaydet → ikisi de aynı kaynakta.
   (g) `PATCH /highlights/{id}` hâlâ `sources.show`'a döner (FR-217);
   (h) arşivlenmemiş kaynağın sayfasında `route('highlights.create', ['source' => id])` bağlantısı var; arşivlenmişte yok;
   (i) kayıttan sonra `GET /add` (oturumda `saved_source_id` varken) cevabında `route('sources.show', id)` bağlantısı var (FR-213)
-- [ ] T004 [US2] `tests/Feature/Content/BrowserPostsStringsTest.php:42` — beklenen yönlendirmeyi `route('highlights.create', ['source' => $source->id])` yap; testin yorumunu koru
+- [x] T004 [US2] `tests/Feature/Content/BrowserPostsStringsTest.php:42` — beklenen yönlendirmeyi `route('highlights.create', ['source' => $source->id])` yap; testin yorumunu koru
 
 ### Implementation for User Story 2
 
-- [ ] T005 [US2] `app/Http/Controllers/HighlightController.php` — `create(Request $request)`: `?source` değerini `$request->integer('source')` ile oku; `> 0` ise `Source::query()->where('is_archived', false)->whereKey($id)->value('id')` ile (scope'lu) doğrula; geçersizse `null`. Görünüme `selectedSourceId` geçir. `store()`: `redirect()->route('highlights.create', ['source' => $highlight->source_id])->with('status', __('settings.saved'))->with('saved_source_id', $highlight->source_id)`. Kısa bir "neden" yorumu (FR-212, FR-215). `update()` değişmez
-- [ ] T006 [US2] `resources/views/components/editor/form.blade.php` — `@props`'a `'selectedSourceId' => null` ekle; satır 41'deki seçimi `@selected((int) old('source_id', $highlight?->source_id ?? $selectedSourceId) === $source->id)` yap ve üstüne neden-yorumu yaz: `old()` oturumdan string döner, katı karşılaştırma doğrulama hatasından sonra seçimi kaybediyordu (FR-216)
-- [ ] T007 [US2] `resources/views/editor/create.blade.php` — `<x-editor.form>`'a `:selected-source-id="$selectedSourceId"` geçir. `session('saved_source_id')` varsa ve kaynak `$sources` içinde bulunuyorsa formun üstünde o kaynağın sayfasına giden bir bağlantı göster (metin `__('editor.saved_to', ['source' => …])`, bağlantı `__('editor.view_source')`); stil mevcut bağlantılarla aynı token'lar
-- [ ] T008 [US2] `lang/en/editor.php` — `saved_to` ("Saved to :source.") ve `view_source` ("Open source") anahtarlarını ekle
-- [ ] T009 [US2] `resources/views/library/sources/show.blade.php` — `! $source->is_archived` iken başlığın altına `route('highlights.create', ['source' => $source])`'a giden ikincil bir `x-button` ("Add passage", `__('library.source.add_passage')`); `lang/en/library.php` → `source.add_passage` anahtarı. Dokunma hedefi ≥ 44px
-- [ ] T010 [US2] Dilim kapısı: T003 + bütün suite yeşil, Pint, Larastan. İki commit: `fix(editor): keep the chosen source after a validation error` (T006'daki int karşılaştırma ve T003(f)) ve `feat(editor): stay on the form with the source kept after saving` (geri kalanı). Blade/CSS değiştiyse `npm run build`, `public/build` değiştiyse ayrı build commit'i
+- [x] T005 [US2] `app/Http/Controllers/HighlightController.php` — `create(Request $request)`: `?source` değerini `$request->integer('source')` ile oku; `> 0` ise `Source::query()->where('is_archived', false)->whereKey($id)->value('id')` ile (scope'lu) doğrula; geçersizse `null`. Görünüme `selectedSourceId` geçir. `store()`: `redirect()->route('highlights.create', ['source' => $highlight->source_id])->with('status', __('settings.saved'))->with('saved_source_id', $highlight->source_id)`. Kısa bir "neden" yorumu (FR-212, FR-215). `update()` değişmez
+- [x] T006 [US2] `resources/views/components/editor/form.blade.php` — `@props`'a `'selectedSourceId' => null` ekle; satır 41'deki seçimi `@selected((int) old('source_id', $highlight?->source_id ?? $selectedSourceId) === $source->id)` yap ve üstüne neden-yorumu yaz: `old()` oturumdan string döner, katı karşılaştırma doğrulama hatasından sonra seçimi kaybediyordu (FR-216)
+- [x] T007 [US2] `resources/views/editor/create.blade.php` — `<x-editor.form>`'a `:selected-source-id="$selectedSourceId"` geçir. `session('saved_source_id')` varsa ve kaynak `$sources` içinde bulunuyorsa formun üstünde o kaynağın sayfasına giden bir bağlantı göster (metin `__('editor.saved_to', ['source' => …])`, bağlantı `__('editor.view_source')`); stil mevcut bağlantılarla aynı token'lar
+- [x] T008 [US2] `lang/en/editor.php` — `saved_to` ("Saved to :source.") ve `view_source` ("Open source") anahtarlarını ekle
+- [x] T009 [US2] `resources/views/library/sources/show.blade.php` — `! $source->is_archived` iken başlığın altına `route('highlights.create', ['source' => $source])`'a giden ikincil bir `x-button` ("Add passage", `__('library.source.add_passage')`); `lang/en/library.php` → `source.add_passage` anahtarı. Dokunma hedefi ≥ 44px
+- [x] T010 [US2] Dilim kapısı: T003 + bütün suite yeşil, Pint, Larastan. İki commit: `fix(editor): keep the chosen source after a validation error` (T006'daki int karşılaştırma ve T003(f)) ve `feat(editor): stay on the form with the source kept after saving` (geri kalanı). Blade/CSS değiştiyse `npm run build`, `public/build` değiştiyse ayrı build commit'i
 
 **Checkpoint**: US2 tek başına kullanılabilir ve teslim edilebilir.
 

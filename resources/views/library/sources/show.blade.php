@@ -11,6 +11,14 @@
         <p class="-mt-2 mb-4 text-sm" style="color: var(--color-ink-muted);">{{ $source->author }}</p>
     @endif
 
+    @if (! $source->is_archived)
+        <div class="mb-4">
+            <x-button :href="route('highlights.create', ['source' => $source->id])" variant="secondary">
+                {{ __('library.source.add_passage') }}
+            </x-button>
+        </div>
+    @endif
+
     @forelse ($highlights as $highlight)
         <x-card class="mb-3">
             <x-highlight-content :highlight="$highlight" />

@@ -12,20 +12,40 @@ use App\Models\Source;
 use App\Services\Content\HighlightWriter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 final class HighlightController extends Controller
 {
     public function __construct(private readonly HighlightWriter $writer) {}
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $sources = Source::query()
             ->where('is_archived', false)
             ->orderBy('title')
             ->get();
 
-        return view('editor.create', ['sources' => $sources]);
+        // Allow pre-selecting a source from the query parameter. If it's not
+        // a valid non-archived source for this user, silently ignore it (FR-215).
+        $selectedSourceId = null;
+        if ($request->has('source')) {
+            $sourceId = $request->integer('source');
+            if ($sourceId > 0) {
+                $validSource = Source::query()
+                    ->where('is_archived', false)
+                    ->whereKey($sourceId)
+                    ->value('id');
+                if ($validSource !== null) {
+                    $selectedSourceId = $validSource;
+                }
+            }
+        }
+
+        return view('editor.create', [
+            'sources' => $sources,
+            'selectedSourceId' => $selectedSourceId,
+        ]);
     }
 
     public function store(StoreHighlightRequest $request): RedirectResponse
@@ -34,9 +54,13 @@ final class HighlightController extends Controller
         // so there is exactly one path by which content_html comes into being.
         $highlight = $this->writer->create($request->validated());
 
+        // After saving, stay on the form with the chosen source selected and
+        // show a link to the source's page (FR-212, FR-215). The user can add
+        // another passage from the same source without re-selecting it.
         return redirect()
-            ->route('sources.show', $highlight->source_id)
-            ->with('status', __('settings.saved'));
+            ->route('highlights.create', ['source' => $highlight->source_id])
+            ->with('status', __('settings.saved'))
+            ->with('saved_source_id', $highlight->source_id);
     }
 
     /**

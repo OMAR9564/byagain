@@ -12,6 +12,7 @@ return [
         'author' => 'Author',
         'frequency' => 'How often should this appear?',
         'highlight_count' => ':count highlight|:count highlights',
+        'add_passage' => 'Add passage',
     ],
 
     'frequency' => [

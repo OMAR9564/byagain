@@ -40,4 +40,7 @@ return [
     ],
 
     'cleaned' => 'Cleaned up the line breaks from your paste.',
+
+    'saved_to' => 'Saved to :source.',
+    'view_source' => 'Open source',
 ];
