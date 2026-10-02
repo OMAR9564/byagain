@@ -318,19 +318,24 @@ than `content_html`.
 
 ## 10. Practice and export
 
-A reader can practice passages from a single source without the session counting
-toward the day's ritual. The set is drawn per request and never stored in the
-database — there is no record to corrupt or confuse with the daily flow.
+A reader can practice passages and questions from a single source without the
+session counting toward the day's ritual. The set is drawn per request and never
+stored in the database — there is no record to corrupt or confuse with the daily flow.
 
-`PracticeSampler` draws `review_size` passages (or fewer if fewer exist) from a
-source, ignoring the daily selection filters and cooldown. Every action is an
+`PracticeSampler` draws passages and active mastery cards from a source, up to
+`review_size` items combined, ignoring the daily selection filters and cooldown.
+Passages and cards are mixed by the user's `mastery_ratio`, with shortfall fill:
+when cards or passages run short, the batch is filled from the other type.
+Discarded passages and paused/retired cards are excluded. Every action is an
 explicit choice: `discard`, `favorite`, or changing the source's frequency.
 `shown_count` and `last_shown_at` never change. No review records, streak days,
-or mastery cards are written.
+or mastery card schedules are written.
 
-The practice screen reuses `review.js` from the daily flow. Each passage card
-carries its own action URL (`POST /library/sources/{source}/practice/{highlight}`),
-and the page has no completion endpoint — the completion screen stays local.
+The practice screen reuses `review.js` from the daily flow. Passage cards carry
+their own action URL (`POST /library/sources/{source}/practice/{highlight}`),
+while question cards route to the Mix card action (`POST /mix/cards/{card}`)
+which validates the request but writes nothing. The page has no completion endpoint
+— the completion screen stays local.
 
 ### Mix: endless shuffled practice
 

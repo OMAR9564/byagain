@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Practice;
 
 use App\Models\Highlight;
+use App\Models\MasteryCard;
 use App\Models\Source;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,7 +17,7 @@ final class PracticeSessionTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_returns_practice_cards_for_the_source(): void
+    public function it_returns_practice_items_for_the_source(): void
     {
         $user = User::factory()->create(['review_size' => 5]);
         $source = Source::factory()->for($user)->create();
@@ -162,5 +163,69 @@ final class PracticeSessionTest extends TestCase
         $this->assertStringNotContainsString('filament', $html);
         $this->assertStringNotContainsString('livewire', strtolower($html));
         $this->assertStringNotContainsString('alpine', $html);
+    }
+
+    #[Test]
+    public function it_includes_mastery_cards_from_the_source(): void
+    {
+        $user = User::factory()->create(['review_size' => 5, 'mastery_ratio' => 50]);
+        $source = Source::factory()->for($user)->create();
+        $highlight = Highlight::factory()->for($user)->for($source)->create();
+        $card = MasteryCard::factory()->for($user)->for($highlight)->create(['status' => MasteryCard::STATUS_ACTIVE]);
+
+        $response = $this->actingAs($user)->get(route('practice.show', $source))->assertOk();
+
+        // Check that the card appears in the response with the mastery item type
+        $this->assertStringContainsString('data-item-type="mastery"', $response->getContent());
+        $this->assertStringContainsString($card->question, $response->getContent());
+    }
+
+    #[Test]
+    public function mastery_cards_in_practice_show_next_button_not_feedback_buttons(): void
+    {
+        $user = User::factory()->create(['mastery_ratio' => 50]);
+        $source = Source::factory()->for($user)->create();
+        Highlight::factory(3)->for($user)->for($source)->create();
+        foreach (range(1, 3) as $unused) {
+            MasteryCard::factory()->for($user)->for(
+                Highlight::factory()->for($user)->for($source)->create()
+            )->create(['status' => MasteryCard::STATUS_ACTIVE]);
+        }
+
+        $content = $this->actingAs($user)->get(route('practice.show', $source))->assertOk()->getContent();
+
+        $cardItems = substr_count($content, 'data-item-type="mastery"');
+        $this->assertGreaterThan(0, $cardItems);
+
+        // One "Next" per card item, and the scheduling choices exist nowhere
+        $this->assertSame($cardItems, substr_count($content, 'data-mastery-choice="later"'));
+        $this->assertStringContainsString(__('practice.mix.next'), $content);
+
+        // "Next" sits inside the feedback wrapper
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($content);
+        $xpath = new \DOMXPath($dom);
+        $this->assertSame($cardItems, $xpath->query('//*[@data-mastery-feedback]')->length);
+        $this->assertSame($cardItems, $xpath->query('//*[@data-mastery-feedback]//*[@data-mastery-choice="later"]')->length);
+        foreach (['sooner', 'later', 'someday', 'learned'] as $feedback) {
+            $this->assertStringNotContainsString(__('mastery.feedback.'.$feedback), $content);
+        }
+    }
+
+    #[Test]
+    public function practice_with_cards_has_correct_action_urls(): void
+    {
+        $user = User::factory()->create(['mastery_ratio' => 50]);
+        $source = Source::factory()->for($user)->create();
+        $highlight = Highlight::factory()->for($user)->for($source)->create();
+        $card = MasteryCard::factory()->for($user)->for($highlight)->create(['status' => MasteryCard::STATUS_ACTIVE]);
+
+        $response = $this->actingAs($user)->get(route('practice.show', $source))->assertOk();
+        $content = $response->getContent();
+
+        // Highlights should have practice.action URL
+        $this->assertStringContainsString(route('practice.action', [$source, $highlight]), $content);
+        // Cards should have mix.card URL (which validates but writes nothing)
+        $this->assertStringContainsString(route('mix.card', $card), $content);
     }
 }

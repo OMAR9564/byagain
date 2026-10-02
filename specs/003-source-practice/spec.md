@@ -34,6 +34,9 @@ değiştirmez (Ana Yasa I: ritüel dokunulmazdır).
   seçili kalır.
 - LLM metni **talimat + pasajlar + mastery kartları** içerir; hem dosya olarak
   indirilebilir hem panoya kopyalanabilir.
+- **2026-10-02: Pratik kaynak kartlarını sorar.** Daha önce FR-204'e göre pratik mastery
+  kartını göstermiyordu. Karar değişti: pratik aktif kartları gösterir, ancak (Mix gibi)
+  hiçbir planlama opsiyonu sunmaz ve kartlar değişmez.
 
 ---
 
@@ -144,9 +147,9 @@ soru sormaya başlamalı.
 **Kaynağa göre pratik (US1)**
 
 - **FR-201**: Kullanıcı, en az bir aktif (çöpe atılmamış) pasajı olan kendi kaynağı için kaynak sayfasından bir pratik başlatabilmelidir.
-- **FR-202**: Pratik seti yalnız o kaynağın aktif pasajlarından, kullanıcının tekrar boyutu kadar, rastgele seçilmelidir; aktif pasaj daha azsa hepsi alınmalıdır.
+- **FR-202**: Pratik seti o kaynağın aktif pasajlarını ve aktif mastery kartlarını içermelidir; tekrar boyutu kadarı rastgele seçilmelidir; aktif pasaj (ve kart) daha azsa hepsi alınmalıdır. Pasajlar ve kartlar mastery_ratio'ya göre karıştırılmalıdır.
 - **FR-203**: Pratik seçimi günlük seçkinin filtrelerine ve ağırlıklarına (soğuma, 3 günlük blok, yenilik, kaynak sıklığı, kısa pasaj filtresi, kaynak kotası) tabi olmamalıdır.
-- **FR-204**: Pratik mastery kartı içermemelidir.
+- **FR-204**: Pratik kartlarını hiçbir planlama seçeneği olmadan göstermelidir (FR-205). Kartın yarı-ömrü, son_incelenme_tarihi, due_at ve geri bildirim sayıları değişmemelidir.
 - **FR-205**: Pratik ekranı, tekrar ekranının kart geçme etkileşimini kullanmalı ve bunun günü saymayan bir pratik olduğunu ekranda açıkça belirtmelidir.
 - **FR-206**: Pratik; seriyi, seri günlerini, günlük turu ve tur sayısını, tekrar geçmişini, pasajların son görülme zamanını ve görülme sayısını, mastery kartlarının planını değiştirmemelidir.
 - **FR-207**: Pratik, sabah e-postasının, akşam hatırlatmasının ve tarayıcı bildiriminin "tekrar yapıldı mı" kararını etkilememelidir.
@@ -208,7 +211,7 @@ soru sormaya başlamalı.
 - "Kategori" = kaynak. Uygulamada ayrı bir kategori veya etiket kavramı yoktur; etiketler hâlâ kapsam dışıdır.
 - "Kart eklemek" = pasaj eklemek. Mastery kartı bir pasajdan oluşturulur ve kaynak seçimi gerektirmez; US2 onu değiştirmez.
 - Pratik seti boyutu kullanıcının ayarlardaki tekrar boyutudur; ayrı bir ayar eklenmez.
-- Pratik mastery kartı göstermez: kartların değeri zamanlamalarındadır ve pratik plana dokunmamalıdır. Kaynağın kartlarını çalışmak isteyen kullanıcı için kartlar LLM metninde yer alır.
+- Pratik mastery kartını gösterir ama plana dokunmaz: kartı "geç" düğmesiyle geçer, dörtlü planlama seçeneği yoktur. Zamanlamalar değişmez (SC-201).
 - Pratik kaydedilmez; yarıda kalan pratik devam ettirilmez. Bu, pratiğin "iz bırakmaz" kuralının doğal sonucudur.
 - Uygulama hiçbir yapay zekâ hizmetine bağlanmaz ve hiçbir veri göndermez; v1'deki "yapay zekâ özellikleri kapsam dışı" kararı korunur. Bu özellik yalnız metin hazırlar.
 - Dışa aktarılan metin, pasajların ham (kullanıcının yazdığı) işaretleme biçimini kullanır; işlenmiş görünüm değil.

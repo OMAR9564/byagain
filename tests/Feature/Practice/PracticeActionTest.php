@@ -122,8 +122,8 @@ final class PracticeActionTest extends TestCase
     /**
      * SC-201: everything data-model.md lists under "Yazılmayan alanlar" is
      * snapshotted with real, non-default state, then every kind of practice
-     * action is sent to every passage and the page is opened. Nothing in the
-     * snapshot may move.
+     * action is sent to every passage and mastery card, and the page is opened.
+     * Nothing in the snapshot may move.
      */
     #[Test]
     public function practice_leaves_no_trace_on_streak_reviews_and_masteries(): void
@@ -180,6 +180,11 @@ final class PracticeActionTest extends TestCase
                 ->postJson(route('practice.action', [$source, $highlight]), $payload)
                 ->assertOk();
         }
+
+        // Also test the card action to verify it writes nothing (like mix.card)
+        $this->actingAs($user)
+            ->postJson(route('mix.card', $card), ['action' => 'keep'])
+            ->assertOk();
 
         $this->actingAs($user)->get(route('practice.show', $source))->assertOk();
 

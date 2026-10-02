@@ -50,21 +50,39 @@
                 </svg>
             </button>
 
-            <x-progress-bar :current="0" :total="$highlights->count()" class="flex-1" data-review-progress />
+            <x-progress-bar :current="0" :total="$items->count()" class="flex-1" data-review-progress />
         </div>
 
-        @foreach ($highlights as $index => $highlight)
+        @foreach ($items as $index => $item)
+            @php
+                $highlight = $item['type'] === 'highlight' ? $item['model'] : null;
+                $card = $item['type'] === 'card' ? $item['model'] : null;
+            @endphp
+
             <article
                 class="review-card"
                 data-review-card
-                data-item-type="highlight"
-                data-item-id="{{ $highlight->id }}"
-                data-action-url="{{ route('practice.action', [$source, $highlight]) }}"
+                {{-- The review's own type names, so review.js wires a card as
+                     a question (reveal, passage, Next) rather than a swipe. --}}
+                data-item-type="{{ $item['type'] === 'card' ? \App\Models\ReviewItem::TYPE_MASTERY : \App\Models\ReviewItem::TYPE_HIGHLIGHT }}"
+                data-item-id="{{ $item['model']->id }}"
+                data-action-url="{{
+                    $item['type'] === 'highlight'
+                        ? route('practice.action', [$source, $highlight])
+                        : route('mix.card', $card)
+                }}"
                 data-acted="false"
                 data-verdict=""
                 @if ($index !== 0) hidden @endif
             >
-                @include('review.partials.highlight-card', ['highlight' => $highlight])
+                @if ($item['type'] === 'highlight' && $highlight !== null)
+                    @include('review.partials.highlight-card', ['highlight' => $highlight])
+                @elseif ($item['type'] === 'card' && $card !== null)
+                    {{-- Mastery cards in practice show no scheduling buttons,
+                         like in Mix (FR-205). The card's schedule never changes
+                         because practice leaves no trace (SC-201). --}}
+                    @include('review.partials.mastery-card', ['card' => $card, 'domId' => 'item-'.$card->id, 'scheduling' => false])
+                @endif
 
                 @include('review.partials.verdict')
             </article>
