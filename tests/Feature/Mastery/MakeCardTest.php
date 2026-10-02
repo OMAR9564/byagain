@@ -98,22 +98,37 @@ final class MakeCardTest extends TestCase
     }
 
     #[Test]
-    public function the_source_page_shows_the_card_count_once_a_card_exists(): void
+    public function the_source_page_keeps_the_make_a_card_link_and_adds_the_count_once_a_card_exists(): void
     {
         [$user, $highlight] = $this->reader();
 
-        // Create a card for this highlight.
         MasteryCard::factory()->for($user)->for($highlight)->create();
 
         $response = $this->actingAs($user)->get(route('sources.show', $highlight->source));
 
         $response->assertOk();
 
-        // Should not see the "Make a card" link anymore.
-        $response->assertDontSee(route('mastery.create', $highlight));
+        // A second card for the same passage must stay possible (FR-044).
+        $response->assertSee(route('mastery.create', $highlight));
+        $response->assertSee(__('mastery.create.action'));
 
-        // Should see the card count instead.
+        // The count is shown next to it, not instead of it.
         $response->assertSee(trans_choice('mastery.create.card_count', 1));
+        $response->assertSee(route('mastery.index'));
+    }
+
+    #[Test]
+    public function retired_cards_are_not_counted_on_the_source_page(): void
+    {
+        [$user, $highlight] = $this->reader();
+
+        MasteryCard::factory()->for($user)->for($highlight)->create(['status' => MasteryCard::STATUS_RETIRED]);
+
+        $response = $this->actingAs($user)->get(route('sources.show', $highlight->source));
+
+        $response->assertOk();
+        $response->assertSee(route('mastery.create', $highlight));
+        $response->assertDontSee(trans_choice('mastery.create.card_count', 1));
     }
 
     #[Test]

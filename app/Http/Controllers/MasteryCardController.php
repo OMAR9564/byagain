@@ -59,7 +59,7 @@ final class MasteryCardController extends Controller
 
         // Redirect back to the source page: the reader came from there
         // (FR-044 entry point). Returning to the passage source keeps the
-        // workflow intact, rather than jumping to the cards index (FR-036).
+        // workflow intact, rather than jumping to the cards index.
         return redirect()
             ->route('sources.show', $highlight->source)
             ->with('status', __('settings.saved'));

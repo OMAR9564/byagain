@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSourceRequest;
 use App\Http\Requests\UpdateSourceRequest;
+use App\Models\MasteryCard;
 use App\Models\Source;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -43,7 +44,7 @@ final class SourceController extends Controller
     {
         $highlights = $source->highlights()
             ->where('is_discarded', false)
-            ->withCount(['masteryCards as active_mastery_cards_count' => fn ($q) => $q->where('status', '!=', 'retired')])
+            ->withCount(['masteryCards as active_mastery_cards_count' => fn ($q) => $q->where('status', '!=', MasteryCard::STATUS_RETIRED)])
             ->latest('id')
             ->paginate(20);
 

@@ -49,16 +49,20 @@
                     </x-button>
                 </form>
 
-                {{-- Show "Make a card" link or card count depending on whether
-                     cards exist (FR-044). --}}
-                @if ($highlight->active_mastery_cards_count === 0)
-                    <x-button :href="route('mastery.create', $highlight)" variant="ghost" class="!px-3 text-sm">
-                        {{ __('mastery.create.action') }}
-                    </x-button>
-                @else
-                    <x-button :href="route('mastery.index')" variant="ghost" class="!px-3 text-sm">
+                {{-- "Make a card" is always offered: one passage can carry
+                     several cards, so the first card must not hide it
+                     (FR-044). The count of live cards sits beside it as its
+                     own small link; both keep the 44px touch height. --}}
+                <x-button :href="route('mastery.create', $highlight)" variant="ghost" class="!px-3 text-sm">
+                    {{ __('mastery.create.action') }}
+                </x-button>
+
+                @if ($highlight->active_mastery_cards_count > 0)
+                    <a href="{{ route('mastery.index') }}"
+                       class="inline-flex min-h-11 items-center px-1 text-xs"
+                       style="color: var(--color-ink-subtle);">
                         {{ trans_choice('mastery.create.card_count', $highlight->active_mastery_cards_count) }}
-                    </x-button>
+                    </a>
                 @endif
 
                 {{-- Discard hides it from future reviews. It is never a
