@@ -418,18 +418,21 @@ Add these three jobs:
 
 | Schedule | Command |
 | --- | --- |
-| `*/5 * * * *` | `cd /home/u179024548/byagain && /usr/bin/php artisan byagain:dispatch-daily >> /dev/null 2>&1` |
-| `30 3 * * *` | `cd /home/u179024548/byagain && /usr/bin/php artisan byagain:prune >> /dev/null 2>&1` |
-| `* * * * *` | `cd /home/u179024548/byagain && /usr/bin/php artisan queue:work --stop-when-empty --max-time=55 --tries=5 >> /dev/null 2>&1` |
+| `*/5 * * * *` | `/usr/bin/php /home/u179024548/byagain/artisan byagain:dispatch-daily` |
+| `30 3 * * *` | `/usr/bin/php /home/u179024548/byagain/artisan byagain:prune` |
+| `* * * * *` | `/usr/bin/php /home/u179024548/byagain/artisan queue:work --stop-when-empty --max-time=55 --tries=5` |
 
 The first finds whoever's local clock has reached their send time, builds
 their review and queues their mail. The second prunes nightly. The third
 drains the queue in one-minute bursts: there is no supervisor here, so the
 worker cannot be long-lived and exits before the next minute starts.
 
-Replace `/usr/bin/php` with whatever `which php` printed. `php` alone very often
-is not on cron's PATH — the single most common reason a scheduler "silently
-does nothing".
+**About the command format:** artisan resolves its own directory, so no `cd`
+is needed. hPanel pre-fills `/usr/bin/php /home/u179024548/` in the command
+box; append the rest (`/byagain/artisan …`), do not paste a full command after
+it. Leaving off `>> /dev/null 2>&1` lets "View output" in hPanel show what
+happened — a quick way to spot crashes. This format is why the scheduler works
+on this host, while the `cd` prefix used before 2026-10-02 would not.
 
 **Do not use `schedule:run` on this host**, even though it is what Laravel
 documents. It launches every scheduled command through Symfony Process, which
@@ -570,11 +573,12 @@ mysqldump --single-transaction --no-tablespaces u179024548_byagain | gzip > ~/ba
 Nightly, keeping two weeks:
 
 ```cron
-30 3 * * * mysqldump --single-transaction --no-tablespaces -u u179024548_byagain -p'PASSWORD' u179024548_byagain | gzip > /home/u179024548/backups/byagain-$(date +\%F).sql.gz && find /home/u179024548/backups -name '*.sql.gz' -mtime +14 -delete
+30 3 * * * /usr/bin/mysqldump --single-transaction --no-tablespaces -u u179024548_byagain -p'PASSWORD' u179024548_byagain | gzip > /home/u179024548/backups/byagain-$(date +\%F).sql.gz && find /home/u179024548/backups -name '*.sql.gz' -mtime +14 -delete
 ```
 
 `--no-tablespaces` is needed because this host's MySQL user lacks the
-`PROCESS` privilege; without it `mysqldump` refuses to run.
+`PROCESS` privilege; without it `mysqldump` refuses to run. Note the escaped
+`\%` — cron treats a bare `%` as a newline and the command will fail without it.
 
 Note the escaped `\%` — cron treats a bare `%` as a newline and the command
 will fail without it.
