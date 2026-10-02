@@ -69,7 +69,9 @@
                 <article
                     class="review-card"
                     data-review-card
-                    data-item-type="{{ $item['type'] }}"
+                    {{-- The review's own type names, so review.js wires a card as
+                         a question (reveal, passage, Next) rather than a swipe. --}}
+                    data-item-type="{{ $item['type'] === 'card' ? \App\Models\ReviewItem::TYPE_MASTERY : \App\Models\ReviewItem::TYPE_HIGHLIGHT }}"
                     data-item-id="{{ $item['model']->id }}"
                     data-action-url="{{
                         $item['type'] === 'highlight'

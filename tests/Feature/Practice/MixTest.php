@@ -100,7 +100,7 @@ final class MixTest extends TestCase
 
         $content = $this->actingAs($user)->get(route('mix.show'))->assertOk()->getContent();
 
-        $cardItems = substr_count($content, 'data-item-type="card"');
+        $cardItems = substr_count($content, 'data-item-type="mastery"');
         $passageItems = substr_count($content, 'data-item-type="highlight"');
         $this->assertGreaterThan(0, $cardItems);
         $this->assertGreaterThan(0, $passageItems);
