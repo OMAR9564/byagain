@@ -298,7 +298,7 @@ gönder; normal rolle erişimin reddedildiğini doğrula.
 - [X] T121 [P] `resources/views/components/footer.blade.php` içine kaynak koda bağlantı ekle (AGPL-3.0 gereği, FR-093)
 - [X] T122 Erişilebilirlik geçişi: odak görünürlüğü, kontrast ≥4.5:1, ikon düğmelerinde `aria-label`, form alanlarında 16px+ yazı tipi, `prefers-reduced-motion` (FR-084, FR-085, FR-080)
 - [X] T123 Varlık bütçesi denetimi: kullanıcı tarafı ilk yükleme ≤150KB (yazı tipleri hariç), sistem font yığını kullanımı (SC-006)
-- [ ] T124 Lighthouse mobil denetimi: performans ≥90, erişilebilirlik ≥95 — bulguları düzelt (SC-007)
+- [X] T124 Lighthouse mobil denetimi: performans ≥90, erişilebilirlik ≥95 — bulguları düzelt (SC-007). 2026-10-02: sekiz sayfada performans 98–100, erişilebilirlik 95–100; tek bulgu `--color-ink-subtle` kontrastıydı (3.95:1), düzeltildi
 - [X] T125 [P] `README.md` yaz: kurulum adımları quickstart.md ile birebir aynı, `.env.example` yapılandırma tablosu (SC-019)
 - [X] T126 [P] `docs/SPEC.md` yaz: rota listesi İngilizce adlarla, algoritma bölümleri (SPEC 4.1/4.2/6) koddaki yorum atıflarıyla eşleşecek şekilde
 - [X] T127 Depo geçmişinde gizli anahtar/ortam dosyası olmadığını doğrula ve `.gitignore` kapsamını kontrol et (SC-020)
