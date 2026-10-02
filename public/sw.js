@@ -81,7 +81,7 @@ self.addEventListener('fetch', (event) => {
     }
 
     if (request.mode === 'navigate') {
-        event.respondWith(networkFirst(request, PAGE_CACHE));
+        event.respondWith(networkFirst(request, PAGE_CACHE, (promise) => event.waitUntil(promise)));
     }
 });
 
@@ -239,72 +239,89 @@ async function cacheFirst(request, cacheName) {
 }
 
 /**
- * Network-first strategy with a ~4 second timeout for navigations.
+ * How long a cached page may be served ahead of a slow network, in ms.
+ */
+const NETWORK_TIMEOUT_MS = 4000;
+
+/**
+ * Network-first strategy for navigations.
  *
- * Try to get the latest from the network, but fall back to the cache if the
- * network is slow or absent. If the cached response has an X-Byagain-Expires
- * header in the past, do not serve it — serve the offline page instead, which
- * explains why and asks the reader to connect.
+ * The fetch is started once. With a cached copy to fall back on, the network
+ * races a timeout and the cache wins a slow connection; without one there is
+ * nothing to fall back to, so the reader waits for the network — a slow but
+ * working connection must never be told it is offline. Only a real network
+ * failure ends at the offline page.
  *
- * If the network eventually responds, update the cache even if we already
- * served from cache.
+ * A cached review past its X-Byagain-Expires is never served; the offline
+ * review page explains why instead (FR-086, FR-087).
+ *
+ * An answer that arrives after the timeout is still stored (through
+ * waitUntil, so the worker is not stopped first), so the next visit is fresh.
  *
  * @param {Request} request
  * @param {string} cacheName
+ * @param {(promise: Promise<unknown>) => void} waitUntil
  * @return {Promise<Response>}
  */
-async function networkFirst(request, cacheName) {
-    let networkResponse = null;
+async function networkFirst(request, cacheName, waitUntil) {
+    const cached = await caches.match(request);
 
-    try {
-        // Race the network against a timeout.
-        networkResponse = await Promise.race([
-            fetch(request),
-            new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('timeout')), 4000),
-            ),
-        ]);
+    let stored = Promise.resolve();
 
-        if (networkResponse.ok) {
-            const cache = await caches.open(cacheName);
-            cache.put(request, networkResponse.clone());
+    const network = fetch(request).then((response) => {
+        if (response.ok) {
+            // Cloned here, before the response is handed to the page: after
+            // that its body may already be in use. Stored whether or not the
+            // page is still waiting for this answer.
+            const copy = response.clone();
+
+            stored = caches
+                .open(cacheName)
+                .then((cache) => cache.put(request, copy))
+                .catch(() => {});
         }
 
-        return networkResponse;
-    } catch {
-        // Network failed or timed out. Try the cache.
-        const cached = await caches.match(request);
+        return response;
+    });
 
-        if (cached !== undefined) {
-            // Check the X-Byagain-Expires header. If the cached response is
-            // expired, serve the offline page instead (FR-086, FR-087).
-            const expiresHeader = cached.headers.get('X-Byagain-Expires');
-            if (expiresHeader) {
-                const expiresAt = new Date(expiresHeader);
-                if (expiresAt <= new Date()) {
-                    // Expired. Serve the offline page.
-                    return caches.match(OFFLINE_REVIEW_URL);
-                }
-            }
+    // Registered up front: waitUntil only works while the event is still
+    // active, and a late answer arrives after respondWith has settled. This
+    // keeps the worker alive until the fetch and its cache write are done.
+    waitUntil(network.then(() => stored).catch(() => {}));
 
-            return cached;
-        }
-
-        return caches.match(OFFLINE_URL);
-    } finally {
-        // If the network eventually succeeded and we haven't stored it yet,
-        // update the cache in the background.
-        if (networkResponse?.ok) {
-            try {
-                const cache = await caches.open(cacheName);
-                const cached = await cache.match(request);
-
-                if (!cached) {
-                    cache.put(request, networkResponse.clone());
-                }
-            } catch {
-                // Swallow background update errors.
-            }
+    if (cached === undefined) {
+        try {
+            return await network;
+        } catch {
+            return caches.match(OFFLINE_URL);
         }
     }
+
+    const timedOut = Symbol('timeout');
+    let timer;
+
+    try {
+        const winner = await Promise.race([
+            network,
+            new Promise((resolve) => {
+                timer = setTimeout(() => resolve(timedOut), NETWORK_TIMEOUT_MS);
+            }),
+        ]);
+
+        if (winner !== timedOut) {
+            return winner;
+        }
+    } catch {
+        // Network failed outright: fall through to the cache.
+    } finally {
+        clearTimeout(timer);
+    }
+
+    const expiresHeader = cached.headers.get('X-Byagain-Expires');
+
+    if (expiresHeader && new Date(expiresHeader) <= new Date()) {
+        return caches.match(OFFLINE_REVIEW_URL);
+    }
+
+    return cached;
 }
