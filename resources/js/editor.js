@@ -201,58 +201,46 @@ function bindCardActions(form) {
         return;
     }
 
-    // Get the next unused index by counting existing rows.
-    function getNextIndex() {
-        const existing = cardsList.querySelectorAll('[data-card-row]');
-        return existing.length;
-    }
+    // A running counter rather than a row count: after removing a middle row
+    // the count would hand out an index that is still in the DOM, and two rows
+    // would overwrite each other on submit.
+    let nextIndex = 0;
+
+    cardsList.querySelectorAll('[name^="cards["]').forEach((field) => {
+        const match = field.name.match(/^cards\[(\d+)\]/);
+
+        if (match !== null) {
+            nextIndex = Math.max(nextIndex, Number(match[1]) + 1);
+        }
+    });
 
     // Add a new card row from the template.
     addButton.addEventListener('click', (event) => {
         event.preventDefault();
 
-        const nextIndex = getNextIndex();
+        const index = String(nextIndex++);
         const clone = template.content.cloneNode(true);
 
-        // Replace __INDEX__ placeholders in the cloned content.
-        const walker = document.createTreeWalker(
-            clone,
-            NodeFilter.SHOW_TEXT,
-            null,
-            false,
-        );
+        // The template starts with a whitespace text node, so take the row
+        // itself rather than the fragment's first child.
+        const row = clone.querySelector('[data-card-row]');
 
-        let node;
-        const nodesToReplace = [];
-
-        while ((node = walker.nextNode())) {
-            if (node.nodeValue?.includes('__INDEX__')) {
-                nodesToReplace.push(node);
-            }
+        if (row === null) {
+            return;
         }
 
-        nodesToReplace.forEach((node) => {
-            node.nodeValue = node.nodeValue.replace(/__INDEX__/g, String(nextIndex));
+        // Every attribute, not just name/id/for: per-row radio names and
+        // label targets must not collide with other rows.
+        [row, ...row.querySelectorAll('*')].forEach((el) => {
+            Array.from(el.attributes).forEach((attribute) => {
+                if (attribute.value.includes('__INDEX__')) {
+                    el.setAttribute(attribute.name, attribute.value.replaceAll('__INDEX__', index));
+                }
+            });
         });
 
-        // Also replace __INDEX__ in attributes.
-        const allElements = clone.querySelectorAll('[name*="__INDEX__"], [id*="__INDEX__"], [for*="__INDEX__"]');
-        allElements.forEach((el) => {
-            if (el.name) el.name = el.name.replace(/__INDEX__/g, String(nextIndex));
-            if (el.id) el.id = el.id.replace(/__INDEX__/g, String(nextIndex));
-            if (el.htmlFor) el.htmlFor = el.htmlFor.replace(/__INDEX__/g, String(nextIndex));
-        });
-
-        // Append to the list and bind the remove button.
-        const row = document.createElement('div');
-        row.appendChild(clone);
-        cardsList.appendChild(row.firstChild);
-
-        // Focus the question field.
-        const questionField = cardsList.lastElementChild.querySelector('[data-card-row] textarea:first-of-type');
-        if (questionField) {
-            questionField.focus();
-        }
+        cardsList.appendChild(row);
+        row.querySelector('textarea')?.focus();
     });
 
     // Remove a card row when the remove button is clicked.

@@ -258,14 +258,9 @@
         </div>
 
         {{-- Add card button. --}}
-        <button
-            type="button"
-            data-cards-add
-            class="self-start min-h-10 px-3 rounded-lg text-sm"
-            style="background-color: var(--color-surface); color: var(--color-ink-muted); border: 1px solid var(--color-border);"
-        >
+        <x-button type="button" variant="secondary" data-cards-add class="self-start">
             {{ __('mastery.inline.add') }}
-        </button>
+        </x-button>
 
         {{-- Template for cloning new card rows. --}}
         <template data-card-template>
