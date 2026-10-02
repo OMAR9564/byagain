@@ -1,4 +1,8 @@
 {
+  "_queue-BcMkMYbT.js": {
+    "file": "assets/queue-BcMkMYbT.js",
+    "name": "queue"
+  },
   "resources/css/admin.css": {
     "file": "assets/admin-BZVToIRD.css",
     "name": "admin",
@@ -18,10 +22,13 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-CDd8B2Rf.js",
+    "file": "assets/app-C5I2bNYA.js",
     "name": "app",
     "src": "resources/js/app.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_queue-BcMkMYbT.js"
+    ]
   },
   "resources/js/copy.js": {
     "file": "assets/copy-CBfw2MM0.js",
@@ -42,9 +49,12 @@
     "isEntry": true
   },
   "resources/js/review.js": {
-    "file": "assets/review-CB_OsIqt.js",
+    "file": "assets/review-a55QJY-V.js",
     "name": "review",
     "src": "resources/js/review.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_queue-BcMkMYbT.js"
+    ]
   }
 }
