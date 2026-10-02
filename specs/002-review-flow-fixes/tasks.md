@@ -191,10 +191,10 @@ tekrar tamamlanmışsa hiç gitmez
 
 - [X] T053 [P] `vendor/bin/pint --test` temiz
 - [X] T054 [P] `vendor/bin/phpstan analyse` temiz (level 6, baseline'a ekleme yok)
-- [ ] T055 `php artisan test` yeşil; yeni davranışların hepsinin testi var
+- [X] T055 `php artisan test` yeşil; yeni davranışların hepsinin testi var
 - [X] T056 [P] `composer audit` temiz
 - [X] T057 `npm run build` — kullanıcı bundle'ı 150KB bütçesinin altında (SC-106); `push.js`'in tekrar ekranına sızmadığını doğrula
-- [ ] T058 `database/migrations/` — `php artisan migrate:rollback` ile üç yeni migration'ın `down()`'ı çalışıyor mu
+- [X] T058 `database/migrations/` — `php artisan migrate:rollback` ile üç yeni migration'ın `down()`'ı çalışıyor mu
 - [X] T059 [P] `lang/en/` — kullanıcıya görünen yeni metnin hiçbiri Blade veya JS içinde gömülü değil (Ana Yasa yasaklı desen listesi)
 - [ ] T060 `specs/002-review-flow-fixes/quickstart.md` — tüm bölümleri baştan sona bir kez daha yürüt (375px gerçek cihaz)
 - [ ] T061 GitHub issue #1, #2, #3, #4 — her birine hangi commit'in kapattığını yaz; PR açıklamasında "ne değişti / neden / nasıl test edildi" kutularını doldur
@@ -203,16 +203,15 @@ tekrar tamamlanmışsa hiç gitmez
 
 ## Kalan görevler ve neden kaldıkları (2026-08-24)
 
-İşaretlenmemiş on görev var. Hiçbiri atlanmadı — hepsi bu makinede
+İşaretlenmemiş on görev vardı; ikisi 2026-10-02'de kapandı. Hiçbiri atlanmadı — hepsi bu makinede
 bulunmayan bir şeye bağlı.
 
-**Veritabanı gerektiriyor** (MySQL çalışmıyor: `127.0.0.1:3306` kapalı,
-`mysqld` yok, Docker yok):
-
-| Görev | Ne gerekiyor |
-|---|---|
-| T055 | `php artisan test` — yedi yeni test dosyası **yazıldı**, hiçbiri koşturulmadı |
-| T058 | `php artisan migrate:rollback` ile üç yeni migration'ın `down()`'ı |
+**Veritabanı gerektiren iki görev kapandı (2026-10-02)**: MySQL 8.4 Docker'da
+kuruldu. T055 — ilk koşuda 301 testten 9'u kırıldı; hepsi test kurgusundandı
+(`Queue::fake()` sabah e-postası işini de yutuyordu, mastery kartı saat
+dondurulmadan önce oluşturuluyordu), üretim kodunda hata çıkmadı. Düzeltmeden
+sonra 301/301 yeşil. T058 — `migrate:rollback --step=3` ve yeniden `migrate`
+temiz.
 
 **Gerçek telefon gerektiriyor** (Ana Yasa I: 375px cihaz doğrulaması):
 
