@@ -20,6 +20,7 @@ function setup(form) {
     bindDraftSaving(form, input, draftKey, status);
     bindFormatting(form, input);
     bindTabs(form, input, preview);
+    bindCardActions(form);
 }
 
 /**
@@ -186,4 +187,79 @@ async function render(form, input, body, ticket, current) {
             body.textContent = form.dataset.previewFailed ?? '';
         }
     }
+}
+
+/**
+ * Manage inline card rows: add new cards and remove them.
+ */
+function bindCardActions(form) {
+    const cardsList = form.querySelector('[data-cards-list]');
+    const addButton = form.querySelector('[data-cards-add]');
+    const template = form.querySelector('[data-card-template]');
+
+    if (!cardsList || !addButton || !template) {
+        return;
+    }
+
+    // Get the next unused index by counting existing rows.
+    function getNextIndex() {
+        const existing = cardsList.querySelectorAll('[data-card-row]');
+        return existing.length;
+    }
+
+    // Add a new card row from the template.
+    addButton.addEventListener('click', (event) => {
+        event.preventDefault();
+
+        const nextIndex = getNextIndex();
+        const clone = template.content.cloneNode(true);
+
+        // Replace __INDEX__ placeholders in the cloned content.
+        const walker = document.createTreeWalker(
+            clone,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false,
+        );
+
+        let node;
+        const nodesToReplace = [];
+
+        while ((node = walker.nextNode())) {
+            if (node.nodeValue?.includes('__INDEX__')) {
+                nodesToReplace.push(node);
+            }
+        }
+
+        nodesToReplace.forEach((node) => {
+            node.nodeValue = node.nodeValue.replace(/__INDEX__/g, String(nextIndex));
+        });
+
+        // Also replace __INDEX__ in attributes.
+        const allElements = clone.querySelectorAll('[name*="__INDEX__"], [id*="__INDEX__"], [for*="__INDEX__"]');
+        allElements.forEach((el) => {
+            if (el.name) el.name = el.name.replace(/__INDEX__/g, String(nextIndex));
+            if (el.id) el.id = el.id.replace(/__INDEX__/g, String(nextIndex));
+            if (el.htmlFor) el.htmlFor = el.htmlFor.replace(/__INDEX__/g, String(nextIndex));
+        });
+
+        // Append to the list and bind the remove button.
+        const row = document.createElement('div');
+        row.appendChild(clone);
+        cardsList.appendChild(row.firstChild);
+
+        // Focus the question field.
+        const questionField = cardsList.lastElementChild.querySelector('[data-card-row] textarea:first-of-type');
+        if (questionField) {
+            questionField.focus();
+        }
+    });
+
+    // Remove a card row when the remove button is clicked.
+    cardsList.addEventListener('click', (event) => {
+        if (event.target.closest('[data-card-remove]')) {
+            event.preventDefault();
+            event.target.closest('[data-card-row]')?.remove();
+        }
+    });
 }

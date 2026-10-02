@@ -26,6 +26,12 @@ return [
         'cloze_hint' => 'Wrap the hidden part in {{curly braces}}.',
     ],
 
+    'inline' => [
+        'heading' => 'Question cards',
+        'add' => 'Add a card',
+        'remove' => 'Remove',
+    ],
+
     // The question is "when do you want to see this again?", never "were you
     // right?" — there is no score to lose here (FR-046).
     'feedback' => [
