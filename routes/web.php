@@ -86,7 +86,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
         ->name('practice.action');
 
     // Export a source's passages and cards as study text for an LLM. Throttled
-    // because the export request samples passages (FR-211, R-309).
+    // because each request reads and renders the whole source (R-309).
     Route::get('/library/sources/{source}/export', [StudyExportController::class, 'show'])
         ->middleware('throttle:30,1')
         ->name('sources.export');

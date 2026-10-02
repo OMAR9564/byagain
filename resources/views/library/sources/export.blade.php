@@ -5,9 +5,10 @@
 
     {{-- Summary row: passage and card counts --}}
     <div class="mb-6 rounded-lg px-4 py-3" style="background-color: var(--color-surface); color: var(--color-ink-muted);">
-        {{ trans_choice('practice.export.summary_passages', $passages, ['count' => $passages]) }}
-        and
-        {{ trans_choice('practice.export.summary_cards', $cards, ['count' => $cards]) }}
+        {{ __('practice.export.summary', [
+            'passages' => trans_choice('practice.export.summary_passages', $passages, ['count' => $passages]),
+            'questions' => trans_choice('practice.export.summary_cards', $cards, ['count' => $cards]),
+        ]) }}
     </div>
 
     {{-- Privacy notice --}}
@@ -28,24 +29,18 @@
 
     {{-- Copy and download buttons --}}
     <div class="mb-6 flex flex-col gap-3">
-        <button
-            type="button"
+        <x-button
             data-copy-button
             data-copied="{{ __('practice.export.copied') }}"
             data-fallback="{{ __('practice.export.copy_fallback') }}"
-            class="inline-flex min-h-11 w-full items-center justify-center rounded-lg px-5 text-base font-medium"
-            style="background-color: var(--color-accent); color: var(--color-accent-ink);"
+            class="w-full"
         >
             {{ __('practice.export.copy') }}
-        </button>
+        </x-button>
 
-        <a
-            href="{{ route('sources.export.download', $source) }}"
-            class="inline-flex min-h-11 items-center justify-center rounded-lg px-5 text-base font-medium"
-            style="background-color: var(--color-surface); color: var(--color-ink); border: 1px solid var(--color-border-strong);"
-        >
+        <x-button variant="secondary" :href="route('sources.export.download', $source)" class="w-full">
             {{ __('practice.export.download') }}
-        </a>
+        </x-button>
     </div>
 
     {{-- Copy status message (updated by copy.js) --}}

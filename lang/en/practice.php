@@ -20,6 +20,7 @@ return [
     'export' => [
         'title' => 'Study with an AI',
         'start' => 'Study with an AI',
+        'summary' => ':passages and :questions.',
         'summary_passages' => ':count passage|:count passages',
         'summary_cards' => ':count question|:count questions',
         'privacy' => 'This text goes to whichever AI service you paste it into. byagain sends it nowhere.',

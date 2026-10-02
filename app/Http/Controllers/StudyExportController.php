@@ -15,19 +15,22 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class StudyExportController extends Controller
 {
-    public function show(Request $request, Source $source): View|RedirectResponse
-    {
-        $builder = new StudyExportBuilder;
+    public function __construct(
+        private readonly StudyExportBuilder $builder,
+        private readonly LocalDayResolver $dayResolver,
+    ) {}
 
+    public function show(Source $source): View|RedirectResponse
+    {
         // If the source has no active passages, redirect
-        $counts = $builder->counts($source);
+        $counts = $this->builder->counts($source);
         if ($counts['passages'] === 0) {
             return redirect()
                 ->route('sources.show', $source)
                 ->with('status', __('practice.export.empty'));
         }
 
-        $text = $builder->build($source);
+        $text = $this->builder->build($source);
 
         return view('library.sources.export', [
             'source' => $source,
@@ -40,12 +43,10 @@ final class StudyExportController extends Controller
     public function download(Request $request, Source $source): StreamedResponse
     {
         $user = $request->user();
-        $builder = new StudyExportBuilder;
-        $text = $builder->build($source);
-        $dayResolver = new LocalDayResolver;
+        $text = $this->builder->build($source);
 
         // Get the user's local date
-        $localDay = $dayResolver->localDayFor($user);
+        $localDay = $this->dayResolver->localDayFor($user);
         $date = $localDay->format('Y-m-d');
 
         // Build filename: slug + date, or fallback to source-{id}
