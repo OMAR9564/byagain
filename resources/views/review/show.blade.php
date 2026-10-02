@@ -5,6 +5,7 @@
     <div
         id="review"
         data-review
+        data-review-id="{{ $review->id }}"
         data-start-index="{{ $startIndex }}"
         data-complete-url="{{ route('review.complete') }}"
         data-csrf="{{ csrf_token() }}"

@@ -36,6 +36,9 @@ const HINT_TO = 80;
 /** Degrees of tilt at full travel. Small: the card is being pushed, not thrown. */
 const TILT_AT_FULL = 6;
 
+/** Prefix of the per-review record of cards decided on this device. */
+const ACTED_KEY_PREFIX = 'byagain.review.acted.';
+
 const root = document.querySelector('[data-review]');
 
 if (root !== null) {
@@ -54,6 +57,29 @@ function start(root) {
     const copy = readCopy(root);
     const csrf = root.dataset.csrf;
     const undoMs = (Number(root.dataset.undoSeconds) || 5) * 1000;
+
+    // A review reopened offline comes from the cache, which holds the page as
+    // it was when it was stored: cards decided since then look undecided. The
+    // server would keep the first answer anyway, but the reader would be asked
+    // twice, so what was decided here is remembered locally and applied again.
+    const reviewId = root.dataset.reviewId || null;
+
+    if (reviewId !== null) {
+        const recorded = readActed(reviewId);
+
+        cards.forEach((card) => {
+            const verdict = recorded[card.dataset.itemId];
+
+            if (verdict !== undefined && card.dataset.acted !== 'true') {
+                card.dataset.acted = 'true';
+                card.dataset.verdict = verdict;
+            }
+        });
+
+        const firstOpen = cards.findIndex((card) => card.dataset.acted !== 'true');
+
+        root.dataset.startIndex = String(firstOpen === -1 ? cards.length : firstOpen);
+    }
 
     // `frontier` is the card being decided; `viewing` is the card on screen.
     // They are the same until the reader steps back to look at one they have
@@ -214,6 +240,10 @@ function start(root) {
         hideUndo();
 
         held.card.dataset.acted = 'true';
+
+        if (reviewId !== null) {
+            recordActed(reviewId, held.card.dataset.itemId, held.action);
+        }
 
         const sent = send(
             held.card.dataset.actionUrl,
@@ -673,3 +703,40 @@ async function send(url, body, csrf) {
 
 // Queue functions are now imported from queue.js. The app.js now handles
 // flushing the queue on every page load and on the online event (FR-086).
+
+/**
+ * Cards decided on this device for one review, as { itemId: action }.
+ *
+ * Keys of other reviews are dropped on the way, so storage does not grow by a
+ * key every day. Storage can be full, blocked or corrupt; none of that may
+ * stop the review, so it reads as "nothing recorded".
+ */
+function readActed(reviewId) {
+    try {
+        const own = ACTED_KEY_PREFIX + reviewId;
+
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+
+            if (key !== null && key.startsWith(ACTED_KEY_PREFIX) && key !== own) {
+                localStorage.removeItem(key);
+            }
+        }
+
+        const parsed = JSON.parse(localStorage.getItem(own) ?? '{}');
+
+        return parsed !== null && typeof parsed === 'object' ? parsed : {};
+    } catch {
+        return {};
+    }
+}
+
+function recordActed(reviewId, itemId, action) {
+    try {
+        const acted = readActed(reviewId);
+        acted[itemId] = action;
+        localStorage.setItem(ACTED_KEY_PREFIX + reviewId, JSON.stringify(acted));
+    } catch {
+        // Not remembering costs a repeated question offline, nothing more.
+    }
+}
