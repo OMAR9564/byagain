@@ -256,4 +256,41 @@ final class StudyExportBuilderTest extends TestCase
         self::assertEquals(2, $counts['passages']);  // Only active passages
         self::assertEquals(2, $counts['cards']);     // Only active cards
     }
+
+    #[Test]
+    public function questions_follow_passage_order_not_card_id_order(): void
+    {
+        // contracts/study-export.md: cards order by highlight id, then card id.
+        $user = User::factory()->create();
+        $source = Source::factory()->for($user)->create();
+        $first = Highlight::factory()->for($user)->for($source)->create();
+        $second = Highlight::factory()->for($user)->for($source)->create();
+
+        // The card on the second highlight is created first, so its id is lower.
+        MasteryCard::factory()->for($user)->for($second)->create(['question' => 'Second-passage question', 'status' => MasteryCard::STATUS_ACTIVE]);
+        MasteryCard::factory()->for($user)->for($first)->create(['question' => 'First-passage question', 'status' => MasteryCard::STATUS_ACTIVE]);
+
+        $result = (new StudyExportBuilder)->build($source);
+
+        self::assertMatchesRegularExpression('/### Q1\n\n\*\*Q:\*\* First-passage question/', $result);
+        self::assertMatchesRegularExpression('/### Q2\n\n\*\*Q:\*\* Second-passage question/', $result);
+    }
+
+    #[Test]
+    public function question_headings_are_contiguous_in_order(): void
+    {
+        $user = User::factory()->create();
+        $source = Source::factory()->for($user)->create();
+        $first = Highlight::factory()->for($user)->for($source)->create();
+        $second = Highlight::factory()->for($user)->for($source)->create();
+
+        MasteryCard::factory()->for($user)->for($second)->create(['status' => MasteryCard::STATUS_ACTIVE]);
+        MasteryCard::factory()->for($user)->for($first)->create(['status' => MasteryCard::STATUS_ACTIVE]);
+        MasteryCard::factory()->for($user)->for($first)->create(['status' => MasteryCard::STATUS_ACTIVE]);
+
+        $result = (new StudyExportBuilder)->build($source);
+
+        preg_match_all('/^### (Q\d+)$/m', $result, $matches);
+        self::assertSame(['Q1', 'Q2', 'Q3'], $matches[1]);
+    }
 }

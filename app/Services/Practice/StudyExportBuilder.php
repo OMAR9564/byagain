@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Practice;
 
+use App\Models\Highlight;
+use App\Models\MasteryCard;
 use App\Models\Source;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Build a study export for an LLM.
@@ -38,13 +41,17 @@ final class StudyExportBuilder
         $lines[] = '## Passages';
         $lines[] = '';
 
-        // Get all non-discarded passages, ordered by id ascending
-        $passages = $source->highlights()
-            ->where('is_discarded', false)
-            ->orderBy('id', 'asc')
+        // One load serves both sections: passages and their cards share the
+        // highlight order (id asc), then card id, as contracts/study-export.md
+        // requires. Numbering uses running counters so Q1..Qn never has gaps.
+        $highlights = $this->activeHighlights($source)
+            ->with(['masteryCards' => function ($query): void {
+                $query->where('status', MasteryCard::STATUS_ACTIVE)->orderBy('id');
+            }])
+            ->orderBy('id')
             ->get();
 
-        foreach ($passages as $index => $passage) {
+        foreach ($highlights->values() as $index => $passage) {
             $number = $index + 1;
             $lines[] = "### {$number}";
             $lines[] = '';
@@ -58,26 +65,16 @@ final class StudyExportBuilder
             }
         }
 
+        $cards = $highlights->flatMap(fn (Highlight $highlight) => $highlight->masteryCards);
+
         // Questions section (only if there are active cards)
-        // Load highlights with their active cards, then flatten and sort
-        $highlights = $source->highlights()
-            ->where('is_discarded', false)
-            ->with(['masteryCards' => function ($query): void {
-                $query->where('status', 'active');
-            }])
-            ->orderBy('id', 'asc')
-            ->get();
-
-        $activeCards = $highlights
-            ->flatMap(fn ($highlight) => $highlight->masteryCards)
-            ->sortBy(['id', 'asc']);
-
-        if ($activeCards->count() > 0) {
+        if ($cards->isNotEmpty()) {
             $lines[] = '## Questions';
             $lines[] = '';
 
-            foreach ($activeCards as $index => $card) {
-                $number = $index + 1;
+            $number = 0;
+            foreach ($cards as $card) {
+                $number++;
                 $lines[] = "### Q{$number}";
                 $lines[] = '';
                 $lines[] = "**Q:** {$card->question}";
@@ -100,22 +97,26 @@ final class StudyExportBuilder
      */
     public function counts(Source $source): array
     {
-        $passages = $source->highlights()
-            ->where('is_discarded', false)
-            ->count();
+        $passages = $this->activeHighlights($source)->count();
 
-        $cards = $source->highlights()
-            ->where('is_discarded', false)
-            ->with(['masteryCards' => function ($query): void {
-                $query->where('status', 'active');
-            }])
-            ->get()
-            ->flatMap(fn ($highlight) => $highlight->masteryCards)
+        $cards = MasteryCard::query()
+            ->where('status', MasteryCard::STATUS_ACTIVE)
+            ->whereIn('highlight_id', $this->activeHighlights($source)->select('id'))
             ->count();
 
         return [
             'passages' => $passages,
             'cards' => $cards,
         ];
+    }
+
+    /**
+     * The source's non-discarded highlights.
+     *
+     * @return HasMany<Highlight, Source>
+     */
+    private function activeHighlights(Source $source): HasMany
+    {
+        return $source->highlights()->where('is_discarded', false);
     }
 }
