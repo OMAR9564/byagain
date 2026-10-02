@@ -1,6 +1,12 @@
-@props(['item'])
+@props(['card' => null, 'item' => null, 'domId' => null, 'scheduling' => true])
 
-@php $card = $item->masteryCard; @endphp
+@php
+// Backward-compatible: if $item is passed, extract the card and domId from it.
+if ($item !== null && $card === null) {
+    $card = $item->masteryCard;
+    $domId = 'item-'.$item->id;
+}
+@endphp
 
 {{-- Question first, answer only when asked for. Showing both at once turns
      recall into recognition, which is the one thing a card cannot afford
@@ -42,7 +48,7 @@
             style="color: var(--color-accent);"
             data-mastery-passage-toggle
             aria-expanded="false"
-            aria-controls="mastery-passage-{{ $item->id }}"
+            aria-controls="mastery-passage-{{ $domId }}"
             data-show-label="{{ __('mastery.card.show_passage') }}"
             data-hide-label="{{ __('mastery.card.hide_passage') }}"
             @if ($card->type === \App\Models\MasteryCard::TYPE_CLOZE) hidden @endif
@@ -51,7 +57,7 @@
         </button>
 
         <div
-            id="mastery-passage-{{ $item->id }}"
+            id="mastery-passage-{{ $domId }}"
             data-mastery-passage
             hidden
             class="mt-4"
@@ -61,18 +67,31 @@
     @endif
 </x-card>
 
-{{-- Four answers, none of them "wrong". The reader is choosing when to see
-     this again, not being marked (FR-046). --}}
-<div class="mt-4 grid grid-cols-2 gap-3" data-mastery-feedback hidden>
-    @foreach (['sooner', 'later', 'someday', 'learned'] as $feedback)
-        <x-button
-            variant="{{ $feedback === 'learned' ? 'primary' : 'secondary' }}"
-            data-mastery-choice="{{ $feedback }}"
-            style="min-height: var(--size-touch-lg);"
-        >
-            {{ __('mastery.feedback.' . $feedback) }}
-        </x-button>
-    @endforeach
-</div>
+@if ($scheduling)
+    {{-- Four answers, none of them "wrong". The reader is choosing when to see
+         this again, not being marked (FR-046). In daily review, this moves the card's
+         schedule. --}}
+    <div class="mt-4 grid grid-cols-2 gap-3" data-mastery-feedback hidden>
+        @foreach (['sooner', 'later', 'someday', 'learned'] as $feedback)
+            <x-button
+                variant="{{ $feedback === 'learned' ? 'primary' : 'secondary' }}"
+                data-mastery-choice="{{ $feedback }}"
+                style="min-height: var(--size-touch-lg);"
+            >
+                {{ __('mastery.feedback.' . $feedback) }}
+            </x-button>
+        @endforeach
+    </div>
 
-<p class="mt-3 text-sm" style="color: var(--color-caution);" data-mastery-hint hidden></p>
+    <p class="mt-3 text-sm" style="color: var(--color-caution);" data-mastery-hint hidden></p>
+@else
+    {{-- In Mix, only a single "Next" button; the card's schedule never changes.
+         The action payload sent is ignored (FR-203). --}}
+    <x-button
+        class="mt-4 w-full"
+        data-mastery-choice="later"
+        style="min-height: var(--size-touch-lg);"
+    >
+        {{ __('practice.mix.next') }}
+    </x-button>
+@endif

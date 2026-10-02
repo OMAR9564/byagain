@@ -61,7 +61,7 @@
                 @if ($index !== $startIndex) hidden @endif
             >
             @if ($item->item_type === \App\Models\ReviewItem::TYPE_MASTERY)
-                @include('review.partials.mastery-card', ['item' => $item])
+                @include('review.partials.mastery-card', ['card' => $item->masteryCard, 'domId' => 'item-'.$item->id, 'scheduling' => true])
             @else
                 @include('review.partials.highlight-card', ['highlight' => $item->highlight])
             @endif
