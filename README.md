@@ -116,7 +116,7 @@ which is the same as not sending it.
 
 ## Scheduled work
 
-A single cron entry drives everything:
+Laravel's scheduler is driven by a single cron entry:
 
 ```
 * * * * * cd /path/to/byagain && php artisan schedule:run >> /dev/null 2>&1
@@ -127,6 +127,12 @@ local clock has reached their send time, builds their review and queues their
 mail. **If cron stops, nothing throws** — reviews quietly stop being built and
 nobody gets their email. The admin dashboard shows a scheduler heartbeat for
 exactly this reason.
+
+**Shared-hosting caveat:** `schedule:run` starts each command through
+`proc_open`. Hosts that disable it (Hostinger shared hosting does) make it run
+nothing, silently. There, give each command its own cron line instead
+(`byagain:dispatch-daily`, `byagain:prune`, and the queue worker) — see
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#8-cron--the-part-that-must-not-be-skipped).
 
 ## Commands
 
