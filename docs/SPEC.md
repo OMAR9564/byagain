@@ -26,6 +26,7 @@ app/
     ├── Content/          MarkdownRenderer, PastedTextCleaner, HighlightWriter
     ├── Mail/             MailDispatcher
     ├── Mastery/          MasteryScheduler
+    ├── Practice/         PracticeSampler, PracticeActions, StudyExportBuilder
     ├── Review/           ReviewBuilder, HighlightSampler, ReviewItemActions
     ├── Streak/           StreakService
     └── Time/             LocalDayResolver
@@ -52,7 +53,12 @@ by the ownership scope, so another account's id produces **404, not 403** — a
 | GET | `/library/sources/{source}` | `sources.show` |
 | GET | `/library/sources/{source}/edit` | `sources.edit` |
 | PATCH | `/library/sources/{source}` | `sources.update` |
+| GET | `/library/sources/{source}/practice` | `practice.show` |
+| POST | `/library/sources/{source}/practice/{highlight}` | `practice.action` |
+| GET | `/library/sources/{source}/export` | `sources.export` |
+| GET | `/library/sources/{source}/export/download` | `sources.export.download` |
 | GET | `/add` | `highlights.create` |
+| POST | `/highlights/preview` | `highlights.preview` |
 | POST | `/highlights` | `highlights.store` |
 | GET | `/highlights/{highlight}/edit` | `highlights.edit` |
 | PATCH | `/highlights/{highlight}` | `highlights.update` |
@@ -74,6 +80,8 @@ by the ownership scope, so another account's id produces **404, not 403** — a
 | --- | --- | --- | --- |
 | GET | `/unsubscribe/{user}/{type}` | `unsubscribe` | `signed` middleware |
 | POST | `/webhooks/mail` | `webhooks.mail` | provider signature verified |
+
+`GET /add` accepts an optional `?source={id}` query parameter to pre-select a source on the editor form.
 
 Authentication routes come from Fortify: `/login`, `/register`,
 `/forgot-password`, `/reset-password/{token}`, `/email/verify/{id}/{hash}`.
@@ -277,3 +285,34 @@ than `content_html`.
   `retired`, `status`), never deleted. The single exception is a reader
   deleting their own account, which is real and irreversible.
 - **Constants** — every threshold lives in `config/byagain.php`.
+
+## 10. Practice and export
+
+A reader can practice passages from a single source without the session counting
+toward the day's ritual. The set is drawn per request and never stored in the
+database — there is no record to corrupt or confuse with the daily flow.
+
+`PracticeSampler` draws `review_size` passages (or fewer if fewer exist) from a
+source, ignoring the daily selection filters and cooldown. Every action is an
+explicit choice: `discard`, `favorite`, or changing the source's frequency.
+`shown_count` and `last_shown_at` never change. No review records, streak days,
+or mastery cards are written.
+
+The practice screen reuses `review.js` from the daily flow. Each passage card
+carries its own action URL (`POST /library/sources/{source}/practice/{highlight}`),
+and the page has no completion endpoint — the completion screen stays local.
+
+The editor stays on the form after saving a passage, and the chosen source
+remains selected. The `GET /add` route accepts an optional `?source=` parameter
+to pre-select a source; invalid or archived sources are silently ignored.
+
+A reader can export passages and active mastery questions from a source as
+Markdown text, to paste into an LLM. `StudyExportBuilder` renders the text at
+request time — instruction, source title, numbered passages in order, and
+active question cards. The text is never stored. See `../specs/003-source-practice/contracts/study-export.md`
+for the exact shape. The app sends the text nowhere; a reader chooses where to
+paste it.
+
+Download uses the reader's local date in the filename. Copy to clipboard falls
+back to text selection if the API is unavailable — essential on phones accessing
+the app over HTTP on a local network.
