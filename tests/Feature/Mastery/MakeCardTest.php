@@ -154,6 +154,20 @@ final class MakeCardTest extends TestCase
         $response->assertNotFound();
     }
 
+    #[Test]
+    public function the_create_form_shows_clear_card_type_labels(): void
+    {
+        [$user, $highlight] = $this->reader();
+
+        $response = $this->actingAs($user)->get(route('mastery.create', $highlight));
+
+        $response->assertOk();
+        $response->assertSee(__('mastery.card.type'));
+        $response->assertSee(__('mastery.card.type_qa'));
+        $response->assertSee(__('mastery.card.type_cloze'));
+        $response->assertDontSee('{{ __('."'mastery.card.question'".') }}');
+    }
+
     /**
      * @return array{0: User, 1: Highlight}
      */

@@ -15,6 +15,9 @@ return [
     ],
 
     'card' => [
+        'type' => 'Card type',
+        'type_qa' => 'Question & answer',
+        'type_cloze' => 'Fill in the blank',
         'question' => 'Question',
         'answer' => 'Answer',
         'show_answer' => 'Show answer',
