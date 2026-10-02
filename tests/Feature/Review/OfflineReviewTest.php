@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Review;
 
+use App\Models\Highlight;
+use App\Models\Review;
+use App\Models\ReviewItem;
+use App\Models\Source;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -20,6 +25,30 @@ use Tests\TestCase;
  */
 final class OfflineReviewTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
+
+    /**
+     * An open review with one card, so /review renders the review screen
+     * rather than the empty or done state.
+     */
+    private function openReviewFor(User $user): Review
+    {
+        $source = Source::factory()->for($user)->create();
+        $highlight = Highlight::factory()->for($user)->for($source)->create();
+
+        $review = Review::factory()->for($user)->create(['size' => 1]);
+        ReviewItem::factory()->for($user)->for($review)->create(['highlight_id' => $highlight->id, 'position' => 1]);
+
+        return $review;
+    }
+
     #[Test]
     public function the_review_response_carries_an_expiry_header_at_the_next_local_day_boundary(): void
     {
@@ -59,56 +88,35 @@ final class OfflineReviewTest extends TestCase
     public function with_prefetch_header_the_review_is_not_marked_as_started(): void
     {
         $user = User::factory()->create();
+        $review = $this->openReviewFor($user);
 
-        // Build a review without marking it started.
-        $response = $this->actingAs($user)->get('/review', [
-            'X-Byagain-Prefetch' => '1',
-        ]);
+        $this->actingAs($user)->get('/review', ['X-Byagain-Prefetch' => '1'])->assertOk();
 
-        $response->assertOk();
-
-        // The review should exist but started_at should be null.
-        $review = $user->reviews()->where('round', 1)->first();
-
-        if ($review !== null) {
-            $this->assertNull($review->started_at);
-        }
+        $this->assertNull($review->fresh()->started_at);
     }
 
     #[Test]
     public function without_prefetch_header_the_review_is_marked_as_started(): void
     {
         $user = User::factory()->create();
+        $review = $this->openReviewFor($user);
 
-        // Open the review normally.
-        $response = $this->actingAs($user)->get('/review');
+        $this->actingAs($user)->get('/review')->assertOk();
 
-        $response->assertOk();
-
-        // The review should exist and started_at should be set.
-        $review = $user->reviews()->where('round', 1)->first();
-
-        if ($review !== null) {
-            $this->assertNotNull($review->started_at);
-        }
+        $this->assertNotNull($review->fresh()->started_at);
     }
 
     #[Test]
     public function the_done_state_response_carries_the_expiry_header(): void
     {
-        $user = User::factory()->create(['timezone' => 'America/New_York']);
+        $user = User::factory()->create(['timezone' => 'UTC']);
+        $review = $this->openReviewFor($user);
+        $review->forceFill(['status' => Review::STATUS_COMPLETED, 'completed_at' => Carbon::now()])->save();
 
-        // Complete today's review so we get the done state.
-        $review = $this->actingAs($user)->get('/review');
+        $response = $this->actingAs($user)->get('/review')->assertOk();
 
-        // Open it again (it should be complete).
-        $response = $this->actingAs($user)->get('/review');
-
-        // Either it is still open, or it is done. Either way, check the header.
-        $this->assertTrue(
-            $response->headers->has('X-Byagain-Expires'),
-            'Every review response should carry X-Byagain-Expires',
-        );
+        $response->assertDontSee('data-review-id', false);
+        $this->assertTrue($response->headers->has('X-Byagain-Expires'));
     }
 
     #[Test]
@@ -116,12 +124,9 @@ final class OfflineReviewTest extends TestCase
     {
         $user = User::factory()->create();
 
-        // If there is no material for today, we should still get the header.
-        $response = $this->actingAs($user)->get('/review');
+        $response = $this->actingAs($user)->get('/review')->assertOk();
 
-        $this->assertTrue(
-            $response->headers->has('X-Byagain-Expires'),
-            'Even the empty state should carry X-Byagain-Expires',
-        );
+        $response->assertDontSee('data-review-card', false);
+        $this->assertTrue($response->headers->has('X-Byagain-Expires'));
     }
 }
