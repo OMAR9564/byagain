@@ -29,6 +29,25 @@ final class PracticeSessionTest extends TestCase
     }
 
     #[Test]
+    public function the_set_is_the_smaller_of_review_size_and_active_passages(): void
+    {
+        $user = User::factory()->create(['review_size' => 3]);
+        $many = Source::factory()->for($user)->create();
+        Highlight::factory(7)->for($user)->for($many)->create();
+        $few = Source::factory()->for($user)->create();
+        Highlight::factory(2)->for($user)->for($few)->create();
+        Highlight::factory()->for($user)->for($few)->create(['is_discarded' => true]);
+
+        $cards = fn (Source $source): int => substr_count(
+            (string) $this->actingAs($user)->get(route('practice.show', $source))->assertOk()->getContent(),
+            '<article',
+        );
+
+        $this->assertSame(3, $cards($many));
+        $this->assertSame(2, $cards($few));
+    }
+
+    #[Test]
     public function it_shows_only_this_sources_highlights(): void
     {
         $user = User::factory()->create(['review_size' => 5]);
@@ -36,13 +55,17 @@ final class PracticeSessionTest extends TestCase
         $otherSource = Source::factory()->for($user)->create();
 
         $highlight = Highlight::factory()->for($user)->for($source)->create();
-        Highlight::factory(3)->for($user)->for($otherSource)->create();
+        $others = Highlight::factory(3)->for($user)->for($otherSource)->create();
 
         $response = $this->actingAs($user)->get(route('practice.show', $source));
 
         $response->assertOk();
         $response->assertSeeText($highlight->content_text);
         $response->assertDontSeeText($otherSource->title);
+
+        foreach ($others as $other) {
+            $response->assertDontSeeText($other->content_text);
+        }
     }
 
     #[Test]
@@ -122,7 +145,7 @@ final class PracticeSessionTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('practice.show', $source));
 
-        $response->assertSee('<h1', false);
+        $this->assertSame(1, substr_count((string) $response->getContent(), '<h1'));
         $response->assertSeeText('Test Source');
     }
 

@@ -26,8 +26,9 @@ final class AccessibilityTest extends TestCase
     public function every_page_declares_a_language_and_a_viewport(): void
     {
         $user = $this->reader();
+        $practice = '/library/sources/'.$user->sources()->firstOrFail()->id.'/practice';
 
-        foreach (['/', '/library', '/settings', '/streak', '/mastery'] as $path) {
+        foreach (['/', '/library', '/settings', '/streak', '/mastery', $practice] as $path) {
             $html = (string) $this->actingAs($user)->get($path)->assertOk()->getContent();
 
             $this->assertStringContainsString('<html lang="en"', $html, "{$path} has no language");
@@ -39,9 +40,10 @@ final class AccessibilityTest extends TestCase
     public function pages_have_exactly_one_first_level_heading(): void
     {
         $user = $this->reader();
+        $practice = '/library/sources/'.$user->sources()->firstOrFail()->id.'/practice';
 
-        foreach (['/', '/library', '/settings', '/streak'] as $path) {
-            $html = (string) $this->actingAs($user)->get($path)->getContent();
+        foreach (['/', '/library', '/settings', '/streak', $practice] as $path) {
+            $html = (string) $this->actingAs($user)->get($path)->assertOk()->getContent();
 
             $this->assertSame(
                 1,

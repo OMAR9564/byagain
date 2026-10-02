@@ -11,13 +11,22 @@
         <p class="-mt-2 mb-4 text-sm" style="color: var(--color-ink-muted);">{{ $source->author }}</p>
     @endif
 
-    @if (! $source->is_archived)
-        <div class="mb-4">
+    {{-- Practice works on archived sources too: archiving only stops a
+         source feeding the daily review (FR-201). The button needs a passage
+         to practise, so it hides when none is active. --}}
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+        @if ($highlights->total() > 0)
+            <x-button :href="route('practice.show', $source)">
+                {{ __('practice.practice.start') }}
+            </x-button>
+        @endif
+
+        @if (! $source->is_archived)
             <x-button :href="route('highlights.create', ['source' => $source->id])" variant="secondary">
                 {{ __('library.source.add_passage') }}
             </x-button>
-        </div>
-    @endif
+        @endif
+    </div>
 
     @forelse ($highlights as $highlight)
         <x-card class="mb-3">
