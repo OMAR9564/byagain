@@ -92,8 +92,9 @@ function start(root) {
     // action commits whatever was already held.
     let pending = null;
 
-    // Set once a navigation has been started, so reaching the completion
-    // screen twice (or a Done click on top of it) cannot navigate twice.
+    // Set once navigation has started, so a second tap or the endless hand-off
+    // cannot queue another one behind it. Declared before the first showCard()
+    // call, which may already be the hand-off.
     let leaving = false;
 
     showCard(frontier);
@@ -130,26 +131,23 @@ function start(root) {
     back?.addEventListener('click', () => showCard(viewing - 1));
     undoButton?.addEventListener('click', undoPending);
 
-    // Done button(s): commit any pending action before leaving, with a timeout
-    // so a slow or offline network never traps the reader. The offline queue
-    // will retry if needed (FR-042, FR-043).
+    // Done button(s): commit any pending action before leaving (FR-042, FR-043).
     document.querySelectorAll('[data-review-done]').forEach((button) => {
-        button.addEventListener('click', async (event) => {
+        button.addEventListener('click', (event) => {
             event.preventDefault();
 
             const href = button.getAttribute('href');
-            if (!href) {
-                return;
-            }
 
-            commitThenGo(href);
+            if (href) {
+                commitThenGo(href);
+            }
         });
     });
 
     /**
-     * Commit any held action, then navigate once that send settles or after
-     * 1500ms at most, so a slow or offline network never traps the reader.
-     * The offline queue retries whatever did not land (FR-042, FR-043).
+     * Send whatever decision is still held, then leave. The wait is capped so
+     * a slow or offline network never traps the reader; the offline queue
+     * keeps the action if it did not get through.
      */
     async function commitThenGo(href) {
         if (leaving) {
@@ -170,6 +168,140 @@ function start(root) {
         window.location.assign(href);
     }
 
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && pending !== null) {
+            undoPending();
+
+            return;
+        }
+
+        if (event.key === 'ArrowUp') {
+            showCard(viewing - 1);
+
+            return;
+        }
+
+        // Deciding is only possible on the card being decided. Arrow keys on
+        // a card you stepped back to look at would silently act on a
+        // different one.
+        if (viewing !== frontier || frontier >= cards.length) {
+            return;
+        }
+
+        if (event.key === 'ArrowRight') {
+            act(cards[frontier], 'keep');
+        } else if (event.key === 'ArrowLeft') {
+            act(cards[frontier], 'discard');
+        }
+    });
+
+    // A held action must not be lost because the reader closed the tab or
+    // switched app. `pagehide` is the one event iOS reliably fires.
+    window.addEventListener('pagehide', () => commitPending());
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            commitPending();
+        }
+    });
+
+    function act(card, action, masteryFeedback = null) {
+        if (card.dataset.acted === 'true' || pending?.card === card) {
+            return;
+        }
+
+        // One at a time: deciding the next card ends the previous card's
+        // window rather than queueing a second undo nobody could aim at.
+        commitPending();
+
+        pending = {
+            card,
+            action,
+            masteryFeedback,
+            index: cards.indexOf(card),
+            favorite: card.querySelector('[data-review-favorite]')?.getAttribute('aria-pressed') === 'true',
+            frequency: frequencyChange(card),
+            actedAt: new Date().toISOString(),
+            timer: window.setTimeout(() => commitPending(), undoMs),
+        };
+
+        card.dataset.verdict = action;
+
+        showUndo(action);
+        advance();
+    }
+
+    /**
+     * Send the held decision. From here it is the server's, and the interface
+     * stops offering to take it back.
+     *
+     * Returns the send promise so callers can wait for it, or null if there
+     * was nothing pending. This enables the Done button to wait for the
+     * last card's action to reach the server before navigating (FR-043).
+     */
+    function commitPending() {
+        if (pending === null) {
+            return null;
+        }
+
+        const held = pending;
+        pending = null;
+
+        window.clearTimeout(held.timer);
+        hideUndo();
+
+        held.card.dataset.acted = 'true';
+
+        if (reviewId !== null) {
+            recordActed(reviewId, held.card.dataset.itemId, held.action);
+        }
+
+        const sent = send(
+            held.card.dataset.actionUrl,
+            {
+                action: held.action,
+                mastery_feedback: held.masteryFeedback,
+                favorite: held.favorite,
+                // Only sent when the reader actually moved the dial, so a
+                // plain keep does not rewrite the source every time.
+                source_frequency: held.frequency,
+                client_acted_at: held.actedAt,
+            },
+            csrf,
+        );
+
+        // The card that finishes the review completes it server-side by
+        // itself; this call is what tells the reader, and what covers the
+        // case where the action was queued offline.
+        if (held.index === cards.length - 1) {
+            sent.then((payload) => completeReview(payload));
+        }
+
+        return sent;
+    }
+
+    function undoPending() {
+        if (pending === null) {
+            return;
+        }
+
+        const held = pending;
+        pending = null;
+
+        window.clearTimeout(held.timer);
+        hideUndo();
+
+        held.card.dataset.verdict = '';
+        frontier = held.index;
+
+        showCard(frontier);
+    }
+
+    function advance() {
+        frontier += 1;
+
+        showCard(frontier);
+    }
+
     /**
      * Put a card on screen. `target` may be cards.length, which is the
      * completion screen, and is clamped at both ends.
@@ -187,14 +319,13 @@ function start(root) {
 
         completion.hidden = viewing !== cards.length;
 
-        // Endless mode (Mix): the completion screen is only a hand-off to the
-        // next batch. Commit the last held action now instead of waiting out
-        // its undo window, which would leave the reader on "Shuffling more".
+        updateChrome();
+
+        // Mix has no end: reaching the last card fetches the next batch at
+        // once rather than waiting out the undo window on the last decision.
         if (viewing === cards.length && root.dataset.endlessUrl) {
             commitThenGo(root.dataset.endlessUrl);
         }
-
-        updateChrome();
     }
 
     /**
