@@ -340,6 +340,13 @@ function start(root) {
     }
 
     async function postCompletion() {
+        // Practice has no completion endpoint (data-complete-url is absent),
+        // so the completion screen shows locally only (R-302). Review does have
+        // one and calls it here.
+        if (!root.dataset.completeUrl) {
+            return null;
+        }
+
         try {
             const response = await fetch(root.dataset.completeUrl, {
                 method: 'POST',
