@@ -1,11 +1,11 @@
 @props(['source' => null])
 
-<x-field name="title" :label="__('library.source.title')" :value="$source?->title" required autofocus />
+<x-field name="title" :label="__('library.source.name')" :value="$source?->title" required autofocus />
 <x-field name="author" :label="__('library.source.author')" :value="$source?->author" />
 
 <div class="flex flex-col gap-1.5">
     <label for="type" class="px-1 text-sm font-medium" style="color: var(--color-ink);">
-        {{ __('library.source.title') }}
+        {{ __('library.source.type') }}
     </label>
 
     <select id="type" name="type" class="ios-field ios-select">

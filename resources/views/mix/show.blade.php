@@ -1,4 +1,4 @@
-<x-layouts.app header="Mix" tabRoot :title="__('practice.mix.title')">
+<x-layouts.app :header="__('practice.mix.title')" tabRoot :title="__('practice.mix.title')">
     {{-- Mix: endless, shuffled practice across all sources and cards.
          Like source practice, this is not recorded and never touches the day.
          The root has `data-endless-url` instead of `data-complete-url` so the

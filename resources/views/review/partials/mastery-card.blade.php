@@ -24,7 +24,7 @@ if ($item !== null && $card === null) {
 
     <button
         type="button"
-        class="pressable mt-4 inline-flex min-h-11 items-center text-sm font-medium"
+        class="pressable mt-2 flex min-h-11 items-center text-base font-medium"
         style="color: var(--color-accent);"
         data-mastery-reveal
         aria-expanded="false"
@@ -44,7 +44,7 @@ if ($item !== null && $card === null) {
     @if ($card->highlight !== null)
         <button
             type="button"
-            class="pressable mt-4 inline-flex min-h-11 items-center text-sm font-medium"
+            class="pressable mt-2 flex min-h-11 items-center text-base font-medium"
             style="color: var(--color-accent);"
             data-mastery-passage-toggle
             aria-expanded="false"

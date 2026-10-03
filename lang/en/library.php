@@ -11,6 +11,8 @@ return [
     'source' => [
         'title' => 'Source',
         'title_plural' => 'Sources',
+        'name' => 'Title',
+        'type' => 'Kind',
         'author' => 'Author',
         'frequency' => 'How often should this appear?',
         'highlight_count' => ':count highlight|:count highlights',

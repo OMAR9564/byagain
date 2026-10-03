@@ -1,4 +1,4 @@
-<x-layouts.app :title="$source->title" inline :back="route('library.index')" :back-label="__('library.title')">
+<x-layouts.app :title="$source->title" :back="route('library.index')" :back-label="__('library.title')">
     <x-slot:header>{{ $source->title }}</x-slot:header>
 
     <x-slot:headerAction>
@@ -17,24 +17,24 @@
         @endif
     </x-slot:headerAction>
 
-    <div class="pt-1 pb-4">
-        <h2 class="text-2xl font-bold" style="color: var(--color-ink);">{{ $source->title }}</h2>
-        @if ($source->author !== null)
-            <p class="mt-1 text-base" style="color: var(--color-ink-muted);">{{ $source->author }}</p>
-        @endif
-    </div>
+    {{-- The title is the large title above; the author is its subtitle. --}}
+    @if ($source->author !== null)
+        <p class="-mt-2 mb-5 text-base" style="color: var(--color-ink-muted);">{{ $source->author }}</p>
+    @endif
 
     {{-- Practice works on archived sources too: archiving only stops a
          source feeding the daily review (FR-201). The button needs a passage
          to practise, so it hides when none is active. Export also requires
          active passages and works on archived sources (R-309). --}}
     @if ($highlights->total() > 0)
-        <div class="mb-5 flex gap-2">
-            <x-button :href="route('practice.show', $source)" class="flex-1">
+        {{-- Stacked, not side by side: at half width "Practise this source"
+             wraps onto two lines, and a two-line button reads as two buttons. --}}
+        <div class="mb-5 flex flex-col gap-2">
+            <x-button :href="route('practice.show', $source)" class="w-full">
                 {{ __('practice.practice.start') }}
             </x-button>
 
-            <x-button :href="route('sources.export', $source)" variant="tinted" class="flex-1">
+            <x-button :href="route('sources.export', $source)" variant="tinted" class="w-full">
                 {{ __('practice.export.start') }}
             </x-button>
         </div>

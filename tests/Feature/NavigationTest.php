@@ -55,6 +55,21 @@ final class NavigationTest extends TestCase
     }
 
     #[Test]
+    public function the_iphone_app_draws_its_own_tab_bar(): void
+    {
+        $user = User::factory()->create();
+        $agent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
+
+        $tabbed = (string) $this->actingAs($user)->withHeader('User-Agent', $agent.' byagainApp/2.0')->get('/')->getContent();
+        $first = (string) $this->actingAs($user)->withHeader('User-Agent', $agent.' byagainApp/1.0')->get('/')->getContent();
+
+        // The flag is what hides the page's bar under the native one. The first
+        // build has no native bar, so it must never get it.
+        $this->assertStringContainsString('data-shell="ios"', $tabbed);
+        $this->assertStringNotContainsString('data-shell="ios"', $first);
+    }
+
+    #[Test]
     public function settings_are_reachable_from_the_screen(): void
     {
         $html = (string) $this->actingAs(User::factory()->create())->get('/')->getContent();

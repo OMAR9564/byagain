@@ -177,7 +177,8 @@
                     name="password"
                     type="password"
                     inline
-                    :label="__('settings.account.delete_confirm')"
+                    :label="__('auth.field.password')"
+                    :placeholder="__('settings.account.password_placeholder')"
                     autocomplete="current-password"
                     required
                 />
@@ -188,7 +189,7 @@
                 </label>
             </div>
 
-            <p class="ios-section-footer">{{ __('settings.account.delete_help') }}</p>
+            <p class="ios-section-footer">{{ __('settings.account.delete_confirm') }} {{ __('settings.account.delete_help') }}</p>
         </section>
 
         <x-button type="submit" variant="danger" class="mt-4 w-full">{{ __('settings.account.delete') }}</x-button>

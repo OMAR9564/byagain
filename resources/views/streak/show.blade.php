@@ -1,4 +1,4 @@
-<x-layouts.app header="Streak" tabRoot :title="__('streak.title')">
+<x-layouts.app :header="__('streak.title')" tabRoot :title="__('streak.title')">
     <x-card class="text-center">
         <p class="text-sm" style="color: var(--color-ink-muted);">{{ __('streak.current') }}</p>
 

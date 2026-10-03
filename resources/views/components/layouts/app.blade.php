@@ -2,9 +2,10 @@
 
 {{-- The signed-in shell.
 
-     Built for a 375px phone held in one hand: content scrolls in a single
-     column, and everything you tap lives in the bottom bar within thumb reach
-     (FR-077, FR-078).
+     Built like an iOS screen: a navigation bar whose large title folds into it
+     on scroll, one column of content, and the sections in a tab bar within
+     thumb reach (FR-077, FR-078). Inside the iPhone app the tab bar is the
+     native one, so the page leaves its own out — see `data-shell` below.
 
      Deliberately loads only the user bundle. No Livewire, no Alpine, no
      Filament asset appears on this page (SC-018). --}}
@@ -16,8 +17,13 @@
      is trying to stay still. The page is as tall as its content; the canvas
      colour comes from `html` in app.css, so there is no white gap under a
      short one (issue #2, R-202). --}}
+{{-- `data-shell` is decided here from the user agent rather than left to the
+     app's injected script: at document start the script runs before <html>
+     exists, and a page painted without the flag shows the web tab bar under
+     the native one until it catches up. The script still sets it, for pages
+     the service worker serves from cache. --}}
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if (\App\Services\Shell\NativeShell::hasTabBar(request())) data-shell="ios" @endif>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -57,7 +63,7 @@
     </a>
 
     @php
-        $navTitle = $header ?? ($greet ? auth()->user()->name : '');
+        $navTitle = $header ?? ($greet ? __('nav.review') : '');
     @endphp
 
     <header data-navbar @if($inline) data-inline @endif>

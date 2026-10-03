@@ -55,16 +55,32 @@ final class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate, WKUI
 		let config = WKWebViewConfiguration()
 		config.websiteDataStore = .default()
 		config.limitsNavigationsToAppBoundDomains = true
-		config.applicationNameForUserAgent = "byagainApp/1.0"
+		// The major version tells the server this build has a native tab bar (2+).
+		config.applicationNameForUserAgent = "byagainApp/2.0"
 		config.allowsInlineMediaPlayback = true
 
 		let userContentController = WKUserContentController()
 
-		// Add dataset script
-		var scriptSource = "document.documentElement.dataset.shell = 'ios';"
-		if presentation == .sheet {
-			scriptSource += " document.documentElement.dataset.presentation = 'sheet';"
-		}
+		// At document start <html> may not exist yet, so mark it as soon as it does.
+		// The server also sets data-shell from the user agent; this covers pages the
+		// service worker serves from cache, and data-presentation, which only we know.
+		let presentationLine = presentation == .sheet ? "h.dataset.presentation = 'sheet';" : ""
+		let scriptSource = """
+		(function () {
+			var mark = function () {
+				var h = document.documentElement;
+				if (!h) { return false; }
+				h.dataset.shell = 'ios';
+				\(presentationLine)
+				return true;
+			};
+			if (!mark()) {
+				new MutationObserver(function (_, observer) {
+					if (mark()) { observer.disconnect(); }
+				}).observe(document, { childList: true });
+			}
+		})();
+		"""
 		let userScript = WKUserScript(
 			source: scriptSource,
 			injectionTime: .atDocumentStart,

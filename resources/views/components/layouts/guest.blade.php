@@ -1,7 +1,7 @@
 {{-- Shell for the signed-out screens: one column, no navigation, nothing to
      do but the task at hand. --}}
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full" @if (\App\Services\Shell\NativeShell::hasTabBar(request())) data-shell="ios" @endif>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
