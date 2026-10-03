@@ -1,17 +1,25 @@
 import SwiftUI
 
-struct ContentView: View {
-	@StateObject private var viewModel = WebViewModel()
+struct SheetWebScreen: View {
+	@StateObject private var model: WebViewModel
+
+	init(url: URL, router: AppRouter) {
+		_model = StateObject(wrappedValue: WebViewModel(
+			startURL: url,
+			presentation: .sheet,
+			router: router
+		))
+	}
 
 	var body: some View {
 		ZStack {
 			Color("Canvas")
 				.ignoresSafeArea()
 
-			WebView(viewModel: viewModel)
+			WebView(viewModel: model)
 				.ignoresSafeArea(edges: .bottom)
 
-			if viewModel.loadFailed {
+			if model.loadFailed {
 				VStack(spacing: 16) {
 					Text("You're offline")
 						.font(.headline)
@@ -19,27 +27,22 @@ struct ContentView: View {
 						.font(.body)
 						.foregroundColor(.secondary)
 					Button(action: {
-						viewModel.reload()
+						model.reload()
 					}) {
 						Text("Try again")
 							.fontWeight(.semibold)
 							.frame(maxWidth: .infinity)
 							.padding()
-							.background(Color("AccentColor"))
-							.foregroundColor(.white)
-							.cornerRadius(8)
 					}
+					.buttonStyle(.borderedProminent)
+					.controlSize(.large)
 					.padding()
 				}
 				.padding()
-				.background(Color("Canvas"))
-				.cornerRadius(12)
+				.background(.regularMaterial)
+				.cornerRadius(16)
 				.padding()
 			}
 		}
 	}
-}
-
-#Preview {
-	ContentView()
 }
