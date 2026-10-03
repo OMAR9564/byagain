@@ -31,11 +31,11 @@
             required
         />
 
-        <x-button type="submit">{{ __('auth.register.submit') }}</x-button>
+        <x-button type="submit" class="w-full">{{ __('auth.register.submit') }}</x-button>
     </form>
 
     <p class="mt-6 text-sm">
-        <a href="{{ route('login') }}" style="color: var(--color-accent);">
+        <a href="{{ route('login') }}" class="pressable inline-flex min-h-11 items-center" style="color: var(--color-accent);">
             {{ __('auth.register.have_account') }}
         </a>
     </p>

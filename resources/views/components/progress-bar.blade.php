@@ -18,8 +18,8 @@
     aria-valuemin="0"
     aria-valuemax="{{ $total }}"
     aria-label="{{ __('review.progress', ['current' => (int) $current, 'total' => $total]) }}"
-    {{ $attributes->merge(['class' => 'h-1.5 w-full overflow-hidden rounded-full']) }}
-    style="background-color: var(--color-border);"
+    {{ $attributes->merge(['class' => 'h-1 w-full overflow-hidden rounded-full']) }}
+    style="background-color: var(--color-fill);"
 >
     <div
         class="h-full rounded-full transition-[width]"

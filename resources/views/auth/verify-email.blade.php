@@ -2,7 +2,7 @@
     <x-slot:subtitle>{{ __('auth.verify.subtitle') }}</x-slot:subtitle>
 
     @if (session('status') === 'verification-link-sent')
-        <p role="status" class="mb-5 rounded-lg px-4 py-3 text-sm"
+        <p role="status" class="mb-5 rounded-[12px] px-4 py-3 text-sm"
            style="background-color: var(--color-accent-wash); color: var(--color-ink);">
             {{ __('auth.verify.resent') }}
         </p>

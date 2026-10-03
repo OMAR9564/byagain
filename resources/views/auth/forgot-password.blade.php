@@ -23,10 +23,10 @@
             autofocus
         />
 
-        <x-button type="submit">{{ __('auth.forgot.submit') }}</x-button>
+        <x-button type="submit" class="w-full">{{ __('auth.forgot.submit') }}</x-button>
     </form>
 
     <p class="mt-6 text-sm">
-        <a href="{{ route('login') }}" style="color: var(--color-accent);">{{ __('actions.back') }}</a>
+        <a href="{{ route('login') }}" class="pressable inline-flex min-h-11 items-center" style="color: var(--color-accent);">{{ __('actions.back') }}</a>
     </p>
 </x-layouts.guest>

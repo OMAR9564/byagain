@@ -23,4 +23,5 @@ return [
     'show_less' => 'Show less',
     'favorite' => 'Favourite',
     'unfavorite' => 'Remove favourite',
+    'more' => 'More',
 ];

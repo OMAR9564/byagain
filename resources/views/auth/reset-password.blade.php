@@ -32,6 +32,6 @@
             required
         />
 
-        <x-button type="submit">{{ __('auth.reset.submit') }}</x-button>
+        <x-button type="submit" class="w-full">{{ __('auth.reset.submit') }}</x-button>
     </form>
 </x-layouts.guest>

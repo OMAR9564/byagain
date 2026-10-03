@@ -3,7 +3,7 @@
 @if ($count > 0)
     <a
         href="{{ route('streak.show') }}"
-        {{ $attributes->merge(['class' => 'inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium']) }}
+        {{ $attributes->merge(['class' => 'pressable inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium']) }}
         style="background-color: var(--color-accent-wash); color: var(--color-accent);"
     >
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"

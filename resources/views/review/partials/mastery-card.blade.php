@@ -24,7 +24,7 @@ if ($item !== null && $card === null) {
 
     <button
         type="button"
-        class="mt-4 inline-flex min-h-11 items-center text-sm font-medium"
+        class="pressable mt-4 inline-flex min-h-11 items-center text-sm font-medium"
         style="color: var(--color-accent);"
         data-mastery-reveal
         aria-expanded="false"
@@ -44,7 +44,7 @@ if ($item !== null && $card === null) {
     @if ($card->highlight !== null)
         <button
             type="button"
-            class="mt-4 inline-flex min-h-11 items-center text-sm font-medium"
+            class="pressable mt-4 inline-flex min-h-11 items-center text-sm font-medium"
             style="color: var(--color-accent);"
             data-mastery-passage-toggle
             aria-expanded="false"
@@ -76,7 +76,7 @@ if ($item !== null && $card === null) {
             <x-button
                 variant="{{ $feedback === 'learned' ? 'primary' : 'secondary' }}"
                 data-mastery-choice="{{ $feedback }}"
-                style="min-height: var(--size-touch-lg);"
+                style="min-height: var(--size-touch-lg); border-radius: 14px;"
             >
                 {{ __('mastery.feedback.' . $feedback) }}
             </x-button>
@@ -93,7 +93,7 @@ if ($item !== null && $card === null) {
         <x-button
             class="w-full"
             data-mastery-choice="later"
-            style="min-height: var(--size-touch-lg);"
+            style="min-height: var(--size-touch-lg); border-radius: 14px;"
         >
             {{ __('practice.mix.next') }}
         </x-button>

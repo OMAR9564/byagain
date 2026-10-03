@@ -7,13 +7,13 @@
     <span
         data-review-verdict-label
         class="inline-flex min-h-9 items-center rounded-full px-3 text-sm font-medium"
-        style="background-color: var(--color-surface-sunken); color: var(--color-ink-muted);"
+        style="background-color: var(--color-fill); color: var(--color-ink-muted);"
     ></span>
 
     <button
         type="button"
         data-review-resume
-        class="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium"
+        class="pressable inline-flex min-h-11 items-center gap-1.5 text-sm font-medium"
         style="color: var(--color-accent);"
     >
         {{ __('review.nav.resume') }}

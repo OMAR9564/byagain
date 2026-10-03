@@ -33,7 +33,7 @@
             variant="secondary"
             class="flex-1"
             data-review-action="discard"
-            style="min-height: var(--size-touch-lg);"
+            style="min-height: var(--size-touch-lg); border-radius: 14px;"
         >
             <span class="flex items-center gap-2">
                 {{-- An archive box, not a bin: discarding hides
@@ -52,7 +52,7 @@
         <x-button
             class="flex-1"
             data-review-action="keep"
-            style="min-height: var(--size-touch-lg);"
+            style="min-height: var(--size-touch-lg); border-radius: 14px;"
         >
             <span class="flex items-center gap-2">
                 {{-- A bookmark: it stays in the book. --}}
@@ -76,7 +76,7 @@
     <div class="mt-3 flex items-center gap-3">
         <button
             type="button"
-            class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 text-sm"
+            class="pressable inline-flex min-h-11 flex-1 items-center justify-center gap-2 text-sm"
             style="color: var(--color-ink-muted);"
             data-review-favorite
             aria-pressed="{{ $highlight->is_favorite ? 'true' : 'false' }}"
@@ -99,8 +99,8 @@
             <select
                 data-review-frequency
                 data-initial="{{ $highlight->source?->frequency }}"
-                class="min-h-11 w-full rounded-lg px-2 text-sm"
-                style="background-color: var(--color-surface); color: var(--color-ink-muted); border: 1px solid var(--color-border);"
+                class="ios-select min-h-11 w-full rounded-[10px] px-3 text-sm"
+                style="background-color: var(--color-fill); color: var(--color-ink); border: 0;"
             >
                 @foreach (\App\Http\Requests\StoreSourceRequest::frequencies() as $frequency)
                     <option value="{{ $frequency }}" @selected($highlight->source?->frequency === $frequency)>

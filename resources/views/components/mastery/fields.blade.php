@@ -1,45 +1,54 @@
 @props(['card' => null])
 
-<fieldset class="flex flex-col gap-2">
-    <legend class="mb-1 text-sm font-medium" style="color: var(--color-ink);">
+<fieldset class="ios-section" style="margin-top: 0;">
+    <legend class="ios-section-header">
         {{ __('mastery.card.type') }}
     </legend>
 
-    <label class="flex min-h-11 items-center gap-2.5 text-base" style="color: var(--color-ink);">
-        <input type="radio" name="type" value="{{ \App\Models\MasteryCard::TYPE_QA }}" class="h-5 w-5"
-               style="accent-color: var(--color-accent);"
-               @checked(old('type', $card?->type ?? \App\Models\MasteryCard::TYPE_QA) === \App\Models\MasteryCard::TYPE_QA)>
-        {{ __('mastery.card.type_qa') }}
-    </label>
+    @php
+        $currentType = old('type', $card?->type ?? \App\Models\MasteryCard::TYPE_QA);
+    @endphp
 
-    <div class="flex flex-col gap-1">
-        <label class="flex min-h-11 items-center gap-2.5 text-base" style="color: var(--color-ink);">
-            <input type="radio" name="type" value="{{ \App\Models\MasteryCard::TYPE_CLOZE }}" class="h-5 w-5"
-                   style="accent-color: var(--color-accent);"
-                   @checked(old('type', $card?->type ?? \App\Models\MasteryCard::TYPE_QA) === \App\Models\MasteryCard::TYPE_CLOZE)>
-            {{ __('mastery.card.type_cloze') }}
+    <div class="ios-group">
+        <label class="ios-row ios-check-row ios-row-link">
+            <span class="flex-1">{{ __('mastery.card.type_qa') }}</span>
+            <input type="radio" name="type" value="{{ \App\Models\MasteryCard::TYPE_QA }}"
+                   @checked($currentType === \App\Models\MasteryCard::TYPE_QA)>
+            <svg class="ios-check" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 8.5 6 12.5 14 3.5"/>
+            </svg>
         </label>
-        <p class="text-sm" style="color: var(--color-ink-muted);">{{ __('mastery.card.cloze_hint') }}</p>
+
+        <label class="ios-row ios-check-row ios-row-link">
+            <span class="flex-1">{{ __('mastery.card.type_cloze') }}</span>
+            <input type="radio" name="type" value="{{ \App\Models\MasteryCard::TYPE_CLOZE }}"
+                   @checked($currentType === \App\Models\MasteryCard::TYPE_CLOZE)>
+            <svg class="ios-check" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 8.5 6 12.5 14 3.5"/>
+            </svg>
+        </label>
     </div>
+
+    <p class="ios-section-footer">{{ __('mastery.card.cloze_hint') }}</p>
 </fieldset>
 
 <div class="flex flex-col gap-1.5">
-    <label for="question" class="text-sm font-medium" style="color: var(--color-ink);">
+    <label for="question" class="px-1 text-sm font-medium" style="color: var(--color-ink);">
         {{ __('mastery.card.question') }}
     </label>
 
     <textarea id="question" name="question" rows="4" required
-              class="w-full rounded-lg p-3.5"
-              style="background-color: var(--color-surface); color: var(--color-ink); border: 1px solid var(--color-border-strong);"
+              class="ios-field"
+              style="padding: 14px 16px;"
     >{{ old('question', $card?->question) }}</textarea>
 
     @error('question')
-        <p class="text-sm" style="color: var(--color-critical);">{{ $message }}</p>
+        <p class="px-1 text-sm" style="color: var(--color-critical);">{{ $message }}</p>
     @enderror
 </div>
 
 <div class="flex flex-col gap-1.5">
-    <label for="answer" class="text-sm font-medium" style="color: var(--color-ink);">
+    <label for="answer" class="px-1 text-sm font-medium" style="color: var(--color-ink);">
         {{ __('mastery.card.answer') }}
     </label>
 
@@ -47,11 +56,11 @@
          answer inside the question, so the controller derives it — two fields
          that must agree are two fields that will eventually disagree. --}}
     <textarea id="answer" name="answer" rows="3"
-              class="w-full rounded-lg p-3.5"
-              style="background-color: var(--color-surface); color: var(--color-ink); border: 1px solid var(--color-border-strong);"
+              class="ios-field"
+              style="padding: 14px 16px;"
     >{{ old('answer', $card?->answer) }}</textarea>
 
     @error('answer')
-        <p class="text-sm" style="color: var(--color-critical);">{{ $message }}</p>
+        <p class="px-1 text-sm" style="color: var(--color-critical);">{{ $message }}</p>
     @enderror
 </div>
