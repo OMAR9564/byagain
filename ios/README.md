@@ -4,7 +4,7 @@ A native iOS shell around the byagain web app. It loads the live site in a web v
 
 ## What's native
 
-The app shell provides a native tab bar with four tabs (Today, Library, Mix, Streak) that each load their own view of the site. Tapping a tab again pops to its root. You can swipe back at the left edge of any tab, pull to refresh, and native dialogs appear for alerts and confirmations. Links to Add source and New source open as sheets instead of full screens. Downloads go to the share sheet for saving or sharing.
+The app shell provides a native tab bar with four tabs (Today, Library, Mix, Streak) that each load their own view of the site. Tapping a tab again pops to its root. You can swipe back at the left edge of any tab, pull to refresh, and native dialogs appear for alerts and confirmations. Add passage and New source open as sheets instead of full screens. The tab bar hides on the sign-in screens. Downloads go to the share sheet for saving or sharing.
 
 ## Requirements
 

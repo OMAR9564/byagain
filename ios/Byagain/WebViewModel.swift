@@ -10,20 +10,20 @@ enum Presentation {
 final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
 	weak var viewModel: WebViewModel?
 
-	init(viewModel: WebViewModel) {
-		self.viewModel = viewModel
+	override init() {
+		super.init()
 	}
 
 	func userContentController(
 		_ userContentController: WKUserContentController,
 		didReceive message: WKScriptMessage
 	) {
-		Task { @MainActor in
-			guard let body = message.body as? [String: Any],
-				  let type = body["type"] as? String else {
-				return
-			}
+		// Read the body here: WKScriptMessage is not Sendable, so only the String crosses actors.
+		guard let type = (message.body as? [String: Any])?["type"] as? String else {
+			return
+		}
 
+		Task { @MainActor in
 			if type == "dismiss" {
 				let didSubmitForm = self.viewModel?.didSubmitForm ?? false
 				self.viewModel?.router?.dismissSheet(reloadCurrent: didSubmitForm)
@@ -73,7 +73,7 @@ final class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate, WKUI
 		userContentController.addUserScript(userScript)
 
 		// Add message handler
-		let weakHandler = WeakScriptMessageHandler(viewModel: nil)
+		let weakHandler = WeakScriptMessageHandler()
 		userContentController.add(weakHandler, name: "byagain")
 
 		config.userContentController = userContentController
@@ -151,7 +151,10 @@ final class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate, WKUI
 		let isAboutBlank = url.absoluteString == "about:blank"
 		let isMainFrame = navigationAction.targetFrame?.isMainFrame ?? true
 
-		if isHttpOrHttps && isAppBoundHost && isMainFrame {
+		if isHttpOrHttps && isAppBoundHost && !isMainFrame {
+			// Embedded content (iframes) on our own host
+			decisionHandler(.allow)
+		} else if isHttpOrHttps && isAppBoundHost {
 			if presentation == .tab {
 				// Tab presentation logic
 				if navigationAction.navigationType == .linkActivated {
@@ -174,18 +177,19 @@ final class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate, WKUI
 				// Sheet presentation logic
 				if navigationAction.request.httpMethod == "POST" {
 					didSubmitForm = true
+					// Lets a swipe-down dismissal reload the tab too
+					router?.noteSheetSubmission()
 					decisionHandler(.allow)
-				} else if navigationAction.targetFrame?.isMainFrame == true {
+				} else {
 					// GET navigation or redirects
 					if !AppConfig.sheetPaths.contains(url.path) && webView.url != nil {
 						// Not first load and not in sheet paths
 						decisionHandler(.cancel)
+						// No reload: open(url) loads the destination itself
 						router?.dismissSheet(reloadCurrent: false)
 						router?.open(url)
 						return
 					}
-					decisionHandler(.allow)
-				} else {
 					decisionHandler(.allow)
 				}
 			}
@@ -246,7 +250,7 @@ final class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate, WKUI
 		if presentation == .tab {
 			let newIsGuest = isPathGuest(currentPath)
 			if wasGuest && !newIsGuest {
-				router?.didSignIn()
+				router?.didSignIn(from: self)
 			}
 			wasGuest = newIsGuest
 		}

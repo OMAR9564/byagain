@@ -11,27 +11,28 @@ final class AppRouter: ObservableObject {
 	@Published var selection: AppTab = .today
 	@Published var sheet: SheetRequest?
 
-	private(set) var models: [AppTab: WebViewModel] = [:]
+	let models: [AppTab: WebViewModel]
 	private var sheetSubmitted = false
 
 	init() {
-		var models: [AppTab: WebViewModel] = [:]
+		var built: [AppTab: WebViewModel] = [:]
 		for tab in AppTab.allCases {
-			models[tab] = WebViewModel(
+			built[tab] = WebViewModel(
 				startURL: AppConfig.url(tab.path),
 				presentation: .tab,
-				router: self
+				router: nil
 			)
 		}
-		self.models = models
+		models = built
+		// Wire the router once self is fully initialized
+		for model in built.values {
+			model.router = self
+		}
 	}
 
 	func model(for tab: AppTab) -> WebViewModel {
-		models[tab] ?? WebViewModel(
-			startURL: AppConfig.url(tab.path),
-			presentation: .tab,
-			router: self
-		)
+		// Every tab is created in init, so the lookup cannot miss
+		models[tab]!
 	}
 
 	func select(_ tab: AppTab) {
@@ -74,17 +75,20 @@ final class AppRouter: ObservableObject {
 		sheetSubmitted = reloadCurrent
 	}
 
+	func noteSheetSubmission() {
+		sheetSubmitted = true
+	}
+
 	func sheetDidDismiss() {
 		if sheetSubmitted {
 			model(for: selection).reload()
 		}
 	}
 
-	func didSignIn() {
-		for tab in AppTab.allCases {
-			if tab != selection {
-				model(for: tab).reload()
-			}
+	func didSignIn(from source: WebViewModel) {
+		// Other tabs still sit on /login; send them to their own root
+		for model in models.values where model !== source {
+			model.load(model.startURL)
 		}
 	}
 }
