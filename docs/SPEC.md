@@ -53,6 +53,7 @@ by the ownership scope, so another account's id produces **404, not 403** — a
 | GET | `/library/sources/{source}` | `sources.show` |
 | GET | `/library/sources/{source}/edit` | `sources.edit` |
 | PATCH | `/library/sources/{source}` | `sources.update` |
+| DELETE | `/library/sources/{source}` | `sources.destroy` |
 | GET | `/library/sources/{source}/practice` | `practice.show` |
 | POST | `/library/sources/{source}/practice/{highlight}` | `practice.action` |
 | GET | `/library/sources/{source}/export` | `sources.export` |
@@ -65,12 +66,14 @@ by the ownership scope, so another account's id produces **404, not 403** — a
 | POST | `/highlights` | `highlights.store` |
 | GET | `/highlights/{highlight}/edit` | `highlights.edit` |
 | PATCH | `/highlights/{highlight}` | `highlights.update` |
+| DELETE | `/highlights/{highlight}` | `highlights.destroy` |
 | POST | `/highlights/{highlight}/discard` | `highlights.discard` |
 | POST | `/highlights/{highlight}/favorite` | `highlights.favorite` |
 | POST | `/highlights/{highlight}/mastery` | `mastery.store` |
 | GET | `/mastery` | `mastery.index` |
 | GET | `/mastery/{card}/edit` | `mastery.edit` |
 | PATCH | `/mastery/{card}` | `mastery.update` |
+| DELETE | `/mastery/{card}` | `mastery.destroy` |
 | POST | `/mastery/{card}/retire` | `mastery.retire` |
 | GET | `/streak` | `streak.show` |
 | GET | `/settings` | `settings.edit` |
@@ -248,7 +251,7 @@ Half-life scheduling. Recall probability is `p(t) = 2^(−Δt / H)`.
 - Later feedback multiplies: `sooner ×0.5 · later ×2.0 · someday ×3.0`.
 - `H` is clamped to `[1, 365]`.
 - `due_at = last_reviewed_at + H`.
-- `learned` retires the card. Hidden, never deleted.
+- `learned` retires the card. Hidden, not permanently deleted; an explicit Delete button removes it permanently.
 
 Due cards are ordered by elapsed-over-half-life, which is ascending recall
 probability without asking the database to evaluate a power. Ties break
@@ -311,9 +314,13 @@ than `content_html`.
 - **Assets** — no user-facing page loads a Filament, Livewire or Alpine asset.
   Livewire's `inject_assets` is off for this reason; a test fetches every page
   and fails on the string.
-- **Deletion** — user content is hidden (`is_discarded`, `is_archived`,
-  `retired`, `status`), never deleted. The single exception is a reader
-  deleting their own account, which is real and irreversible.
+- **Deletion** — user content is hidden by default (`is_discarded`, `is_archived`,
+  `retired`, `status`) or deleted permanently. Passages and cards may be
+  permanently deleted via an explicit Delete action with confirmation. Hidden
+  items remain as history; deleted unacted review items are removed (lest they
+  block completion forever), while acted items stay as null-FK records. The only
+  other permanent deletion is a reader deleting their own account, which is
+  irreversible.
 - **Constants** — every threshold lives in `config/byagain.php`.
 
 ## 10. Practice and export

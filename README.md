@@ -142,6 +142,7 @@ nothing, silently. There, give each command its own cron line instead
 | `byagain:prune` | Removes expired tokens, old delivery rows, stale failed jobs. Never touches your content. |
 | `byagain:rerender-highlights` | Rebuilds rendered HTML from markdown. `--dry-run`, `--user=`. |
 | `byagain:promote-admin {email}` | Grants the admin role. `--demote` revokes it. |
+| `byagain:import-passages {file}` | Bulk-import passages and cards from Markdown. `--user=` (id or email), `--source=` (title, created if missing), `--dry-run`. |
 
 ## Quality gates
 
