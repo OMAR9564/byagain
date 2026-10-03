@@ -24,13 +24,14 @@
 
     /* Reading scale. `base` is the highlight body — everything else is
      * measured against it. */
-    --text-xs: 0.8125rem; /* 13px — timestamps, metadata */
-    --text-sm: 0.9375rem; /* 15px — secondary labels */
-    --text-base: 1.0625rem; /* 17px — body, the floor for anything readable */
-    --text-lg: 1.1875rem; /* 19px — highlight text on the review card */
-    --text-xl: 1.375rem; /* 22px — section headings */
-    --text-2xl: 1.75rem; /* 28px — page titles */
-    --text-3xl: 2.125rem; /* 34px — the streak number, and little else */
+    --text-2xs: 0.647rem;  /* 11px — Caption 2, tab labels */
+    --text-xs: 0.765rem;   /* 13px — Footnote: metadata, section headers/footers */
+    --text-sm: 0.882rem;   /* 15px — Subheadline */
+    --text-base: 1rem;     /* 17px — Body / Headline */
+    --text-lg: 1.118rem;   /* 19px — passage text on the review card */
+    --text-xl: 1.294rem;   /* 22px — Title 2 */
+    --text-2xl: 1.647rem;  /* 28px — Title 1 */
+    --text-3xl: 2rem;      /* 34px — Large Title */
 
     --leading-tight: 1.25;
     --leading-snug: 1.4;
@@ -41,34 +42,41 @@
     --container-prose: 34rem;
 
     /* ---------------------------------------------------------------- *
-     * Spacing — a 4px grid.
+     * Spacing — a 4px grid. Not scaled with Dynamic Type.
      * ---------------------------------------------------------------- */
 
-    --spacing: 0.25rem;
+    --spacing: 4px;
 
     /* ---------------------------------------------------------------- *
      * Touch targets — WCAG 2.5.5 asks for 44x44px; the bottom nav gets a
      * little more because it is used one-handed while walking.
+     * Not scaled with Dynamic Type.
      * ---------------------------------------------------------------- */
 
-    --size-touch: 2.75rem; /* 44px — the minimum for any control */
-    --size-touch-lg: 3.25rem; /* 52px — primary review actions */
-    --size-bottom-nav: 3.5rem; /* 56px — height of the thumb-reach bar */
+    --size-touch: 44px;
+    --size-touch-lg: 52px;
+    --size-bottom-nav: 49px;
 
     /* ---------------------------------------------------------------- *
      * Colour — light theme. Every foreground/background pair below is at
      * or above 4.5:1 (FR-084).
      * ---------------------------------------------------------------- */
 
-    --color-canvas: #fbfaf8; /* page background — warm, not clinical white */
-    --color-surface: #ffffff; /* cards */
-    --color-surface-sunken: #f2f0ec; /* code blocks, inset areas */
+    --color-canvas: #f4f1ec;          /* systemGroupedBackground, warm */
+    --color-surface: #ffffff;         /* grouped rows, cards */
+    --color-surface-sunken: #ebe7e0;  /* code blocks, inset areas */
     --color-border: #e3dfd8;
     --color-border-strong: #cfc9bf;
+    --color-separator: rgb(60 50 40 / 0.16);   /* hairlines between rows */
+    --color-fill: rgb(120 100 80 / 0.12);      /* gray button fill, segmented track */
+    --color-fill-strong: rgb(120 100 80 / 0.2);
+    --color-row-pressed: #e8e3db;
+    --color-bar: rgb(248 246 242 / 0.8);       /* nav + tab bar material tint */
+    --color-tab-inactive: #6c685f;
 
     --color-ink: #1c1a17; /* body text — 15.8:1 on canvas */
-    --color-ink-muted: #5f5a52; /* metadata — 6.9:1 on canvas */
-    --color-ink-subtle: #6c685f; /* placeholders — 4.74:1 on accent-wash */
+    --color-ink-muted: #5f5a52; /* metadata — 6.2:1 on canvas */
+    --color-ink-subtle: #6c685f; /* placeholders — 5.0:1 on canvas */
 
     --color-accent: #8a5a2b; /* the single brand colour: worn leather */
     --color-accent-hover: #6f4721;
@@ -83,15 +91,17 @@
                              * "where am I" never reads as "what is this" */
 
     /* ---------------------------------------------------------------- *
-     * Radius, elevation, motion.
+     * Radius, elevation, motion. Not scaled with Dynamic Type.
      * ---------------------------------------------------------------- */
 
-    --radius-sm: 0.375rem;
-    --radius-md: 0.625rem;
-    --radius-lg: 1rem;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --radius-xl: 14px;
+    --radius-2xl: 18px;
     --radius-full: 9999px;
 
-    --shadow-card: 0 1px 2px rgb(28 26 23 / 0.06), 0 4px 12px rgb(28 26 23 / 0.05);
+    --shadow-card: 0 1px 2px rgb(28 26 23 / 0.04), 0 2px 8px rgb(28 26 23 / 0.04);
     --shadow-raised: 0 2px 4px rgb(28 26 23 / 0.08), 0 12px 28px rgb(28 26 23 / 0.10);
 
     /* Card transitions stay under 200ms: long enough to read as movement,
@@ -99,6 +109,8 @@
     --duration-fast: 120ms;
     --duration-card: 180ms;
     --ease-out: cubic-bezier(0.2, 0, 0, 1);
+    --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+    --duration-press: 200ms;
 
     /* Z-scale, so no component invents its own number. */
     --z-bottom-nav: 40;
@@ -113,11 +125,17 @@
  */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light']) {
-        --color-canvas: #161513;
-        --color-surface: #1f1e1b;
-        --color-surface-sunken: #131211;
+        --color-canvas: #121110;
+        --color-surface: #1f1d1a;
+        --color-surface-sunken: #0c0b0a;
         --color-border: #34322d;
         --color-border-strong: #47443d;
+        --color-separator: rgb(235 225 210 / 0.14);
+        --color-fill: rgb(200 180 160 / 0.16);
+        --color-fill-strong: rgb(200 180 160 / 0.24);
+        --color-row-pressed: #2c2925;
+        --color-bar: rgb(26 25 23 / 0.78);
+        --color-tab-inactive: #a8a299;
 
         --color-ink: #ece8e1;
         --color-ink-muted: #a8a299;
@@ -134,17 +152,23 @@
 
         --color-focus: #7fb2ea;
 
-        --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.3);
+        --shadow-card: none;
         --shadow-raised: 0 2px 4px rgb(0 0 0 / 0.45), 0 12px 28px rgb(0 0 0 / 0.4);
     }
 }
 
 :root[data-theme='dark'] {
-    --color-canvas: #161513;
-    --color-surface: #1f1e1b;
-    --color-surface-sunken: #131211;
+    --color-canvas: #121110;
+    --color-surface: #1f1d1a;
+    --color-surface-sunken: #0c0b0a;
     --color-border: #34322d;
     --color-border-strong: #47443d;
+    --color-separator: rgb(235 225 210 / 0.14);
+    --color-fill: rgb(200 180 160 / 0.16);
+    --color-fill-strong: rgb(200 180 160 / 0.24);
+    --color-row-pressed: #2c2925;
+    --color-bar: rgb(26 25 23 / 0.78);
+    --color-tab-inactive: #a8a299;
 
     --color-ink: #ece8e1;
     --color-ink-muted: #a8a299;
@@ -161,7 +185,7 @@
 
     --color-focus: #7fb2ea;
 
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.3);
+    --shadow-card: none;
     --shadow-raised: 0 2px 4px rgb(0 0 0 / 0.45), 0 12px 28px rgb(0 0 0 / 0.4);
 }
 
@@ -173,5 +197,6 @@
     :root {
         --duration-fast: 1ms;
         --duration-card: 1ms;
+        --duration-press: 1ms;
     }
 }

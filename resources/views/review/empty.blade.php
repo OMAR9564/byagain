@@ -1,6 +1,4 @@
-<x-layouts.app :title="__('review.title')">
-    <x-slot:header>{{ __('review.title') }}</x-slot:header>
-
+<x-layouts.app greet tabRoot :title="__('review.title')">
     {{-- No eligible highlights means no review at all, rather than an empty
          one — the same rule that stops the pipeline mailing a blank page
          (FR-037). --}}

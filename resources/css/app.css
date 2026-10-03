@@ -10,6 +10,15 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+html { font-size: 106.25%; } /* 17px: iOS Body, everywhere */
+
+/* iOS Safari and WKWebView only: -webkit-touch-callout exists nowhere else, and
+ * -apple-system-body on macOS is 13px, so the pair keeps this to the phone. The
+ * root then follows the reader's Dynamic Type size and every rem with it. */
+@supports (font: -apple-system-body) and (-webkit-touch-callout: none) {
+    html { font: -apple-system-body; }
+}
+
 /*
  * Room for the fixed thumb bar.
  *
@@ -31,6 +40,9 @@
     --bottom-nav-space: calc(var(--size-bottom-nav) + var(--bottom-nav-inset));
 }
 
+html[data-shell='ios'] { --bottom-nav-space: 0px; }
+html[data-shell='ios'] [data-bottom-nav] { display: none; }
+
 @layer base {
     html {
         background-color: var(--color-canvas);
@@ -38,6 +50,7 @@
         /* Stop iOS from inflating text in landscape, which breaks the
          * one-card-per-screen rhythm of the review. */
         -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
     }
 
     body {
@@ -45,8 +58,14 @@
         font-size: var(--text-base);
         line-height: var(--leading-normal);
         /* The bottom nav is fixed; keep the last item reachable above it. */
-        padding-bottom: var(--bottom-nav-space);
+        padding-bottom: calc(var(--bottom-nav-space) + 24px);
+        caret-color: var(--color-accent);
     }
+
+    ::selection { background-color: color-mix(in srgb, var(--color-accent) 28%, transparent); }
+    a, button, [role='button'], label, summary, select { touch-action: manipulation; }
+    /* Chrome is not text: a long press on a tab or button should not select or callout. */
+    [data-navbar], [data-bottom-nav], button, .ios-row-link { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
     /* One visible, consistent focus ring everywhere. Never removed — it is
      * the only way a keyboard user knows where they are (FR-084). */
@@ -74,6 +93,107 @@
  * screen moves.
  */
 @layer components {
+    /* Navigation bar. Transparent over the large title; material + hairline once
+     * content scrolls under it — iOS's scroll-edge appearance. */
+    [data-navbar] {
+        position: sticky; top: 0; z-index: var(--z-sticky);
+        padding-top: env(safe-area-inset-top);
+        background-color: transparent;
+        border-bottom: 0.5px solid transparent;
+        transition: background-color var(--duration-fast) linear, border-color var(--duration-fast) linear;
+    }
+    [data-navbar][data-scrolled] {
+        background-color: var(--color-bar);
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        backdrop-filter: saturate(180%) blur(20px);
+        border-bottom-color: var(--color-separator);
+    }
+    .navbar-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 44px; padding: 0 8px; max-width: 28rem; margin: 0 auto; }
+    .navbar-title { font-size: var(--text-base); font-weight: 600; color: var(--color-ink); max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0; transition: opacity var(--duration-fast) linear; }
+    [data-navbar][data-scrolled] .navbar-title, [data-navbar][data-inline] .navbar-title { opacity: 1; }
+    .navbar-leading { justify-self: start; display: flex; align-items: center; min-width: 0; }
+    .navbar-trailing { justify-self: end; display: flex; align-items: center; gap: 2px; }
+
+    /* Bar buttons: tint text or a 44pt icon target. */
+    .bar-button { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; min-width: 44px; padding: 0 8px; justify-content: center; color: var(--color-accent); font-size: var(--text-base); border-radius: var(--radius-md); }
+    .bar-button svg { width: 24px; height: 24px; }
+    .bar-button--back { padding-left: 2px; }
+    .bar-button--back svg { width: 13px; height: 22px; } /* chevron.backward proportions */
+    .bar-button--prominent { font-weight: 600; }
+
+    /* Large title block under the bar. */
+    .large-title { font-size: var(--text-3xl); line-height: 1.2; font-weight: 700; letter-spacing: 0.011em; color: var(--color-ink); text-wrap: balance; }
+
+    /* Press feedback: iOS dims, it does not ripple. */
+    .pressable { transition: opacity var(--duration-press) var(--ease-out); }
+    .pressable:active { opacity: 0.45; transition-duration: 0ms; }
+
+    /* Inset grouped list. */
+    .ios-section { margin-top: 28px; }
+    .ios-section:first-child { margin-top: 8px; }
+    .ios-section-header { padding: 0 16px 7px; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.02em; color: var(--color-ink-muted); }
+    .ios-section-footer { padding: 7px 16px 0; font-size: var(--text-xs); line-height: 1.38; color: var(--color-ink-muted); }
+    .ios-group { background-color: var(--color-surface); border-radius: var(--radius-lg); overflow: hidden; }
+    .ios-row { position: relative; display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 11px 16px; color: var(--color-ink); font-size: var(--text-base); }
+    .ios-row + .ios-row::before, .ios-row + .ios-row-wrap::before, .ios-row-wrap + .ios-row::before, .ios-row-wrap + .ios-row-wrap::before { content: ''; position: absolute; top: 0; left: 16px; right: 0; border-top: 0.5px solid var(--color-separator); }
+    .ios-row-wrap { position: relative; } /* use when a row is a <form> or <li> wrapper around .ios-row */
+    .ios-row-link:active, .ios-row-link.is-pressed { background-color: var(--color-row-pressed); }
+    .ios-row-body { min-width: 0; flex: 1; }
+    .ios-row-title { font-size: var(--text-base); color: var(--color-ink); }
+    .ios-row-subtitle { font-size: var(--text-sm); color: var(--color-ink-muted); margin-top: 1px; }
+    .ios-row-detail { font-size: var(--text-base); color: var(--color-ink-muted); flex-shrink: 0; }
+    .ios-chevron { width: 8px; height: 14px; flex-shrink: 0; color: var(--color-border-strong); }
+    .ios-row--action { color: var(--color-accent); }
+    .ios-row--destructive { color: var(--color-critical); justify-content: center; }
+
+    /* iOS switch on a native checkbox: the input keeps its name, value, form and
+     * every data-* attribute, so push.js and the settings form need no change. */
+    .ios-switch { -webkit-appearance: none; appearance: none; position: relative; flex-shrink: 0; width: 51px; height: 31px; border-radius: 9999px; background-color: var(--color-fill-strong); transition: background-color 200ms var(--ease-out); cursor: pointer; }
+    .ios-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 9999px; background: #fff; box-shadow: 0 3px 8px rgb(0 0 0 / 0.15), 0 1px 1px rgb(0 0 0 / 0.16); transition: transform 250ms var(--ease-ios); }
+    .ios-switch:checked { background-color: var(--color-positive); }
+    .ios-switch:checked::after { transform: translateX(20px); }
+    .ios-switch:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Segmented control. Buttons carry aria-selected (editor.js already sets it). */
+    .ios-segmented { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 2px; border-radius: 9px; background-color: var(--color-fill); }
+    .ios-segmented > * { min-height: 32px; border-radius: 7px; font-size: var(--text-sm); font-weight: 500; color: var(--color-ink); transition: background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
+    .ios-segmented > [aria-selected='true'] { background-color: var(--color-surface); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); font-weight: 600; }
+    html[data-theme='dark'] .ios-segmented > [aria-selected='true'] { background-color: #5a564f; }
+    @media (prefers-color-scheme: dark) { html:not([data-theme='light']) .ios-segmented > [aria-selected='true'] { background-color: #5a564f; } }
+
+    /* Text inputs inside grouped rows: no border, the row is the field. */
+    .ios-input { width: 100%; min-height: 44px; background: transparent; color: var(--color-ink); border: 0; padding: 0; }
+    .ios-input::placeholder { color: var(--color-ink-subtle); }
+    .ios-input--trailing { text-align: right; color: var(--color-ink-muted); }
+
+    /* Stand-alone field (auth, editor): a filled rounded box. */
+    .ios-field { width: 100%; min-height: 50px; padding: 0 16px; border-radius: var(--radius-lg); background-color: var(--color-surface); color: var(--color-ink); border: 1px solid transparent; }
+    .ios-field:focus { border-color: var(--color-accent); }
+    .ios-field[aria-invalid='true'] { border-color: var(--color-critical); }
+
+    /* Pop-up button look for <select>: native picker opens on tap. */
+    .ios-select { -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 20' fill='none' stroke='%238a847b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 7.5 6 4l3.5 3.5M2.5 12.5 6 16l3.5-3.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 10px 16px; padding-right: 32px; }
+
+    /* Selection list row (radio as checkmark, like iOS pickers in Settings). */
+    .ios-check-row input[type='radio'] { position: absolute; opacity: 0; pointer-events: none; }
+    .ios-check-row .ios-check { width: 16px; height: 16px; color: var(--color-accent); visibility: hidden; flex-shrink: 0; }
+    .ios-check-row:has(input:checked) .ios-check { visibility: visible; }
+    .ios-check-row:has(input:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+
+    /* Context menu built on <details>; app.js closes it on outside tap. */
+    .ios-menu { position: relative; }
+    .ios-menu > summary { list-style: none; }
+    .ios-menu > summary::-webkit-details-marker { display: none; }
+    .ios-menu-panel { position: absolute; right: 0; top: calc(100% + 6px); z-index: var(--z-overlay); min-width: 220px; border-radius: 13px; overflow: hidden; background-color: var(--color-bar); -webkit-backdrop-filter: saturate(180%) blur(30px); backdrop-filter: saturate(180%) blur(30px); box-shadow: 0 10px 40px rgb(0 0 0 / 0.18), 0 0 0 0.5px var(--color-separator); transform-origin: top right; animation: ios-menu-in 220ms var(--ease-ios); }
+    .ios-menu-panel > * { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 0 16px; font-size: var(--text-base); color: var(--color-ink); text-align: left; }
+    .ios-menu-panel > * + * { border-top: 0.5px solid var(--color-separator); }
+    .ios-menu-panel > *:active { background-color: var(--color-fill); }
+    .ios-menu-panel .is-destructive { color: var(--color-critical); }
+    .ios-menu-panel form > button { display: flex; width: 100%; align-items: center; justify-content: space-between; min-height: 44px; }
+    .ios-menu-panel > form { padding: 0 16px; }
+    @keyframes ios-menu-in { from { opacity: 0; transform: scale(0.85); } }
+    @media (prefers-reduced-motion: reduce) { .ios-menu-panel { animation: none; } }
+
     /*
      * The thumb bar, pinned for the whole scroll (FR-131, FR-133).
      *

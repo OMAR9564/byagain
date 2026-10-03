@@ -1,4 +1,4 @@
-<x-layouts.app :title="__('review.title')">
+<x-layouts.app greet tabRoot :title="__('review.title')">
     {{-- The day is finished, and this screen says so instead of dealing
          another hand. Everything the product promises rests on finishing
          being possible (FR-043).
@@ -17,9 +17,9 @@
             <path d="M10 33h14" opacity="0.35" />
         </svg>
 
-        <h1 class="text-2xl font-semibold tracking-tight" style="color: var(--color-ink);">
+        <h2 class="text-2xl font-bold" style="color: var(--color-ink);">
             {{ __('review.done.title') }}
-        </h1>
+        </h2>
 
         <p class="mt-2 max-w-xs text-base" style="color: var(--color-ink-muted);">
             {{ __('review.done.body') }}

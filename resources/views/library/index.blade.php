@@ -1,63 +1,62 @@
-<x-layouts.app :title="__('library.title')">
-    <x-slot:header>{{ __('library.title') }}</x-slot:header>
-
-    <x-slot:headerAction>
-        <x-button :href="route('sources.create')" variant="secondary" class="!px-3">
-            {{ __('actions.add') }}
-        </x-button>
-    </x-slot:headerAction>
-
-    {{-- Link to the question cards list. Moved from the bottom navigation to
-         give more room to the new Mix tab. --}}
-    <a href="{{ route('mastery.index') }}" class="mb-3 block">
-        <x-card>
-            <div class="flex items-center justify-between">
-                <h2 class="text-base font-semibold" style="color: var(--color-ink);">
-                    {{ __('mastery.title') }}
-                </h2>
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"
-                     style="color: var(--color-ink-muted);">
-                    <path d="M9.5 6.5 15 12l-5.5 5.5" />
-                </svg>
-            </div>
-            <p class="mt-1 text-sm" style="color: var(--color-ink-muted);">
-                {{ __('mastery.index_body') }}
-            </p>
-        </x-card>
-    </a>
-
-    @forelse ($sources as $source)
-        <a href="{{ route('sources.show', $source) }}" class="mb-3 block">
-            <x-card>
-                <div class="flex items-baseline justify-between gap-3">
-                    <h2 class="text-base font-semibold" style="color: var(--color-ink);">
-                        {{ $source->title }}
-                    </h2>
-
-                    @if ($source->is_archived)
-                        <span class="shrink-0 text-xs" style="color: var(--color-ink-subtle);">
-                            {{ __('actions.archive') }}
-                        </span>
-                    @endif
+<x-layouts.app header="Library" tabRoot :title="__('library.title')">
+    {{-- Cards (Mastery) link section --}}
+    <div class="ios-section">
+        <div class="ios-group">
+            <a href="{{ route('mastery.index') }}" class="ios-row ios-row-link pressable">
+                <div style="width: 29px; height: 29px; border-radius: 7px; background-color: var(--color-accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="white"
+                         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                        <rect x="6" y="4" width="4" height="4" rx="0.5" />
+                        <rect x="6" y="10" width="4" height="4" rx="0.5" />
+                        <rect x="14" y="4" width="4" height="4" rx="0.5" />
+                        <rect x="14" y="10" width="4" height="4" rx="0.5" />
+                    </svg>
                 </div>
+                <div class="ios-row-body">
+                    <div class="ios-row-title">{{ __('mastery.title') }}</div>
+                    <div class="ios-row-subtitle">{{ __('mastery.index_body') }}</div>
+                </div>
+                <svg class="ios-chevron" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                    <path d="M1 1l6 6-6 6"/>
+                </svg>
+            </a>
+        </div>
+    </div>
 
-                @if ($source->author !== null)
-                    <p class="mt-0.5 text-sm" style="color: var(--color-ink-muted);">{{ $source->author }}</p>
-                @endif
-
-                <p class="mt-2 text-sm" style="color: var(--color-ink-subtle);">
-                    {{ trans_choice('library.source.highlight_count', $source->active_highlights_count, ['count' => $source->active_highlights_count]) }}
-                    · {{ __('library.frequency.' . $source->frequency) }}
-                </p>
-            </x-card>
-        </a>
-    @empty
-        <x-empty-state
-            :title="__('library.empty.title')"
-            :body="__('library.empty.body')"
-            :action="__('library.empty.action')"
-            :href="route('sources.create')"
-        />
-    @endforelse
+    {{-- Sources section --}}
+    @if ($sources->isNotEmpty() || true)
+        <div class="ios-section">
+            <div class="ios-section-header">{{ __('library.sources_header') }}</div>
+            <div class="ios-group">
+                @forelse ($sources as $source)
+                    <a href="{{ route('sources.show', $source) }}" class="ios-row ios-row-link pressable">
+                        <div class="ios-row-body">
+                            <div class="ios-row-title" style="font-weight: 500;">{{ $source->title }}</div>
+                            @if ($source->author !== null)
+                                <div class="ios-row-subtitle">{{ $source->author }}</div>
+                            @endif
+                            <div class="ios-row-subtitle">
+                                {{ trans_choice('library.source.highlight_count', $source->active_highlights_count, ['count' => $source->active_highlights_count]) }}
+                                · {{ __('library.frequency.' . $source->frequency) }}
+                            </div>
+                            @if ($source->is_archived)
+                                <div class="ios-row-detail text-sm">{{ __('actions.archive') }}</div>
+                            @endif
+                        </div>
+                        <svg class="ios-chevron" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                            <path d="M1 1l6 6-6 6"/>
+                        </svg>
+                    </a>
+                @empty
+                @endforelse
+                <a href="{{ route('sources.create') }}" class="ios-row ios-row-link ios-row--action pressable">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; flex-shrink: 0;">
+                        <circle cx="12" cy="12" r="11" />
+                        <path d="M12 7v10M7 12h10" />
+                    </svg>
+                    <span>{{ __('library.source.new') }}</span>
+                </a>
+            </div>
+        </div>
+    @endif
 </x-layouts.app>

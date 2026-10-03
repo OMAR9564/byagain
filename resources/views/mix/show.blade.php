@@ -1,6 +1,4 @@
-<x-layouts.app :title="__('practice.mix.title')">
-    <x-slot:header>{{ __('practice.mix.title') }}</x-slot:header>
-
+<x-layouts.app header="Mix" tabRoot :title="__('practice.mix.title')">
     {{-- Mix: endless, shuffled practice across all sources and cards.
          Like source practice, this is not recorded and never touches the day.
          The root has `data-endless-url` instead of `data-complete-url` so the
@@ -29,9 +27,9 @@
         <script type="application/json" data-review-copy>@json($reviewCopy)</script>
 
         {{-- Banner: this is endless practice, not a single set. --}}
-        <div class="mb-6 rounded-lg px-4 py-3" style="background-color: var(--color-surface); color: var(--color-ink-muted);">
+        <p class="mb-5 text-sm" style="color: var(--color-ink-muted);">
             {{ __('practice.mix.banner') }}
-        </div>
+        </p>
 
         @if ($items->isEmpty())
             <x-empty-state
@@ -47,12 +45,11 @@
                     type="button"
                     data-review-back
                     hidden
-                    class="-ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                    style="color: var(--color-ink-muted);"
+                    class="bar-button pressable"
                     aria-label="{{ __('review.nav.previous') }}"
                 >
                     <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                         stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;">
                         <path d="M14.5 6.5 9 12l5.5 5.5" />
                     </svg>
                 </button>

@@ -101,10 +101,138 @@ function bindConfirmationForms() {
     });
 }
 
+/**
+ * Navbar scroll tracking for iOS-style collapse behavior.
+ *
+ * If a large title exists, use IntersectionObserver to detect when it scrolls
+ * out of view. Otherwise, toggle on any scroll.
+ */
+function bindNavbar() {
+    const navbar = document.querySelector('[data-navbar]');
+
+    if (!navbar) {
+        return;
+    }
+
+    const largeTitle = document.querySelector('[data-large-title]');
+
+    if (largeTitle) {
+        // Use IntersectionObserver to detect when the large title leaves the viewport.
+        const navbarHeight = navbar.offsetHeight;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        delete navbar.dataset.scrolled;
+                    } else {
+                        navbar.dataset.scrolled = '';
+                    }
+                });
+            },
+            { rootMargin: `-${navbarHeight}px 0px 0px 0px`, threshold: 0 }
+        );
+
+        observer.observe(largeTitle);
+    } else {
+        // For inline pages without a large title, track scroll position.
+        let ticking = false;
+
+        const updateNavbar = () => {
+            if (window.scrollY > 0) {
+                navbar.dataset.scrolled = '';
+            } else {
+                delete navbar.dataset.scrolled;
+            }
+
+            ticking = false;
+        };
+
+        window.addEventListener(
+            'scroll',
+            () => {
+                if (!ticking) {
+                    window.requestAnimationFrame(updateNavbar);
+                    ticking = true;
+                }
+            },
+            { passive: true }
+        );
+    }
+}
+
+/**
+ * Sheet dismissal for the native iOS wrapper.
+ *
+ * When a link or button has data-sheet-dismiss and the presentation is 'sheet',
+ * delegate to the native side instead of following the link normally.
+ */
+function bindSheetDismiss() {
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+
+        if (!(target instanceof HTMLElement)) {
+            return;
+        }
+
+        const dismissible = target.closest('[data-sheet-dismiss]');
+
+        if (!dismissible) {
+            return;
+        }
+
+        // Only intercept if we are in a sheet presentation and the webkit bridge exists.
+        if (
+            document.documentElement.dataset.presentation !== 'sheet' ||
+            !window.webkit?.messageHandlers?.byagain
+        ) {
+            return;
+        }
+
+        event.preventDefault();
+        window.webkit.messageHandlers.byagain.postMessage({ type: 'dismiss' });
+    });
+}
+
+/**
+ * Context menus built on <details> elements.
+ *
+ * Close all open menus when clicking outside, or when Escape is pressed.
+ */
+function bindMenus() {
+    // Close menus on outside click.
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+
+        if (!(target instanceof HTMLElement)) {
+            return;
+        }
+
+        const openMenus = document.querySelectorAll('[data-menu][open]');
+
+        openMenus.forEach((menu) => {
+            if (!menu.contains(target)) {
+                menu.removeAttribute('open');
+            }
+        });
+    });
+
+    // Close all menus on Escape.
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            document.querySelectorAll('[data-menu][open]').forEach((menu) => {
+                menu.removeAttribute('open');
+            });
+        }
+    });
+}
+
 bindThemeControls();
 bindConnectionBanner();
 registerServiceWorker();
 bindConfirmationForms();
+bindNavbar();
+bindSheetDismiss();
+bindMenus();
 flushQueueOnLoadAndOnline();
 prefetchReviewIfOnline();
 

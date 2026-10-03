@@ -1,10 +1,8 @@
-<x-layouts.app :title="__('streak.title')">
-    <x-slot:header>{{ __('streak.title') }}</x-slot:header>
-
+<x-layouts.app header="Streak" tabRoot :title="__('streak.title')">
     <x-card class="text-center">
         <p class="text-sm" style="color: var(--color-ink-muted);">{{ __('streak.current') }}</p>
 
-        <p class="mt-1 text-3xl font-semibold" style="color: var(--color-accent);">
+        <p class="mt-1 text-3xl font-bold" style="color: var(--color-accent);">
             {{ trans_choice('streak.days', $current, ['count' => $current]) }}
         </p>
 
@@ -36,11 +34,10 @@
                 @php $isToday = $index === count($calendar) - 1; @endphp
 
                 <li
-                    class="aspect-square rounded-md"
+                    class="aspect-square rounded-[8px]"
                     style="
-                        background-color: {{ $day['done'] ? 'var(--color-accent)' : 'var(--color-surface-sunken)' }};
-                        border: 1px solid {{ $day['done'] ? 'transparent' : 'var(--color-border)' }};
-                        @if ($isToday) outline: 2px solid var(--color-accent); outline-offset: 2px; @endif
+                        background-color: {{ $day['done'] ? 'var(--color-accent)' : 'var(--color-fill)' }};
+                        @if ($isToday) border: 2px solid var(--color-accent); @endif
                     "
                     title="{{ $day['date'] }} — {{ $day['done'] ? __('streak.calendar.done') : __('streak.calendar.missed') }}"
                 >

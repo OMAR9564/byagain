@@ -1,4 +1,4 @@
-@props(['mastheadAs' => 'p'])
+@props(['mastheadAs' => 'p', 'greet' => false, 'back' => null, 'backLabel' => null, 'inline' => false, 'tabRoot' => false, 'cancel' => null, 'header' => null, 'headerAction' => null, 'cancelLabel' => null])
 
 {{-- The signed-in shell.
 
@@ -23,8 +23,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#f4f1ec" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)">
     <title>{{ isset($title) ? $title . ' · ' . config('app.name') : config('app.name') }}</title>
 
     <link rel="manifest" href="{{ url('manifest.json') }}">
@@ -56,23 +56,64 @@
         {{ __('actions.next') }}
     </a>
 
-    <main id="main" class="mx-auto w-full max-w-md px-4 pt-3">
-        <x-masthead :as="$mastheadAs" />
+    @php
+        $navTitle = $header ?? ($greet ? auth()->user()->name : '');
+    @endphp
 
-        @isset($header)
-            <header class="mb-4 flex min-h-11 items-center justify-between gap-3">
-                <h1 class="text-xl font-semibold tracking-tight" style="color: var(--color-ink);">
-                    {{ $header }}
-                </h1>
+    <header data-navbar @if($inline) data-inline @endif>
+        <div class="navbar-row">
+            <div class="navbar-leading">
+                @if ($cancel)
+                    <a href="{{ $cancel }}" class="bar-button pressable" data-sheet-dismiss>
+                        {{ $cancelLabel ?? __('actions.cancel') }}
+                    </a>
+                @elseif ($back)
+                    <a href="{{ $back }}" class="bar-button bar-button--back pressable">
+                        <svg viewBox="0 0 13 22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 2 2 11l9 9"/>
+                        </svg>
+                        <span class="truncate">{{ $backLabel ?? __('actions.back') }}</span>
+                    </a>
+                @endif
+            </div>
+            <p class="navbar-title" aria-hidden="true">{{ $navTitle }}</p>
+            <div class="navbar-trailing">
+                {{ $headerAction ?? '' }}
+                @if ($tabRoot)
+                    <a href="{{ route('highlights.create') }}" class="bar-button pressable" aria-label="{{ __('nav.add') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="11"/>
+                            <path d="M12 7v10M7 12h10"/>
+                        </svg>
+                    </a>
+                    <a href="{{ route('settings.edit') }}" class="bar-button pressable" aria-label="{{ __('settings.title') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.98 2.98l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m2.98-2.98l4.24-4.24M19.78 19.78l-4.24-4.24m-2.98-2.98l-4.24-4.24"/>
+                        </svg>
+                    </a>
+                @endif
+            </div>
+        </div>
+    </header>
 
-                @isset($headerAction)
-                    <div class="flex items-center gap-2">{{ $headerAction }}</div>
-                @endisset
-            </header>
-        @endisset
+    <main id="main" class="mx-auto w-full max-w-md px-4">
+        @unless($inline)
+            <div class="pt-1 pb-3">
+                @if($greet)
+                    <x-masthead />
+                @elseif(isset($header))
+                    <h1 class="large-title" data-large-title>{{ $header }}</h1>
+                @endif
+            </div>
+        @endunless
+
+        @if($inline && isset($header))
+            <h1 class="sr-only">{{ $header }}</h1>
+        @endif
 
         @if (session('status'))
-            <p role="status" class="mb-4 rounded-lg px-4 py-3 text-sm"
+            <p role="status" class="mb-4 rounded-[12px] px-4 py-3 text-sm"
                style="background-color: var(--color-accent-wash); color: var(--color-ink);">
                 {{ session('status') }}
             </p>
@@ -86,7 +127,7 @@
     {{-- Offline banner. Hidden until app.js has something to say (SC-016). --}}
     <p id="offline-banner" hidden role="status"
        class="fixed inset-x-0 z-50 px-4 py-2 text-center text-sm"
-       style="bottom: var(--bottom-nav-space); background-color: var(--color-caution); color: var(--color-canvas);">
+       style="bottom: calc(var(--bottom-nav-space)); background-color: var(--color-caution); color: var(--color-canvas);">
         {{ __('review.offline') }}
     </p>
 

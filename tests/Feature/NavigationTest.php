@@ -27,9 +27,9 @@ final class NavigationTest extends TestCase
                 continue;
             }
 
-            // Five tabs across a 375px screen leave about 70px each. A label
-            // of two words wraps, which pushes its icon up and leaves one tab
-            // visibly taller than its neighbours (FR-078).
+            // Four tabs across a 375px screen leave about 94px each. A label
+            // of two words still wraps, which pushes its icon up and leaves one
+            // tab visibly taller than its neighbours.
             $this->assertStringNotContainsString(' ', trim($label), "nav.{$key} would wrap");
         }
     }
@@ -39,9 +39,19 @@ final class NavigationTest extends TestCase
     {
         $html = (string) $this->actingAs(User::factory()->create())->get('/')->getContent();
 
-        foreach (['review', 'library', 'add', 'mix', 'streak'] as $key) {
+        foreach (['review', 'library', 'mix', 'streak'] as $key) {
             $this->assertStringContainsString(__("nav.{$key}"), $html);
         }
+    }
+
+    #[Test]
+    public function adding_is_one_tap_away_from_a_tab_root(): void
+    {
+        $html = (string) $this->actingAs(User::factory()->create())->get('/')->getContent();
+
+        // The + button appears in the navbar on tab roots, not in the bottom nav.
+        $this->assertStringContainsString(route('highlights.create'), $html);
+        $this->assertStringContainsString(__('nav.add'), $html);
     }
 
     #[Test]

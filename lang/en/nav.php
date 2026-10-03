@@ -3,14 +3,14 @@
 declare(strict_types=1);
 
 /*
- * The bottom bar.
+ * The bottom bar (four tabs) and the "Add" action in the navigation bar.
  *
  * Every label here is one word, and that is a layout requirement rather than a
- * style preference: five tabs across a 375px screen leave about 70px each, and
- * a two-word label wraps onto a second line, which pushes the icon up and
- * makes one tab taller than its neighbours.
+ * style preference: four tabs across a 375px screen leave about 94px each.
+ * A two-word label would still wrap onto a second line.
  *
- * Screens keep their full titles — these are only what fits under an icon.
+ * Screens keep their full titles — these are only what fits under an icon
+ * or as an aria-label on the + button in the navbar.
  */
 return [
     'label' => 'Sections',
