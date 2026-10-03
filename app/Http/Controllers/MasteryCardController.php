@@ -8,9 +8,11 @@ use App\Http\Requests\StoreMasteryCardRequest;
 use App\Http\Requests\UpdateMasteryCardRequest;
 use App\Models\Highlight;
 use App\Models\MasteryCard;
+use App\Services\Content\ContentDeleter;
 use App\Services\Mastery\MasteryCardWriter;
 use App\Services\Mastery\MasteryScheduler;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 final class MasteryCardController extends Controller
@@ -18,6 +20,7 @@ final class MasteryCardController extends Controller
     public function __construct(
         private readonly MasteryCardWriter $writer,
         private readonly MasteryScheduler $scheduler,
+        private readonly ContentDeleter $deleter,
     ) {}
 
     public function index(): View
@@ -88,5 +91,23 @@ final class MasteryCardController extends Controller
         $this->scheduler->retire($card);
 
         return back()->with('status', __('settings.saved'));
+    }
+
+    public function destroy(Request $request, MasteryCard $card): RedirectResponse
+    {
+        $sourceId = $card->highlight?->source_id;
+        $this->deleter->deleteCard($card);
+
+        // If returning from the card's own edit page, redirect to its source if available,
+        // otherwise to the mastery index.
+        if ($request->input('return') === 'source' && $sourceId !== null) {
+            return redirect()
+                ->route('sources.show', $sourceId)
+                ->with('status', __('mastery.deleted'));
+        }
+
+        return redirect()
+            ->route('mastery.index')
+            ->with('status', __('mastery.deleted'));
     }
 }

@@ -75,9 +75,32 @@ function registerServiceWorker() {
     });
 }
 
+/**
+ * Ask for confirmation before submitting forms with data-confirm.
+ *
+ * The iOS app implements window.confirm natively, so this works on all
+ * platforms (FR-058).
+ */
+function bindConfirmationForms() {
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const message = form.dataset.confirm;
+
+        if (!message || !window.confirm(message)) {
+            event.preventDefault();
+        }
+    });
+}
+
 bindThemeControls();
 bindConnectionBanner();
 registerServiceWorker();
+bindConfirmationForms();
 flushQueueOnLoadAndOnline();
 prefetchReviewIfOnline();
 

@@ -73,6 +73,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::get('/library/sources/{source}', [SourceController::class, 'show'])->name('sources.show');
     Route::get('/library/sources/{source}/edit', [SourceController::class, 'edit'])->name('sources.edit');
     Route::patch('/library/sources/{source}', [SourceController::class, 'update'])->name('sources.update');
+    Route::delete('/library/sources/{source}', [SourceController::class, 'destroy'])->name('sources.destroy');
 
     // Practice one source without touching the day: no review record, no
     // streak recording, no mastery scheduling. Only explicit decisions
@@ -110,6 +111,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::post('/highlights', [HighlightController::class, 'store'])->name('highlights.store');
     Route::get('/highlights/{highlight}/edit', [HighlightController::class, 'edit'])->name('highlights.edit');
     Route::patch('/highlights/{highlight}', [HighlightController::class, 'update'])->name('highlights.update');
+    Route::delete('/highlights/{highlight}', [HighlightController::class, 'destroy'])->name('highlights.destroy');
     Route::post('/highlights/{highlight}/discard', [HighlightController::class, 'discard'])->name('highlights.discard');
     Route::post('/highlights/{highlight}/favorite', [HighlightController::class, 'favorite'])->name('highlights.favorite');
 
@@ -118,6 +120,7 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::get('/mastery', [MasteryCardController::class, 'index'])->name('mastery.index');
     Route::get('/mastery/{card}/edit', [MasteryCardController::class, 'edit'])->name('mastery.edit');
     Route::patch('/mastery/{card}', [MasteryCardController::class, 'update'])->name('mastery.update');
+    Route::delete('/mastery/{card}', [MasteryCardController::class, 'destroy'])->name('mastery.destroy');
     Route::post('/mastery/{card}/retire', [MasteryCardController::class, 'retire'])->name('mastery.retire');
 
     // Endless shuffled practice: all sources, all card types, no trace.

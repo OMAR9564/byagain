@@ -65,12 +65,22 @@
                     </a>
                 @endif
 
-                {{-- Discard hides it from future reviews. It is never a
-                     delete, and today's review keeps showing it (FR-013). --}}
+                {{-- Discard hides it from future reviews without deleting it, and today's
+                     review keeps showing it (FR-013). Delete removes it permanently. --}}
                 <form method="POST" action="{{ route('highlights.discard', $highlight) }}" class="ml-auto">
                     @csrf
                     <x-button type="submit" variant="ghost" class="!px-3 text-sm">
                         {{ __('actions.discard') }}
+                    </x-button>
+                </form>
+
+                <form method="POST" action="{{ route('highlights.destroy', $highlight) }}"
+                      data-confirm="{{ __('library.highlight.delete_confirm') }}"
+                      class="ml-1">
+                    @csrf
+                    @method('DELETE')
+                    <x-button type="submit" variant="ghost" class="!px-3 text-sm" style="color: var(--color-critical);">
+                        {{ __('actions.delete') }}
                     </x-button>
                 </form>
             </div>

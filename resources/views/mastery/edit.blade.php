@@ -24,4 +24,17 @@
 
         <x-button type="submit">{{ __('actions.save') }}</x-button>
     </form>
+
+    <form method="POST" action="{{ route('mastery.destroy', $card) }}"
+          data-confirm="{{ __('mastery.delete_confirm') }}"
+          class="mt-6 flex flex-col gap-5">
+        @csrf
+        @method('DELETE')
+
+        <input type="hidden" name="return" value="source">
+
+        <x-button type="submit" style="color: var(--color-critical);">
+            {{ __('actions.delete') }}
+        </x-button>
+    </form>
 </x-layouts.app>

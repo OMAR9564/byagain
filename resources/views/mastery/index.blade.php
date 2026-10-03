@@ -27,6 +27,15 @@
                         </x-button>
                     </form>
                 @endif
+
+                <form method="POST" action="{{ route('mastery.destroy', $card) }}"
+                      data-confirm="{{ __('mastery.delete_confirm') }}">
+                    @csrf
+                    @method('DELETE')
+                    <x-button type="submit" variant="ghost" class="!px-3 text-sm" style="color: var(--color-critical);">
+                        {{ __('actions.delete') }}
+                    </x-button>
+                </form>
             </div>
         </x-card>
     @empty

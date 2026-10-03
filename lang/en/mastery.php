@@ -51,6 +51,9 @@ return [
 
     'struggle_hint' => 'This one keeps slipping. Try rewriting it as a smaller question.',
 
+    'deleted' => 'Card deleted.',
+    'delete_confirm' => 'Delete this card? This cannot be undone.',
+
     'empty' => [
         'title' => 'No cards yet',
         'body' => 'Turn a highlight into a card when you want to remember it, not just meet it again.',

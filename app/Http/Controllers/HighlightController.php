@@ -9,6 +9,7 @@ use App\Http\Requests\StoreHighlightRequest;
 use App\Http\Requests\UpdateHighlightRequest;
 use App\Models\Highlight;
 use App\Models\Source;
+use App\Services\Content\ContentDeleter;
 use App\Services\Content\HighlightWriter;
 use App\Services\Content\PassageWithCards;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +22,7 @@ final class HighlightController extends Controller
     public function __construct(
         private readonly HighlightWriter $highlightWriter,
         private readonly PassageWithCards $passages,
+        private readonly ContentDeleter $deleter,
     ) {}
 
     public function create(Request $request): View
@@ -108,6 +110,16 @@ final class HighlightController extends Controller
         $this->highlightWriter->toggleFavorite($highlight);
 
         return back();
+    }
+
+    public function destroy(Highlight $highlight): RedirectResponse
+    {
+        $sourceId = $highlight->source_id;
+        $this->deleter->deleteHighlight($highlight);
+
+        return redirect()
+            ->route('sources.show', $sourceId)
+            ->with('status', __('library.highlight.deleted'));
     }
 
     private function statusFor(int $cardCount): string
