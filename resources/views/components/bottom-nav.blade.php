@@ -1,7 +1,5 @@
 @php
-    // Thumb-reach navigation. Five destinations at most — past that the
-    // targets get too narrow to hit reliably on a 375px screen (FR-078).
-    //
+    // Four destinations for the iOS bottom tab bar. Add moves to the navbar "+" on tab roots.
     // Labels are single words on purpose (see lang/en/nav.php): two words wrap
     // at this width and leave one tab taller than the rest.
     //
@@ -20,11 +18,6 @@
             'route' => 'library.index',
             'label' => __('nav.library'),
             'paths' => ['M5 4.5h14v15H6.8A1.8 1.8 0 0 1 5 17.7z', 'M5 16.2h14'],
-        ],
-        [
-            'route' => 'highlights.create',
-            'label' => __('nav.add'),
-            'paths' => ['M12 5.5v13', 'M5.5 12h13'],
         ],
         [
             'route' => 'mix.show',
@@ -46,8 +39,8 @@
     <nav
         data-bottom-nav
         aria-label="{{ __('nav.label') }}"
-        class="fixed inset-x-0 bottom-0 border-t"
-        style="z-index: var(--z-bottom-nav); background-color: var(--color-surface); border-color: var(--color-border);"
+        class="fixed inset-x-0 bottom-0"
+        style="z-index: var(--z-bottom-nav); background-color: var(--color-bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-top: 0.5px solid var(--color-separator);"
     >
         <ul class="mx-auto flex max-w-md items-stretch">
             @foreach ($items as $item)
@@ -58,28 +51,20 @@
                 <li class="min-w-0 flex-1">
                     <a
                         href="{{ route($item['route']) }}"
-                        class="flex h-full flex-col items-center justify-center gap-1 px-1 pt-1.5 pb-1"
-                        style="min-height: var(--size-bottom-nav); color: {{ $active ? 'var(--color-accent)' : 'var(--color-ink-muted)' }};"
+                        class="flex h-full flex-col items-center justify-center gap-0.5 px-1 pt-1"
+                        style="min-height: var(--size-bottom-nav); color: {{ $active ? 'var(--color-accent)' : 'var(--color-tab-inactive)' }};"
                         @if ($active) aria-current="page" @endif
                     >
-                        {{-- The wash sits behind the icon rather than the whole
-                             tab: it marks where you are without making the tab
-                             look like a pressed button. --}}
-                        <span
-                            class="flex h-7 w-11 items-center justify-center rounded-full transition-colors"
-                            style="background-color: {{ $active ? 'var(--color-accent-wash)' : 'transparent' }}; transition-duration: var(--duration-fast);"
-                        >
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="{{ $active ? '2' : '1.75' }}" stroke-linecap="round" stroke-linejoin="round"
-                                 class="h-[22px] w-[22px]">
-                                @foreach ($item['paths'] as $path)
-                                    <path d="{{ $path }}" />
-                                @endforeach
-                            </svg>
-                        </span>
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="{{ $active ? '2.1' : '1.7' }}" stroke-linecap="round" stroke-linejoin="round"
+                             style="width: 26px; height: 26px;">
+                            @foreach ($item['paths'] as $path)
+                                <path d="{{ $path }}" />
+                            @endforeach
+                        </svg>
 
-                        <span class="w-full truncate text-center text-[11px] leading-none whitespace-nowrap"
-                              style="{{ $active ? 'font-weight: 600;' : '' }}">
+                        <span class="w-full truncate text-center leading-none whitespace-nowrap"
+                              style="font-size: 11px; font-weight: 500;">
                             {{ $item['label'] }}
                         </span>
                     </a>

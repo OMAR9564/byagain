@@ -1,6 +1,6 @@
 <x-layouts.guest :title="__('errors.throttled.title')">
     <section>
-        <h1 class="text-2xl font-semibold" style="color: var(--color-ink);">
+        <h1 class="text-2xl font-bold" style="color: var(--color-ink);">
             {{ __('errors.throttled.title') }}
         </h1>
 
@@ -8,7 +8,7 @@
             {{ __('errors.throttled.body') }}
         </p>
 
-        <a href="{{ url('/') }}" class="mt-6 inline-flex min-h-11 items-center text-sm font-medium" style="color: var(--color-accent);">
+        <a href="{{ url('/') }}" class="pressable mt-6 inline-flex min-h-11 items-center text-sm font-medium" style="color: var(--color-accent);">
             {{ __('actions.back') }}
         </a>
     </section>

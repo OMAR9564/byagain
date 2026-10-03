@@ -6,12 +6,17 @@ declare(strict_types=1);
 return [
     'title' => 'Library',
 
+    'sources_header' => 'Sources',
+
     'source' => [
         'title' => 'Source',
         'title_plural' => 'Sources',
+        'name' => 'Title',
+        'type' => 'Kind',
         'author' => 'Author',
         'frequency' => 'How often should this appear?',
         'highlight_count' => ':count highlight|:count highlights',
+        'new' => 'New source',
         'add_passage' => 'Add passage',
         'deleted' => 'Source deleted.',
         'delete_confirm' => 'Delete this source and all its passages and cards? This cannot be undone.',

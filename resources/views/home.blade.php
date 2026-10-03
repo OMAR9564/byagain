@@ -1,4 +1,4 @@
-<x-layouts.app masthead-as="h1">
+<x-layouts.app greet tabRoot>
     {{-- No page heading here on purpose: the masthead already says who this
          is and the screen answers one question — what now? A brand name
          repeated under a greeting would be the only thing on the page that

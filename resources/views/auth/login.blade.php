@@ -21,20 +21,22 @@
             required
         />
 
-        <label class="flex items-center gap-2.5 text-sm" style="color: var(--color-ink-muted);">
-            <input type="checkbox" name="remember" class="h-5 w-5 rounded" style="accent-color: var(--color-accent);">
-            {{ __('auth.login.remember') }}
-        </label>
+        <div class="ios-group">
+            <label class="ios-row">
+                <span class="flex-1">{{ __('auth.login.remember') }}</span>
+                <input type="checkbox" name="remember" class="ios-switch">
+            </label>
+        </div>
 
-        <x-button type="submit">{{ __('auth.login.submit') }}</x-button>
+        <x-button type="submit" class="w-full">{{ __('auth.login.submit') }}</x-button>
     </form>
 
     <div class="mt-6 flex flex-col gap-2 text-sm">
-        <a href="{{ route('password.request') }}" style="color: var(--color-accent);">
+        <a href="{{ route('password.request') }}" class="pressable inline-flex min-h-11 items-center" style="color: var(--color-accent);">
             {{ __('auth.login.forgot') }}
         </a>
 
-        <a href="{{ route('register') }}" style="color: var(--color-accent);">
+        <a href="{{ route('register') }}" class="pressable inline-flex min-h-11 items-center" style="color: var(--color-accent);">
             {{ __('auth.login.no_account') }}
         </a>
     </div>

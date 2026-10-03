@@ -13,6 +13,6 @@
             autofocus
         />
 
-        <x-button type="submit">{{ __('actions.confirm') }}</x-button>
+        <x-button type="submit" class="w-full">{{ __('actions.confirm') }}</x-button>
     </form>
 </x-layouts.guest>

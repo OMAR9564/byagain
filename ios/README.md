@@ -2,6 +2,10 @@
 
 A native iOS shell around the byagain web app. It loads the live site in a web view, keeps you signed in, and keeps offline review working. It is meant to be installed straight from Xcode onto your own iPhone, without the App Store.
 
+## What's native
+
+The app shell provides a native tab bar with four tabs (Today, Library, Mix, Streak) that each load their own view of the site. Tapping a tab again pops to its root. You can swipe back at the left edge of any tab, pull to refresh, and native dialogs appear for alerts and confirmations. Add passage and New source open as sheets instead of full screens. The tab bar hides on the sign-in screens. Downloads go to the share sheet for saving or sharing.
+
 ## Requirements
 
 - Mac with a macOS version that runs Xcode 16 or later

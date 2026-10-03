@@ -1,4 +1,4 @@
-<x-layouts.app :title="__('mastery.create.title')">
+<x-layouts.app :title="__('mastery.create.title')" inline :back="route('sources.show', $highlight->source_id)" :back-label="$highlight->source?->title">
     <x-slot:header>{{ __('mastery.create.title') }}</x-slot:header>
 
     <x-card class="mb-5">
@@ -14,6 +14,6 @@
 
         <x-mastery.fields />
 
-        <x-button type="submit">{{ __('mastery.create.submit') }}</x-button>
+        <x-button type="submit" class="w-full">{{ __('mastery.create.submit') }}</x-button>
     </form>
 </x-layouts.app>

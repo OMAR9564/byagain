@@ -1,10 +1,10 @@
-<x-layouts.app :title="__('practice.export.title')">
+<x-layouts.app :title="__('practice.export.title')" inline :back="route('sources.show', $source)" :back-label="$source->title">
     <x-slot:header>{{ __('practice.export.title') }}</x-slot:header>
 
     {{-- Study export screen: passages and cards as study text for an LLM. --}}
 
     {{-- Summary row: passage and card counts --}}
-    <div class="mb-6 rounded-lg px-4 py-3" style="background-color: var(--color-surface); color: var(--color-ink-muted);">
+    <div class="mb-4 rounded-[12px] px-4 py-3" style="background-color: var(--color-surface); color: var(--color-ink-muted);">
         {{ __('practice.export.summary', [
             'passages' => trans_choice('practice.export.summary_passages', $passages, ['count' => $passages]),
             'questions' => trans_choice('practice.export.summary_cards', $cards, ['count' => $cards]),
@@ -12,7 +12,7 @@
     </div>
 
     {{-- Privacy notice --}}
-    <div class="mb-6 rounded-lg border px-4 py-3" style="border-color: var(--color-border); color: var(--color-ink-muted);">
+    <div class="mb-6 px-4 text-xs" style="color: var(--color-ink-muted);">
         {{ __('practice.export.privacy') }}
     </div>
 
@@ -24,8 +24,8 @@
             readonly
             data-copy-source
             rows="12"
-            class="w-full rounded-lg border px-3 py-2"
-            style="border-color: var(--color-border); background-color: var(--color-canvas); color: var(--color-ink); font-family: var(--font-mono); font-size: 0.875rem; overflow-x: hidden; white-space: pre-wrap; word-wrap: break-word;"
+            class="ios-field"
+            style="padding: 14px 16px; background-color: var(--color-surface); color: var(--color-ink); font-family: var(--font-mono); font-size: 0.875rem; overflow-x: hidden; white-space: pre-wrap; word-wrap: break-word;"
         >{{ $text }}</textarea>
     </div>
 

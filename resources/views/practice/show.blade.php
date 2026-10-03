@@ -1,4 +1,4 @@
-<x-layouts.app :title="$source->title">
+<x-layouts.app :title="$source->title" inline :back="route('sources.show', $source)" :back-label="$source->title">
     <x-slot:header>{{ $source->title }}</x-slot:header>
 
     {{-- Practice set: not recorded, not touching the schedule or streak.
@@ -28,9 +28,9 @@
 
         {{-- Banner: this is a practice, not a day review. Not in a status role
              because the page title already states it. --}}
-        <div class="mb-6 rounded-lg px-4 py-3" style="background-color: var(--color-surface); color: var(--color-ink-muted);">
+        <p class="mb-5 text-sm" style="color: var(--color-ink-muted);">
             {{ __('practice.practice.banner') }}
-        </div>
+        </p>
 
         <div class="mb-5 flex items-center gap-3">
             {{-- Going back was the missing half of swiping. A gesture that only
@@ -40,12 +40,11 @@
                 type="button"
                 data-review-back
                 hidden
-                class="-ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                style="color: var(--color-ink-muted);"
+                class="bar-button pressable"
                 aria-label="{{ __('review.nav.previous') }}"
             >
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                     stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;">
                     <path d="M14.5 6.5 9 12l5.5 5.5" />
                 </svg>
             </button>

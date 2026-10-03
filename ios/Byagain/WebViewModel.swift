@@ -2,27 +2,110 @@ import Foundation
 import WebKit
 import UIKit
 
+enum Presentation {
+	case tab
+	case sheet
+}
+
+final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
+	weak var viewModel: WebViewModel?
+
+	override init() {
+		super.init()
+	}
+
+	func userContentController(
+		_ userContentController: WKUserContentController,
+		didReceive message: WKScriptMessage
+	) {
+		// Read the body here: WKScriptMessage is not Sendable, so only the String crosses actors.
+		guard let type = (message.body as? [String: Any])?["type"] as? String else {
+			return
+		}
+
+		Task { @MainActor in
+			if type == "dismiss" {
+				let didSubmitForm = self.viewModel?.didSubmitForm ?? false
+				self.viewModel?.router?.dismissSheet(reloadCurrent: didSubmitForm)
+			}
+		}
+	}
+}
+
 @MainActor
 final class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate {
 	@Published var loadFailed: Bool = false
-	let webView: WKWebView
-	private var downloadDestinations: [ObjectIdentifier: URL] = [:]
+	@Published var currentPath: String = ""
+	@Published var isGuestPage: Bool = false
 
-	override init() {
+	let webView: WKWebView
+	let startURL: URL
+	let presentation: Presentation
+	weak var router: AppRouter?
+
+	private var downloadDestinations: [ObjectIdentifier: URL] = [:]
+	private var wasGuest = false
+	var didSubmitForm = false
+
+	init(startURL: URL, presentation: Presentation, router: AppRouter?) {
+		self.startURL = startURL
+		self.presentation = presentation
+		self.router = router
+
 		let config = WKWebViewConfiguration()
 		config.websiteDataStore = .default()
 		config.limitsNavigationsToAppBoundDomains = true
-		config.applicationNameForUserAgent = "byagainApp/1.0"
+		// The major version tells the server this build has a native tab bar (2+).
+		config.applicationNameForUserAgent = "byagainApp/2.0"
 		config.allowsInlineMediaPlayback = true
+
+		let userContentController = WKUserContentController()
+
+		// At document start <html> may not exist yet, so mark it as soon as it does.
+		// The server also sets data-shell from the user agent; this covers pages the
+		// service worker serves from cache, and data-presentation, which only we know.
+		let presentationLine = presentation == .sheet ? "h.dataset.presentation = 'sheet';" : ""
+		let scriptSource = """
+		(function () {
+			var mark = function () {
+				var h = document.documentElement;
+				if (!h) { return false; }
+				h.dataset.shell = 'ios';
+				\(presentationLine)
+				return true;
+			};
+			if (!mark()) {
+				new MutationObserver(function (_, observer) {
+					if (mark()) { observer.disconnect(); }
+				}).observe(document, { childList: true });
+			}
+		})();
+		"""
+		let userScript = WKUserScript(
+			source: scriptSource,
+			injectionTime: .atDocumentStart,
+			forMainFrameOnly: true
+		)
+		userContentController.addUserScript(userScript)
+
+		// Add message handler
+		let weakHandler = WeakScriptMessageHandler()
+		userContentController.add(weakHandler, name: "byagain")
+
+		config.userContentController = userContentController
 
 		self.webView = WKWebView(frame: .zero, configuration: config)
 
 		super.init()
 
+		// Set the weak handler's viewModel after init completes
+		weakHandler.viewModel = self
+
 		webView.allowsBackForwardNavigationGestures = true
 		webView.isOpaque = false
-		webView.backgroundColor = .clear
-		webView.scrollView.backgroundColor = .clear
+		webView.backgroundColor = UIColor(named: "Canvas")
+		webView.scrollView.backgroundColor = UIColor(named: "Canvas")
+		webView.underPageBackgroundColor = UIColor(named: "Canvas") ?? .clear
 		webView.scrollView.contentInsetAdjustmentBehavior = .never
 		webView.navigationDelegate = self
 		webView.uiDelegate = self
@@ -31,7 +114,8 @@ final class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate, WKUI
 		refreshControl.addTarget(self, action: #selector(refreshWebView(_:)), for: .valueChanged)
 		webView.scrollView.refreshControl = refreshControl
 
-		webView.load(URLRequest(url: AppConfig.startURL))
+		webView.load(URLRequest(url: startURL))
+		wasGuest = isPathGuest(startURL.path)
 	}
 
 	@objc private func refreshWebView(_ sender: UIRefreshControl) {
@@ -41,10 +125,29 @@ final class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate, WKUI
 	func reload() {
 		loadFailed = false
 		if webView.url == nil {
-			webView.load(URLRequest(url: AppConfig.startURL))
+			webView.load(URLRequest(url: startURL))
 		} else {
 			webView.reload()
 		}
+	}
+
+	func load(_ url: URL) {
+		webView.load(URLRequest(url: url))
+	}
+
+	func popToRoot() {
+		if currentPath == startURL.path {
+			webView.scrollView.setContentOffset(
+				CGPoint(x: 0, y: -webView.scrollView.adjustedContentInset.top),
+				animated: true
+			)
+		} else {
+			webView.load(URLRequest(url: startURL))
+		}
+	}
+
+	private func isPathGuest(_ path: String) -> Bool {
+		AppConfig.guestPathPrefixes.contains { path.hasPrefix($0) }
 	}
 
 	// MARK: - WKNavigationDelegate
@@ -62,9 +165,50 @@ final class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate, WKUI
 		let isHttpOrHttps = url.scheme == "http" || url.scheme == "https"
 		let isAppBoundHost = url.host == AppConfig.host
 		let isAboutBlank = url.absoluteString == "about:blank"
+		let isMainFrame = navigationAction.targetFrame?.isMainFrame ?? true
 
-		if isHttpOrHttps && isAppBoundHost {
+		if isHttpOrHttps && isAppBoundHost && !isMainFrame {
+			// Embedded content (iframes) on our own host
 			decisionHandler(.allow)
+		} else if isHttpOrHttps && isAppBoundHost {
+			if presentation == .tab {
+				// Tab presentation logic
+				if navigationAction.navigationType == .linkActivated {
+					if AppConfig.sheetPaths.contains(url.path) {
+						decisionHandler(.cancel)
+						router?.presentSheet(url)
+						return
+					}
+
+					if let matchingTab = AppTab.allCases.first(where: { $0.path == url.path }) ?? (url.path == "/" ? .today : nil) {
+						if matchingTab != router?.selection {
+							decisionHandler(.cancel)
+							router?.open(url)
+							return
+						}
+					}
+				}
+				decisionHandler(.allow)
+			} else {
+				// Sheet presentation logic
+				if navigationAction.request.httpMethod == "POST" {
+					didSubmitForm = true
+					// Lets a swipe-down dismissal reload the tab too
+					router?.noteSheetSubmission()
+					decisionHandler(.allow)
+				} else {
+					// GET navigation or redirects
+					if !AppConfig.sheetPaths.contains(url.path) && webView.url != nil {
+						// Not first load and not in sheet paths
+						decisionHandler(.cancel)
+						// No reload: open(url) loads the destination itself
+						router?.dismissSheet(reloadCurrent: false)
+						router?.open(url)
+						return
+					}
+					decisionHandler(.allow)
+				}
+			}
 		} else if isAboutBlank {
 			decisionHandler(.allow)
 		} else if url.scheme == "mailto" || url.scheme == "tel" || (isHttpOrHttps && !isAppBoundHost) {
@@ -115,6 +259,17 @@ final class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate, WKUI
 	func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
 		loadFailed = false
 		webView.scrollView.refreshControl?.endRefreshing()
+
+		updateCurrentPath()
+
+		// Sign-in detection
+		if presentation == .tab {
+			let newIsGuest = isPathGuest(currentPath)
+			if wasGuest && !newIsGuest {
+				router?.didSignIn(from: self)
+			}
+			wasGuest = newIsGuest
+		}
 	}
 
 	func webView(
@@ -276,6 +431,13 @@ final class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate, WKUI
 	}
 
 	// MARK: - Helpers
+
+	private func updateCurrentPath() {
+		if let path = webView.url?.path {
+			currentPath = path
+			isGuestPage = isPathGuest(path)
+		}
+	}
 
 	private var topViewController: UIViewController? {
 		let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }

@@ -1,4 +1,4 @@
-<x-layouts.app :title="__('review.title')">
+<x-layouts.app greet tabRoot :title="__('review.title')">
     {{-- Cards are rendered server-side and hidden with [hidden], not fetched.
          The whole review is already on the page, so moving between cards
          costs nothing and works with no connection at all (FR-041). --}}
@@ -34,12 +34,11 @@
                 type="button"
                 data-review-back
                 hidden
-                class="-ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                style="color: var(--color-ink-muted);"
+                class="bar-button pressable"
                 aria-label="{{ __('review.nav.previous') }}"
             >
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                     stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;">
                     <path d="M14.5 6.5 9 12l5.5 5.5" />
                 </svg>
             </button>

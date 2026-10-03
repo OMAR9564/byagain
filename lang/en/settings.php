@@ -40,6 +40,7 @@ return [
         'delete' => 'Delete my account',
         'delete_help' => 'This removes your highlights permanently. It cannot be undone.',
         'delete_confirm' => 'Enter your password to confirm.',
+        'password_placeholder' => 'Required',
         'deleted' => 'Your account and everything in it is gone.',
     ],
 

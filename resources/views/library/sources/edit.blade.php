@@ -1,4 +1,4 @@
-<x-layouts.app :title="$source->title">
+<x-layouts.app :title="$source->title" inline :back="route('sources.show', $source)" :back-label="$source->title">
     <x-slot:header>{{ __('actions.edit') }}</x-slot:header>
 
     <form method="POST" action="{{ route('sources.update', $source) }}" class="flex flex-col gap-5">
@@ -7,22 +7,24 @@
 
         <x-library.source-fields :source="$source" />
 
-        <label class="flex items-center gap-2.5 text-base" style="color: var(--color-ink);">
-            <input type="checkbox" name="is_archived" value="1" class="h-5 w-5 rounded"
-                   style="accent-color: var(--color-accent);" @checked(old('is_archived', $source->is_archived))>
-            {{ __('actions.archive') }}
-        </label>
+        <div class="ios-group">
+            <label class="ios-row">
+                <span class="flex-1">{{ __('actions.archive') }}</span>
+                <input type="checkbox" name="is_archived" value="1" class="ios-switch"
+                       @checked(old('is_archived', $source->is_archived))>
+            </label>
+        </div>
 
-        <x-button type="submit">{{ __('actions.save') }}</x-button>
+        <x-button type="submit" class="w-full">{{ __('actions.save') }}</x-button>
     </form>
 
     <form method="POST" action="{{ route('sources.destroy', $source) }}"
           data-confirm="{{ __('library.source.delete_confirm') }}"
-          class="mt-6 flex flex-col gap-5">
+          class="mt-4 flex flex-col gap-5">
         @csrf
         @method('DELETE')
 
-        <x-button type="submit" variant="ghost" style="color: var(--color-critical);">
+        <x-button type="submit" variant="danger" class="w-full">
             {{ __('actions.delete') }}
         </x-button>
     </form>

@@ -4,7 +4,7 @@
     "name": "queue"
   },
   "resources/css/admin.css": {
-    "file": "assets/admin-BjSnbsH6.css",
+    "file": "assets/admin-C2tmzNM9.css",
     "name": "admin",
     "names": [
       "admin.css"
@@ -13,7 +13,7 @@
     "isEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-DhEPaW4V.css",
+    "file": "assets/app-DbwrZSc4.css",
     "name": "app",
     "names": [
       "app.css"
@@ -22,7 +22,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-CpJPg-Hn.js",
+    "file": "assets/app-BaD2djKG.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
