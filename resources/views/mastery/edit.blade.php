@@ -33,7 +33,7 @@
 
         <input type="hidden" name="return" value="source">
 
-        <x-button type="submit" style="color: var(--color-critical);">
+        <x-button type="submit" variant="ghost" style="color: var(--color-critical);">
             {{ __('actions.delete') }}
         </x-button>
     </form>

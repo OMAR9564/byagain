@@ -25,7 +25,7 @@ final class PassageImportParserTest extends TestCase
 **Cevap:** Kalan yaklaşık 2,98 saniyenin nerede geçtiğini araştırırım.
 MD;
 
-        $parser = new PassageImportParser();
+        $parser = new PassageImportParser;
         $result = $parser->parse($markdown);
 
         $this->assertCount(1, $result);
@@ -57,7 +57,7 @@ MD;
 **Cevap:** İsteği dağıtır.
 MD;
 
-        $parser = new PassageImportParser();
+        $parser = new PassageImportParser;
         $result = $parser->parse($markdown);
 
         $this->assertCount(1, $result);
@@ -75,7 +75,7 @@ MD;
 **Cevap:** Answer.
 MD;
 
-        $parser = new PassageImportParser();
+        $parser = new PassageImportParser;
         $result = $parser->parse($markdown);
 
         $this->assertCount(1, $result);
@@ -93,7 +93,7 @@ MD;
 **Cevap:** Answer.
 MD;
 
-        $parser = new PassageImportParser();
+        $parser = new PassageImportParser;
         $result = $parser->parse($markdown);
 
         $this->assertCount(1, $result);
@@ -106,7 +106,7 @@ MD;
     {
         $markdown = "## Kart 1 — Title  \n\n**Açıklama:** Content with trailing spaces  \n\n**Soru 1:** Question?  \n**Cevap:** Answer  ";
 
-        $parser = new PassageImportParser();
+        $parser = new PassageImportParser;
         $result = $parser->parse($markdown);
 
         $this->assertCount(1, $result);
@@ -134,7 +134,7 @@ MD;
 **Cevap:** A2.
 MD;
 
-        $parser = new PassageImportParser();
+        $parser = new PassageImportParser;
         $result = $parser->parse($markdown);
 
         $this->assertCount(2, $result);
@@ -159,7 +159,7 @@ MD;
 **Cevap:** Third answer.
 MD;
 
-        $parser = new PassageImportParser();
+        $parser = new PassageImportParser;
         $result = $parser->parse($markdown);
 
         $this->assertCount(1, $result);
@@ -168,5 +168,79 @@ MD;
         $this->assertStringContainsString('First', $result[0]['cards'][0]['question']);
         $this->assertStringContainsString('Second', $result[0]['cards'][1]['question']);
         $this->assertStringContainsString('Third', $result[0]['cards'][2]['question']);
+    }
+
+    public function test_keeps_hatirla_when_blocks_are_separated_by_blank_lines(): void
+    {
+        $markdown = "## Kart 7 — Başlık\n\n"
+            ."**Açıklama:** Açıklama metni.\n\n"
+            ."**Hatırla:** Hatırlatma metni.\n\n"
+            ."**Soru 1:** Birinci soru?  \n"
+            ."**Cevap:** Birinci cevap.\n\n"
+            ."**Soru 2:** İkinci soru?  \n"
+            ."**Cevap:** İkinci cevap.\n";
+
+        $result = (new PassageImportParser)->parse($markdown);
+
+        $this->assertCount(1, $result);
+        $this->assertSame(
+            "## Başlık\n\n**Açıklama:** Açıklama metni.\n\n**Hatırla:** Hatırlatma metni.",
+            $result[0]['content_md']
+        );
+        $this->assertSame('İkinci soru?', $result[0]['cards'][1]['question']);
+        $this->assertSame('İkinci cevap.', $result[0]['cards'][1]['answer']);
+    }
+
+    public function test_omits_hatirla_paragraph_when_label_is_absent(): void
+    {
+        $markdown = "## Kart 8 — Yalın\n\n**Açıklama:** Sadece açıklama.\n\n"
+            ."**Soru 1:** Soru?  \n**Cevap:** Cevap.\n";
+
+        $result = (new PassageImportParser)->parse($markdown);
+
+        $this->assertSame("## Yalın\n\n**Açıklama:** Sadece açıklama.", $result[0]['content_md']);
+        $this->assertCount(1, $result[0]['cards']);
+    }
+
+    public function test_parses_real_export_sections(): void
+    {
+        $markdown = <<<'MD'
+## Kart 24 — EXPLAIN ANALYZE ve ölçüm
+
+**Açıklama:** EXPLAIN ANALYZE sorgu planını ve gerçek çalışmanın ölçümlerini gösterir; sorguyu gerçekten çalıştırır.
+
+**Hatırla:** Planı incele → aynı koşullarda önce/sonra ölç.
+
+**Soru 1:** Index’in işe yaradığını nasıl kontrol edersin?  
+**Cevap:** EXPLAIN ANALYZE ile planı, taranan satırları ve süreleri incelerim.
+
+**Soru 2:** Sorgu 20 ms, API 3 saniye sürüyor. Nereden başlarsın?  
+**Cevap:** Kalan yaklaşık 2,98 saniyenin nerede geçtiğini araştırırım.
+
+## Kart 27 — Async ve ağır hesap
+
+**Açıklama:** Async, bir iş I/O cevabı beklerken diğer işlerin ilerlemesini sağlar.
+
+**Hatırla:** Bekleme → async. Ağır hesap → ayrı çalışma kaynağı.
+
+**Soru 1:** Async için daha uygun örnek hangisi: API beklemek mi, ağır hesap mı?  
+**Cevap:** API cevabını beklemek.
+
+**Soru 2:** Async 100 DB sorgusunu tek sorguya indirir mi?  
+**Cevap:** Hayır. Bekleme biçimini düzenler.
+
+**Soru 3:** Sırayla üç API beklemekle birlikte başlatmak arasındaki fark ne?  
+**Cevap:** Sırayla beklemeler toplanır; birlikte başlatınca örtüşür.
+MD;
+
+        $result = (new PassageImportParser)->parse($markdown);
+
+        $this->assertCount(2, $result);
+        $this->assertCount(2, $result[0]['cards']);
+        $this->assertCount(3, $result[1]['cards']);
+
+        foreach ($result as $passage) {
+            $this->assertStringContainsString("\n\n**Hatırla:** ", $passage['content_md']);
+        }
     }
 }

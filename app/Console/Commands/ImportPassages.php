@@ -30,7 +30,6 @@ final class ImportPassages extends Command
         $filePath = $this->argument('file');
         $dryRun = (bool) $this->option('dry-run');
 
-        // Read the file.
         if (! file_exists($filePath)) {
             $this->error("File not found: $filePath");
 
@@ -45,10 +44,8 @@ final class ImportPassages extends Command
             return self::FAILURE;
         }
 
-        // Parse the markdown.
         $parsed = $parser->parse($markdown);
 
-        // Resolve the user.
         $userArg = $this->option('user');
 
         if (! $userArg) {
@@ -57,7 +54,6 @@ final class ImportPassages extends Command
             return self::FAILURE;
         }
 
-        // Try to parse as ID first, then as email.
         if (is_numeric($userArg)) {
             $user = User::query()->find((int) $userArg);
         } else {
@@ -70,10 +66,9 @@ final class ImportPassages extends Command
             return self::FAILURE;
         }
 
-        // Set the authenticated user so BelongsToUser scope works.
+        // BelongsToUser scopes and stamps by the authenticated user.
         Auth::setUser($user);
 
-        // Resolve or create the source.
         $sourceTitle = $this->option('source');
 
         if (! $sourceTitle) {
@@ -91,7 +86,7 @@ final class ImportPassages extends Command
             if ($dryRun) {
                 $this->line("Would create source: $sourceTitle");
 
-                // Create a temporary source object for dry-run purposes.
+                // Unsaved, so the duplicate check below has an owner but nothing is written.
                 $source = new Source([
                     'title' => $sourceTitle,
                     'type' => 'note',
@@ -107,7 +102,6 @@ final class ImportPassages extends Command
             }
         }
 
-        // Process passages.
         $created = 0;
         $skipped = 0;
         $totalCards = 0;
@@ -116,7 +110,6 @@ final class ImportPassages extends Command
             $contentMd = $passageData['content_md'];
             $cards = $passageData['cards'];
 
-            // Check if this passage already exists in the source.
             $exists = Source::query()->find($source->id)?->highlights()
                 ->where('content_md', $contentMd)
                 ->exists() ?? false;
@@ -137,7 +130,6 @@ final class ImportPassages extends Command
                 continue;
             }
 
-            // Create the passage with its cards.
             $passages->create([
                 'source_id' => $source->id,
                 'content_md' => $contentMd,

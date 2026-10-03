@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Console;
 
 use App\Models\Highlight;
-use App\Models\MasteryCard;
 use App\Models\Source;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

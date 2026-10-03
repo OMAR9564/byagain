@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\DB;
 /**
  * Permanently delete sources, passages, and cards.
  *
- * Deletion must remove unacted review items pointing at the deleted content,
- * because they would otherwise block review completion forever. Acted items
- * stay as history with null foreign keys.
+ * Unacted review items pointing at the deleted content are removed with it:
+ * they could never be acted on, so they would block review completion
+ * forever. Acted items stay as history with null foreign keys.
  */
 final class ContentDeleter
 {
@@ -25,10 +25,8 @@ final class ContentDeleter
     public function deleteSource(Source $source): void
     {
         DB::transaction(function () use ($source): void {
-            // Collect all highlight IDs that will be deleted.
             $highlightIds = $source->highlights()->pluck('id')->toArray();
 
-            // Delete unacted review items pointing at these highlights or their cards.
             ReviewItem::query()
                 ->whereNull('acted_at')
                 ->where(function ($query) use ($highlightIds): void {
@@ -41,7 +39,6 @@ final class ContentDeleter
                 })
                 ->delete();
 
-            // Delete the source (cascades to highlights and their cards).
             $source->delete();
         });
     }
@@ -52,10 +49,8 @@ final class ContentDeleter
     public function deleteHighlight(Highlight $highlight): void
     {
         DB::transaction(function () use ($highlight): void {
-            // Collect all card IDs that will be deleted.
             $cardIds = $highlight->masteryCards()->pluck('id')->toArray();
 
-            // Delete unacted review items pointing at this highlight or its cards.
             ReviewItem::query()
                 ->whereNull('acted_at')
                 ->where(function ($query) use ($highlight, $cardIds): void {
@@ -64,7 +59,6 @@ final class ContentDeleter
                 })
                 ->delete();
 
-            // Delete the highlight (cascades to its cards).
             $highlight->delete();
         });
     }
@@ -75,13 +69,11 @@ final class ContentDeleter
     public function deleteCard(MasteryCard $card): void
     {
         DB::transaction(function () use ($card): void {
-            // Delete unacted review items pointing at this card.
             ReviewItem::query()
                 ->whereNull('acted_at')
                 ->where('mastery_card_id', $card->id)
                 ->delete();
 
-            // Delete the card.
             $card->delete();
         });
     }

@@ -79,7 +79,7 @@ function registerServiceWorker() {
  * Ask for confirmation before submitting forms with data-confirm.
  *
  * The iOS app implements window.confirm natively, so this works on all
- * platforms (FR-058).
+ * platforms.
  */
 function bindConfirmationForms() {
     document.addEventListener('submit', (event) => {
@@ -91,7 +91,11 @@ function bindConfirmationForms() {
 
         const message = form.dataset.confirm;
 
-        if (!message || !window.confirm(message)) {
+        if (!message) {
+            return;
+        }
+
+        if (!window.confirm(message)) {
             event.preventDefault();
         }
     });

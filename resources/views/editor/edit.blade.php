@@ -21,7 +21,7 @@
         @csrf
         @method('DELETE')
 
-        <x-button type="submit" style="color: var(--color-critical);">
+        <x-button type="submit" variant="ghost" style="color: var(--color-critical);">
             {{ __('actions.delete') }}
         </x-button>
     </form>
