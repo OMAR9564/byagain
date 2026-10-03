@@ -16,7 +16,7 @@ Three constraints shape everything below:
 3. **No Node on the server**, so assets are built on your machine and uploaded.
 
 And the usual warning, which matters more here than anywhere: without the
-**cron entries** in step 8, byagain looks perfectly healthy and silently never
+**cron entries** in step 8, written the way that step says, byagain looks perfectly healthy and silently never
 produces a review or sends an email.
 
 ---
@@ -112,6 +112,22 @@ Hostinger's `DO_NOT_UPLOAD_HERE` marker.
 cd ~/byagain
 composer install --no-dev --optimize-autoloader
 composer check-platform-reqs
+```
+
+`composer install` will probably **end with an error** from the
+`post-autoload-dump` script:
+
+```
+The Process class relies on proc_open, which is not available on your PHP installation.
+Script @php artisan package:discover --ansi handling the post-autoload-dump event returned with error code 1
+```
+
+The install itself succeeded; only the script that follows it could not run,
+because this host disables `proc_open` (see step 8). Do by hand what the
+script would have done:
+
+```bash
+php artisan package:discover
 ```
 
 `check-platform-reqs` must print `success` on every line. This account already
@@ -390,30 +406,48 @@ BYAGAIN_SEED_EMAIL=you@example.com php artisan db:seed --class=EngineeringLibrar
 
 ## 8. Cron — the part that must not be skipped
 
+**`crontab` is not available over SSH on this host.** Add the entries in
+hPanel instead: **Advanced → Cron Jobs**. First note the full path to PHP,
+since cron does not inherit your PATH:
+
 ```bash
-which php     # note the full path; cron does not inherit your PATH
-crontab -e
+which php
 ```
 
-```cron
-# The whole product. Finds whoever's local clock has reached their send time,
-# builds their review, queues their mail. Also prunes nightly.
-* * * * * cd /home/u179024548/byagain && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
+Add these three jobs:
 
-# The queue, in one-minute bursts. There is no supervisor here, so the worker
-# cannot be long-lived: it drains what is waiting and exits before the next
-# minute starts.
-* * * * * cd /home/u179024548/byagain && /usr/bin/php artisan queue:work --stop-when-empty --max-time=55 --tries=5 >> /dev/null 2>&1
-```
+| Schedule | Command |
+| --- | --- |
+| `*/5 * * * *` | `/usr/bin/php /home/u179024548/byagain/artisan byagain:dispatch-daily` |
+| `30 3 * * *` | `/usr/bin/php /home/u179024548/byagain/artisan byagain:prune` |
+| `* * * * *` | `/usr/bin/php /home/u179024548/byagain/artisan queue:work --stop-when-empty --max-time=55 --tries=5` |
 
-Replace `/usr/bin/php` with whatever `which php` printed. Cron runs with a
-minimal environment, and `php` alone very often is not on its PATH — this is
-the single most common reason a scheduler "silently does nothing".
+The first finds whoever's local clock has reached their send time, builds
+their review and queues their mail. The second prunes nightly. The third
+drains the queue in one-minute bursts: there is no supervisor here, so the
+worker cannot be long-lived and exits before the next minute starts.
+
+**About the command format:** artisan resolves its own directory, so no `cd`
+is needed. hPanel pre-fills `/usr/bin/php /home/u179024548/` in the command
+box; append the rest (`/byagain/artisan …`), do not paste a full command after
+it. Leaving off `>> /dev/null 2>&1` lets "View output" in hPanel show what
+happened — a quick way to spot crashes. This format is why the scheduler works
+on this host, while the `cd` prefix used before 2026-10-02 would not.
+
+**Do not use `schedule:run` on this host**, even though it is what Laravel
+documents. It launches every scheduled command through Symfony Process, which
+needs `proc_open` — and `proc_open`, `popen`, `shell_exec`, `passthru` and
+`system` are all in this account's `disable_functions`, for the CLI and the web
+PHP alike. `schedule:run` therefore exits happily having run nothing: the
+heartbeat stopped on 2026-08-24 and no morning email went out for five weeks.
+`queue:work` runs jobs in-process, so it is unaffected.
+
+The consequence: the schedule in `routes/console.php` is not what runs here.
+If it ever gains a new command, that command needs its own cron line.
 
 Check it took:
 
 ```bash
-crontab -l
 cd ~/byagain && php artisan byagain:dispatch-daily --dry-run
 ```
 
@@ -498,10 +532,13 @@ Then, on the server — the whole deploy:
 
 ```bash
 cd ~/byagain
+mkdir -p ~/backups && mysqldump --single-transaction --no-tablespaces u179024548_byagain | gzip > ~/backups/byagain-$(date +%F).sql.gz
+
 php artisan down
 
 git pull
-composer install --no-dev --optimize-autoloader
+composer install --no-dev --optimize-autoloader   # ends with a proc_open error; harmless
+php artisan package:discover                      # what that failed script would have run
 php artisan migrate --force
 php artisan filament:assets
 php artisan optimize
@@ -514,6 +551,11 @@ and views; the old cache describes the old code, and a route added in this
 release simply will not exist until it is rebuilt. A 500 on a page that works
 locally is this, more often than not.
 
+The `composer install` error is the same `proc_open` restriction as in step 3.
+The packages are installed; `package:discover` is the one thing the failed
+script was meant to do, so never skip it — a new package would otherwise not
+be registered.
+
 There is no worker to restart — cron starts a fresh one every minute, which is
 the one genuine advantage of this arrangement.
 
@@ -525,14 +567,18 @@ The database is the whole product.
 
 ```bash
 mkdir -p ~/backups
-mysqldump --single-transaction u179024548_byagain | gzip > ~/backups/byagain-$(date +%F).sql.gz
+mysqldump --single-transaction --no-tablespaces u179024548_byagain | gzip > ~/backups/byagain-$(date +%F).sql.gz
 ```
 
 Nightly, keeping two weeks:
 
 ```cron
-30 3 * * * mysqldump --single-transaction -u u179024548_byagain -p'PASSWORD' u179024548_byagain | gzip > /home/u179024548/backups/byagain-$(date +\%F).sql.gz && find /home/u179024548/backups -name '*.sql.gz' -mtime +14 -delete
+30 3 * * * /usr/bin/mysqldump --single-transaction --no-tablespaces -u u179024548_byagain -p'PASSWORD' u179024548_byagain | gzip > /home/u179024548/backups/byagain-$(date +\%F).sql.gz && find /home/u179024548/backups -name '*.sql.gz' -mtime +14 -delete
 ```
+
+`--no-tablespaces` is needed because this host's MySQL user lacks the
+`PROCESS` privilege; without it `mysqldump` refuses to run. Note the escaped
+`\%` — cron treats a bare `%` as a newline and the command will fail without it.
 
 Note the escaped `\%` — cron treats a bare `%` as a newline and the command
 will fail without it.

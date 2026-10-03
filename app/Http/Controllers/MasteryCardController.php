@@ -8,13 +8,20 @@ use App\Http\Requests\StoreMasteryCardRequest;
 use App\Http\Requests\UpdateMasteryCardRequest;
 use App\Models\Highlight;
 use App\Models\MasteryCard;
+use App\Services\Content\ContentDeleter;
+use App\Services\Mastery\MasteryCardWriter;
 use App\Services\Mastery\MasteryScheduler;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 final class MasteryCardController extends Controller
 {
-    public function __construct(private readonly MasteryScheduler $scheduler) {}
+    public function __construct(
+        private readonly MasteryCardWriter $writer,
+        private readonly MasteryScheduler $scheduler,
+        private readonly ContentDeleter $deleter,
+    ) {}
 
     public function index(): View
     {
@@ -28,27 +35,28 @@ final class MasteryCardController extends Controller
     }
 
     /**
+     * Render the create form for a mastery card from a highlight (FR-044).
+     */
+    public function create(Highlight $highlight): View
+    {
+        return view('mastery.create', [
+            'highlight' => $highlight->load('source'),
+        ]);
+    }
+
+    /**
      * Build a card from a highlight the reader wants to actually hold on to,
      * rather than merely meet again (FR-044).
      */
     public function store(StoreMasteryCardRequest $request, Highlight $highlight): RedirectResponse
     {
-        $data = $request->validated();
+        $this->writer->create($highlight, $request->validated());
 
-        $card = new MasteryCard;
-        $card->fill([
-            'highlight_id' => $highlight->id,
-            'type' => $data['type'],
-            'question' => $data['question'],
-            'answer' => $this->answerFor($data),
-        ]);
-
-        // Left unscheduled on purpose: the first feedback sets the half-life
-        // outright, so there is nothing meaningful to guess at now (FR-047).
-        $card->save();
-
+        // Redirect back to the source page: the reader came from there
+        // (FR-044 entry point). Returning to the passage source keeps the
+        // workflow intact, rather than jumping to the cards index.
         return redirect()
-            ->route('mastery.index')
+            ->route('sources.show', $highlight->source)
             ->with('status', __('settings.saved'));
     }
 
@@ -64,7 +72,7 @@ final class MasteryCardController extends Controller
         $card->fill([
             'type' => $data['type'],
             'question' => $data['question'],
-            'answer' => $this->answerFor($data),
+            'answer' => $this->writer->answerFor($data),
         ]);
 
         $card->status = $data['status'];
@@ -85,21 +93,21 @@ final class MasteryCardController extends Controller
         return back()->with('status', __('settings.saved'));
     }
 
-    /**
-     * A cloze carries its answer inside the question, so it is derived rather
-     * than asked for twice — two fields that must agree are two fields that
-     * will eventually disagree.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function answerFor(array $data): string
+    public function destroy(Request $request, MasteryCard $card): RedirectResponse
     {
-        if ($data['type'] !== MasteryCard::TYPE_CLOZE) {
-            return (string) $data['answer'];
+        $sourceId = $card->highlight?->source_id;
+        $this->deleter->deleteCard($card);
+
+        // If returning from the card's own edit page, redirect to its source if available,
+        // otherwise to the mastery index.
+        if ($request->input('return') === 'source' && $sourceId !== null) {
+            return redirect()
+                ->route('sources.show', $sourceId)
+                ->with('status', __('mastery.deleted'));
         }
 
-        preg_match_all(StoreMasteryCardRequest::CLOZE_PATTERN, (string) $data['question'], $matches);
-
-        return implode(', ', $matches[1]);
+        return redirect()
+            ->route('mastery.index')
+            ->with('status', __('mastery.deleted'));
     }
 }

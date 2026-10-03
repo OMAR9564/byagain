@@ -20,6 +20,7 @@ function setup(form) {
     bindDraftSaving(form, input, draftKey, status);
     bindFormatting(form, input);
     bindTabs(form, input, preview);
+    bindCardActions(form);
 }
 
 /**
@@ -186,4 +187,67 @@ async function render(form, input, body, ticket, current) {
             body.textContent = form.dataset.previewFailed ?? '';
         }
     }
+}
+
+/**
+ * Manage inline card rows: add new cards and remove them.
+ */
+function bindCardActions(form) {
+    const cardsList = form.querySelector('[data-cards-list]');
+    const addButton = form.querySelector('[data-cards-add]');
+    const template = form.querySelector('[data-card-template]');
+
+    if (!cardsList || !addButton || !template) {
+        return;
+    }
+
+    // A running counter rather than a row count: after removing a middle row
+    // the count would hand out an index that is still in the DOM, and two rows
+    // would overwrite each other on submit.
+    let nextIndex = 0;
+
+    cardsList.querySelectorAll('[name^="cards["]').forEach((field) => {
+        const match = field.name.match(/^cards\[(\d+)\]/);
+
+        if (match !== null) {
+            nextIndex = Math.max(nextIndex, Number(match[1]) + 1);
+        }
+    });
+
+    // Add a new card row from the template.
+    addButton.addEventListener('click', (event) => {
+        event.preventDefault();
+
+        const index = String(nextIndex++);
+        const clone = template.content.cloneNode(true);
+
+        // The template starts with a whitespace text node, so take the row
+        // itself rather than the fragment's first child.
+        const row = clone.querySelector('[data-card-row]');
+
+        if (row === null) {
+            return;
+        }
+
+        // Every attribute, not just name/id/for: per-row radio names and
+        // label targets must not collide with other rows.
+        [row, ...row.querySelectorAll('*')].forEach((el) => {
+            Array.from(el.attributes).forEach((attribute) => {
+                if (attribute.value.includes('__INDEX__')) {
+                    el.setAttribute(attribute.name, attribute.value.replaceAll('__INDEX__', index));
+                }
+            });
+        });
+
+        cardsList.appendChild(row);
+        row.querySelector('textarea')?.focus();
+    });
+
+    // Remove a card row when the remove button is clicked.
+    cardsList.addEventListener('click', (event) => {
+        if (event.target.closest('[data-card-remove]')) {
+            event.preventDefault();
+            event.target.closest('[data-card-row]')?.remove();
+        }
+    });
 }

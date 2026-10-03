@@ -7,12 +7,15 @@ use App\Http\Controllers\HighlightController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MailWebhookController;
 use App\Http\Controllers\MasteryCardController;
+use App\Http\Controllers\MixController;
+use App\Http\Controllers\PracticeController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewItemActionController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SourceController;
 use App\Http\Controllers\StreakController;
+use App\Http\Controllers\StudyExportController;
 use App\Http\Controllers\UnsubscribeController;
 use Illuminate\Support\Facades\Route;
 
@@ -70,6 +73,31 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::get('/library/sources/{source}', [SourceController::class, 'show'])->name('sources.show');
     Route::get('/library/sources/{source}/edit', [SourceController::class, 'edit'])->name('sources.edit');
     Route::patch('/library/sources/{source}', [SourceController::class, 'update'])->name('sources.update');
+    Route::delete('/library/sources/{source}', [SourceController::class, 'destroy'])->name('sources.destroy');
+
+    // Practice one source without touching the day: no review record, no
+    // streak recording, no mastery scheduling. Only explicit decisions
+    // (discard, favorite, frequency) persist (FR-201, FR-206, R-305).
+    // Throttled generously to allow readers to draw multiple sets quickly
+    // without hitting rate limits on normal use (FR-202).
+    Route::get('/library/sources/{source}/practice', [PracticeController::class, 'show'])
+        ->middleware('throttle:120,1')
+        ->name('practice.show');
+
+    Route::post('/library/sources/{source}/practice/{highlight}', [PracticeController::class, 'action'])
+        ->middleware('throttle:120,1')
+        ->scopeBindings()
+        ->name('practice.action');
+
+    // Export a source's passages and cards as study text for an LLM. Throttled
+    // because each request reads and renders the whole source (R-309).
+    Route::get('/library/sources/{source}/export', [StudyExportController::class, 'show'])
+        ->middleware('throttle:30,1')
+        ->name('sources.export');
+
+    Route::get('/library/sources/{source}/export/download', [StudyExportController::class, 'download'])
+        ->middleware('throttle:30,1')
+        ->name('sources.export.download');
 
     Route::get('/add', [HighlightController::class, 'create'])->name('highlights.create');
 
@@ -83,14 +111,33 @@ Route::middleware(['auth', 'ensure.active'])->group(function (): void {
     Route::post('/highlights', [HighlightController::class, 'store'])->name('highlights.store');
     Route::get('/highlights/{highlight}/edit', [HighlightController::class, 'edit'])->name('highlights.edit');
     Route::patch('/highlights/{highlight}', [HighlightController::class, 'update'])->name('highlights.update');
+    Route::delete('/highlights/{highlight}', [HighlightController::class, 'destroy'])->name('highlights.destroy');
     Route::post('/highlights/{highlight}/discard', [HighlightController::class, 'discard'])->name('highlights.discard');
     Route::post('/highlights/{highlight}/favorite', [HighlightController::class, 'favorite'])->name('highlights.favorite');
 
+    Route::get('/highlights/{highlight}/mastery/create', [MasteryCardController::class, 'create'])->name('mastery.create');
     Route::post('/highlights/{highlight}/mastery', [MasteryCardController::class, 'store'])->name('mastery.store');
     Route::get('/mastery', [MasteryCardController::class, 'index'])->name('mastery.index');
     Route::get('/mastery/{card}/edit', [MasteryCardController::class, 'edit'])->name('mastery.edit');
     Route::patch('/mastery/{card}', [MasteryCardController::class, 'update'])->name('mastery.update');
+    Route::delete('/mastery/{card}', [MasteryCardController::class, 'destroy'])->name('mastery.destroy');
     Route::post('/mastery/{card}/retire', [MasteryCardController::class, 'retire'])->name('mastery.retire');
+
+    // Endless shuffled practice: all sources, all card types, no trace.
+    // Like source practice, Mix never touches the day's ritual, schedule, or
+    // streak; only explicit discard, favorite, and frequency changes persist
+    // (FR-203, R-305). The card list moved to the Library as a button.
+    Route::get('/mix', [MixController::class, 'show'])
+        ->middleware('throttle:120,1')
+        ->name('mix.show');
+
+    Route::post('/mix/highlights/{highlight}', [MixController::class, 'highlight'])
+        ->middleware('throttle:120,1')
+        ->name('mix.highlight');
+
+    Route::post('/mix/cards/{card}', [MixController::class, 'card'])
+        ->middleware('throttle:120,1')
+        ->name('mix.card');
 
     Route::get('/streak', [StreakController::class, 'show'])->name('streak.show');
 

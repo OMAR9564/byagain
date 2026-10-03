@@ -40,4 +40,8 @@ return [
     ],
 
     'cleaned' => 'Cleaned up the line breaks from your paste.',
+
+    'saved_to' => 'Saved to :source.',
+    'view_source' => 'Open source',
+    'saved_with_cards' => '{1} Saved. 1 card created.|[2,*] Saved. :count cards created.',
 ];

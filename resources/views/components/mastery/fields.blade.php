@@ -2,17 +2,25 @@
 
 <fieldset class="flex flex-col gap-2">
     <legend class="mb-1 text-sm font-medium" style="color: var(--color-ink);">
-        {{ __('mastery.card.question') }}
+        {{ __('mastery.card.type') }}
     </legend>
 
-    @foreach ([\App\Models\MasteryCard::TYPE_QA, \App\Models\MasteryCard::TYPE_CLOZE] as $type)
+    <label class="flex min-h-11 items-center gap-2.5 text-base" style="color: var(--color-ink);">
+        <input type="radio" name="type" value="{{ \App\Models\MasteryCard::TYPE_QA }}" class="h-5 w-5"
+               style="accent-color: var(--color-accent);"
+               @checked(old('type', $card?->type ?? \App\Models\MasteryCard::TYPE_QA) === \App\Models\MasteryCard::TYPE_QA)>
+        {{ __('mastery.card.type_qa') }}
+    </label>
+
+    <div class="flex flex-col gap-1">
         <label class="flex min-h-11 items-center gap-2.5 text-base" style="color: var(--color-ink);">
-            <input type="radio" name="type" value="{{ $type }}" class="h-5 w-5"
+            <input type="radio" name="type" value="{{ \App\Models\MasteryCard::TYPE_CLOZE }}" class="h-5 w-5"
                    style="accent-color: var(--color-accent);"
-                   @checked(old('type', $card?->type ?? \App\Models\MasteryCard::TYPE_QA) === $type)>
-            {{ $type === \App\Models\MasteryCard::TYPE_CLOZE ? __('mastery.card.cloze_hint') : __('mastery.card.question') }}
+                   @checked(old('type', $card?->type ?? \App\Models\MasteryCard::TYPE_QA) === \App\Models\MasteryCard::TYPE_CLOZE)>
+            {{ __('mastery.card.type_cloze') }}
         </label>
-    @endforeach
+        <p class="text-sm" style="color: var(--color-ink-muted);">{{ __('mastery.card.cloze_hint') }}</p>
+    </div>
 </fieldset>
 
 <div class="flex flex-col gap-1.5">

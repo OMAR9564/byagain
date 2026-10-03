@@ -26,6 +26,7 @@ app/
     ├── Content/          MarkdownRenderer, PastedTextCleaner, HighlightWriter
     ├── Mail/             MailDispatcher
     ├── Mastery/          MasteryScheduler
+    ├── Practice/         PracticeSampler, PracticeActions, StudyExportBuilder
     ├── Review/           ReviewBuilder, HighlightSampler, ReviewItemActions
     ├── Streak/           StreakService
     └── Time/             LocalDayResolver
@@ -52,16 +53,27 @@ by the ownership scope, so another account's id produces **404, not 403** — a
 | GET | `/library/sources/{source}` | `sources.show` |
 | GET | `/library/sources/{source}/edit` | `sources.edit` |
 | PATCH | `/library/sources/{source}` | `sources.update` |
+| DELETE | `/library/sources/{source}` | `sources.destroy` |
+| GET | `/library/sources/{source}/practice` | `practice.show` |
+| POST | `/library/sources/{source}/practice/{highlight}` | `practice.action` |
+| GET | `/library/sources/{source}/export` | `sources.export` |
+| GET | `/library/sources/{source}/export/download` | `sources.export.download` |
+| GET | `/mix` | `mix.show` |
+| POST | `/mix/highlights/{card}` | `mix.highlight` |
+| POST | `/mix/cards/{card}` | `mix.card` |
 | GET | `/add` | `highlights.create` |
+| POST | `/highlights/preview` | `highlights.preview` |
 | POST | `/highlights` | `highlights.store` |
 | GET | `/highlights/{highlight}/edit` | `highlights.edit` |
 | PATCH | `/highlights/{highlight}` | `highlights.update` |
+| DELETE | `/highlights/{highlight}` | `highlights.destroy` |
 | POST | `/highlights/{highlight}/discard` | `highlights.discard` |
 | POST | `/highlights/{highlight}/favorite` | `highlights.favorite` |
 | POST | `/highlights/{highlight}/mastery` | `mastery.store` |
 | GET | `/mastery` | `mastery.index` |
 | GET | `/mastery/{card}/edit` | `mastery.edit` |
 | PATCH | `/mastery/{card}` | `mastery.update` |
+| DELETE | `/mastery/{card}` | `mastery.destroy` |
 | POST | `/mastery/{card}/retire` | `mastery.retire` |
 | GET | `/streak` | `streak.show` |
 | GET | `/settings` | `settings.edit` |
@@ -74,6 +86,8 @@ by the ownership scope, so another account's id produces **404, not 403** — a
 | --- | --- | --- | --- |
 | GET | `/unsubscribe/{user}/{type}` | `unsubscribe` | `signed` middleware |
 | POST | `/webhooks/mail` | `webhooks.mail` | provider signature verified |
+
+`GET /add` accepts an optional `?source={id}` query parameter to pre-select a source on the editor form.
 
 Authentication routes come from Fortify: `/login`, `/register`,
 `/forgot-password`, `/reset-password/{token}`, `/email/verify/{id}/{hash}`.
@@ -185,6 +199,14 @@ middle one is asked as a question — `ReviewBuilder::hasMaterialFor()`, which
 reads and writes nothing — rather than deduced from a round having failed to
 appear.
 
+The completion screen carries a Done button that commits any held decision
+(within the undo window) and navigates home without making the reader wait.
+The button uses `keepalive: true` on its fetch, so a decision sent on
+`pagehide` or `visibilitychange` (when the reader leaves via nav or closes the
+tab) still reaches the server; offline actions queue as always. The undo window
+stays — only the final decision can be committed early, not all of them
+(FR-042, FR-043).
+
 There is no way back into a finished round. The completion screen is the last
 stop; a reader who wants to see what they decided opens the passage from the
 library.
@@ -202,6 +224,25 @@ missed.
 Days are resolved when the review is completed, so moving country changes what
 tomorrow means without rewriting what yesterday was.
 
+## 5.5 Offline
+
+The app is installable as a PWA and works offline. When the reader opens any
+page while online, the app downloads today's review in the background with
+`X-Byagain-Prefetch: 1`, which caches the page without marking it as started.
+This ensures offline use is possible without advancing the ritual.
+
+Cached pages carry an `X-Byagain-Expires` header set to the end of the user's
+local day (the next 04:00 boundary in UTC). The service worker checks this
+header: an expired review is never served offline. Instead, the offline page
+explains that the reader should connect to download today's review.
+
+Card actions that fail to reach the server are queued in localStorage and
+replayed when the connection returns or any page loads, whichever comes first.
+
+The service worker uses a network-first strategy with a ~4-second timeout for
+navigations. If the network is slow or absent, the app falls back to the cache.
+If the network eventually responds, the cache is updated in the background.
+
 ## 6. Mastery
 
 Half-life scheduling. Recall probability is `p(t) = 2^(−Δt / H)`.
@@ -210,7 +251,7 @@ Half-life scheduling. Recall probability is `p(t) = 2^(−Δt / H)`.
 - Later feedback multiplies: `sooner ×0.5 · later ×2.0 · someday ×3.0`.
 - `H` is clamped to `[1, 365]`.
 - `due_at = last_reviewed_at + H`.
-- `learned` retires the card. Hidden, never deleted.
+- `learned` retires the card. Hidden, not deleted; Delete removes it permanently.
 
 Due cards are ordered by elapsed-over-half-life, which is ascending recall
 probability without asking the database to evaluate a power. Ties break
@@ -273,7 +314,63 @@ than `content_html`.
 - **Assets** — no user-facing page loads a Filament, Livewire or Alpine asset.
   Livewire's `inject_assets` is off for this reason; a test fetches every page
   and fails on the string.
-- **Deletion** — user content is hidden (`is_discarded`, `is_archived`,
-  `retired`, `status`), never deleted. The single exception is a reader
-  deleting their own account, which is real and irreversible.
+- **Deletion** — user content is hidden by discard, archive or retire
+  (`is_discarded`, `is_archived`, `retired`, `status`). Sources, passages and
+  cards can also be deleted permanently through an explicit, confirmed Delete;
+  a source takes its passages and cards with it. Unacted review items pointing
+  at deleted content are dropped so a review can still finish; acted ones stay
+  as history. Deleting the account remains the other permanent deletion, and
+  it is irreversible.
 - **Constants** — every threshold lives in `config/byagain.php`.
+
+## 10. Practice and export
+
+A reader can practice passages and questions from a single source without the
+session counting toward the day's ritual. The set is drawn per request and never
+stored in the database — there is no record to corrupt or confuse with the daily flow.
+
+`PracticeSampler` draws passages and active mastery cards from a source, up to
+`review_size` items combined, ignoring the daily selection filters and cooldown.
+Passages and cards are mixed by the user's `mastery_ratio`, with shortfall fill:
+when cards or passages run short, the batch is filled from the other type.
+Discarded passages and paused/retired cards are excluded. Every action is an
+explicit choice: `discard`, `favorite`, or changing the source's frequency.
+`shown_count` and `last_shown_at` never change. No review records, streak days,
+or mastery card schedules are written.
+
+The practice screen reuses `review.js` from the daily flow. Passage cards carry
+their own action URL (`POST /library/sources/{source}/practice/{highlight}`),
+while question cards route to the Mix card action (`POST /mix/cards/{card}`)
+which validates the request but writes nothing. The page has no completion endpoint
+— the completion screen stays local.
+
+### Mix: endless shuffled practice
+
+A reader can also practice endlessly across all sources and question cards at
+once, in a shuffled order. `MixSampler` draws up to `config('byagain.mix.batch_size')`
+items (passages + cards together) every time the page loads, mixing them by the
+user's `mastery_ratio` (the percentage of cards vs. passages they want to practice).
+Passages are drawn from non-archived sources with frequency != `never`, and cards
+are active mastery cards only. When one type runs short, the batch is filled from
+the other.
+
+Mix is pure practice: no review records, no streak recording, no mastery scheduling.
+Explicit choices persist — discard, favorite, and source frequency — but card
+schedules never move. Cards in Mix show a single "Next" button instead of the four
+scheduling choices, signalling this is not review. The completion screen triggers
+a fresh batch load (via `data-endless-url` in `review.js`) rather than navigating away.
+
+The editor stays on the form after saving a passage, and the chosen source
+remains selected. The `GET /add` route accepts an optional `?source=` parameter
+to pre-select a source; invalid or archived sources are silently ignored.
+
+A reader can export passages and active mastery questions from a source as
+Markdown text, to paste into an LLM. `StudyExportBuilder` renders the text at
+request time — instruction, source title, numbered passages in order, and
+active question cards. The text is never stored. See `../specs/003-source-practice/contracts/study-export.md`
+for the exact shape. The app sends the text nowhere; a reader chooses where to
+paste it.
+
+Download uses the reader's local date in the filename. Copy to clipboard falls
+back to text selection if the API is unavailable — essential on phones accessing
+the app over HTTP on a local network.

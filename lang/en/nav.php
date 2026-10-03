@@ -18,6 +18,6 @@ return [
     'review' => 'Today',
     'library' => 'Library',
     'add' => 'Add',
-    'mastery' => 'Cards',
+    'mix' => 'Mix',
     'streak' => 'Streak',
 ];

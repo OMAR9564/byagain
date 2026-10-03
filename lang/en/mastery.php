@@ -7,11 +7,31 @@ declare(strict_types=1);
 return [
     'title' => 'Cards',
 
+    'index_body' => 'Your question cards and scheduled practice.',
+
+    'create' => [
+        'title' => 'Make a card',
+        'action' => 'Make a card',
+        'submit' => 'Create card',
+        'card_count' => '{1} 1 card|[2,*] :count cards',
+    ],
+
     'card' => [
+        'type' => 'Card type',
+        'type_qa' => 'Question & answer',
+        'type_cloze' => 'Fill in the blank',
         'question' => 'Question',
         'answer' => 'Answer',
         'show_answer' => 'Show answer',
+        'show_passage' => 'Show passage',
+        'hide_passage' => 'Hide passage',
         'cloze_hint' => 'Wrap the hidden part in {{curly braces}}.',
+    ],
+
+    'inline' => [
+        'heading' => 'Question cards',
+        'add' => 'Add a card',
+        'remove' => 'Remove',
     ],
 
     // The question is "when do you want to see this again?", never "were you
@@ -30,6 +50,9 @@ return [
     ],
 
     'struggle_hint' => 'This one keeps slipping. Try rewriting it as a smaller question.',
+
+    'deleted' => 'Card deleted.',
+    'delete_confirm' => 'Delete this card? This cannot be undone.',
 
     'empty' => [
         'title' => 'No cards yet',

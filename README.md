@@ -116,7 +116,7 @@ which is the same as not sending it.
 
 ## Scheduled work
 
-A single cron entry drives everything:
+Laravel's scheduler is driven by a single cron entry:
 
 ```
 * * * * * cd /path/to/byagain && php artisan schedule:run >> /dev/null 2>&1
@@ -128,6 +128,12 @@ mail. **If cron stops, nothing throws** — reviews quietly stop being built and
 nobody gets their email. The admin dashboard shows a scheduler heartbeat for
 exactly this reason.
 
+**Shared-hosting caveat:** `schedule:run` starts each command through
+`proc_open`. Hosts that disable it (Hostinger shared hosting does) make it run
+nothing, silently. There, give each command its own cron line instead
+(`byagain:dispatch-daily`, `byagain:prune`, and the queue worker) — see
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#8-cron--the-part-that-must-not-be-skipped).
+
 ## Commands
 
 | Command | Purpose |
@@ -136,6 +142,7 @@ exactly this reason.
 | `byagain:prune` | Removes expired tokens, old delivery rows, stale failed jobs. Never touches your content. |
 | `byagain:rerender-highlights` | Rebuilds rendered HTML from markdown. `--dry-run`, `--user=`. |
 | `byagain:promote-admin {email}` | Grants the admin role. `--demote` revokes it. |
+| `byagain:import-passages {file}` | Bulk-import passages and cards from Markdown. `--user=` (id or email), `--source=` (title, created if missing), `--dry-run`. |
 
 ## Quality gates
 
@@ -229,6 +236,7 @@ with `php -S 127.0.0.1:8000 -t public public/index.php` and open `/login`.
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — shared hosting, and the three things that fail silently if you skip them
 - [`docs/DEPLOYMENT-VPS.md`](docs/DEPLOYMENT-VPS.md) — the nginx, PHP-FPM and supervisor version
 - [`docs/SPEC.md`](docs/SPEC.md) — routes, algorithms, the reasoning behind them
+- [`ios/README.md`](ios/README.md) — the iPhone app shell, installed from Xcode without the App Store
 - [`.specify/memory/constitution.md`](.specify/memory/constitution.md) — the rules this codebase is held to
 - [`specs/001-daily-highlight-review/`](specs/001-daily-highlight-review/) — the specification this was built from
 

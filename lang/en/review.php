@@ -42,6 +42,7 @@ return [
         'title' => 'That is today.',
         'body' => 'Come back tomorrow for a new selection.',
         'streak' => 'Day :count.',
+        'done' => 'Done',
     ],
 
     // The screen you get when the day is already finished. The point of the

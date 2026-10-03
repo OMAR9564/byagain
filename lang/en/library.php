@@ -12,6 +12,9 @@ return [
         'author' => 'Author',
         'frequency' => 'How often should this appear?',
         'highlight_count' => ':count highlight|:count highlights',
+        'add_passage' => 'Add passage',
+        'deleted' => 'Source deleted.',
+        'delete_confirm' => 'Delete this source and all its passages and cards? This cannot be undone.',
     ],
 
     'frequency' => [
@@ -28,6 +31,8 @@ return [
         'title_plural' => 'Highlights',
         'note' => 'Note',
         'location' => 'Page or location',
+        'deleted' => 'Passage deleted.',
+        'delete_confirm' => 'Delete this passage and its cards? This cannot be undone.',
     ],
 
     'empty' => [

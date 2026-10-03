@@ -6,12 +6,18 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSourceRequest;
 use App\Http\Requests\UpdateSourceRequest;
+use App\Models\MasteryCard;
 use App\Models\Source;
+use App\Services\Content\ContentDeleter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 final class SourceController extends Controller
 {
+    public function __construct(
+        private readonly ContentDeleter $deleter,
+    ) {}
+
     public function index(): View
     {
         // The ownership scope narrows this to the signed-in user; there is no
@@ -43,6 +49,7 @@ final class SourceController extends Controller
     {
         $highlights = $source->highlights()
             ->where('is_discarded', false)
+            ->withCount(['masteryCards as active_mastery_cards_count' => fn ($q) => $q->where('status', '!=', MasteryCard::STATUS_RETIRED)])
             ->latest('id')
             ->paginate(20);
 
@@ -64,5 +71,14 @@ final class SourceController extends Controller
         return redirect()
             ->route('sources.show', $source)
             ->with('status', __('settings.saved'));
+    }
+
+    public function destroy(Source $source): RedirectResponse
+    {
+        $this->deleter->deleteSource($source);
+
+        return redirect()
+            ->route('library.index')
+            ->with('status', __('library.source.deleted'));
     }
 }

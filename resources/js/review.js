@@ -20,7 +20,7 @@
  *     shows what was chosen; it does not pretend to be a form.
  */
 
-const QUEUE_KEY = 'byagain.review.queue';
+import { send, flushQueue, jsonHeaders } from './queue.js';
 
 /** A gesture has to be this decisive to count, in pixels. */
 const SWIPE_DISTANCE = 60;
@@ -35,6 +35,9 @@ const HINT_TO = 80;
 
 /** Degrees of tilt at full travel. Small: the card is being pushed, not thrown. */
 const TILT_AT_FULL = 6;
+
+/** Prefix of the per-review record of cards decided on this device. */
+const ACTED_KEY_PREFIX = 'byagain.review.acted.';
 
 const root = document.querySelector('[data-review]');
 
@@ -55,6 +58,29 @@ function start(root) {
     const csrf = root.dataset.csrf;
     const undoMs = (Number(root.dataset.undoSeconds) || 5) * 1000;
 
+    // A review reopened offline comes from the cache, which holds the page as
+    // it was when it was stored: cards decided since then look undecided. The
+    // server would keep the first answer anyway, but the reader would be asked
+    // twice, so what was decided here is remembered locally and applied again.
+    const reviewId = root.dataset.reviewId || null;
+
+    if (reviewId !== null) {
+        const recorded = readActed(reviewId);
+
+        cards.forEach((card) => {
+            const verdict = recorded[card.dataset.itemId];
+
+            if (verdict !== undefined && card.dataset.acted !== 'true') {
+                card.dataset.acted = 'true';
+                card.dataset.verdict = verdict;
+            }
+        });
+
+        const firstOpen = cards.findIndex((card) => card.dataset.acted !== 'true');
+
+        root.dataset.startIndex = String(firstOpen === -1 ? cards.length : firstOpen);
+    }
+
     // `frontier` is the card being decided; `viewing` is the card on screen.
     // They are the same until the reader steps back to look at one they have
     // already dealt with. Both may equal cards.length, which means the
@@ -65,6 +91,11 @@ function start(root) {
     // The decision waiting out its undo window. At most one: taking another
     // action commits whatever was already held.
     let pending = null;
+
+    // Set once navigation has started, so a second tap or the endless hand-off
+    // cannot queue another one behind it. Declared before the first showCard()
+    // call, which may already be the hand-off.
+    let leaving = false;
 
     showCard(frontier);
     flushQueue(csrf);
@@ -99,6 +130,43 @@ function start(root) {
 
     back?.addEventListener('click', () => showCard(viewing - 1));
     undoButton?.addEventListener('click', undoPending);
+
+    // Done button(s): commit any pending action before leaving (FR-042, FR-043).
+    document.querySelectorAll('[data-review-done]').forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+
+            const href = button.getAttribute('href');
+
+            if (href) {
+                commitThenGo(href);
+            }
+        });
+    });
+
+    /**
+     * Send whatever decision is still held, then leave. The wait is capped so
+     * a slow or offline network never traps the reader; the offline queue
+     * keeps the action if it did not get through.
+     */
+    async function commitThenGo(href) {
+        if (leaving) {
+            return;
+        }
+
+        leaving = true;
+
+        const sent = commitPending();
+
+        if (sent !== null) {
+            await Promise.race([
+                sent,
+                new Promise((resolve) => window.setTimeout(resolve, 1500)),
+            ]);
+        }
+
+        window.location.assign(href);
+    }
 
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && pending !== null) {
@@ -165,10 +233,14 @@ function start(root) {
     /**
      * Send the held decision. From here it is the server's, and the interface
      * stops offering to take it back.
+     *
+     * Returns the send promise so callers can wait for it, or null if there
+     * was nothing pending. This enables the Done button to wait for the
+     * last card's action to reach the server before navigating (FR-043).
      */
     function commitPending() {
         if (pending === null) {
-            return;
+            return null;
         }
 
         const held = pending;
@@ -178,6 +250,10 @@ function start(root) {
         hideUndo();
 
         held.card.dataset.acted = 'true';
+
+        if (reviewId !== null) {
+            recordActed(reviewId, held.card.dataset.itemId, held.action);
+        }
 
         const sent = send(
             held.card.dataset.actionUrl,
@@ -199,6 +275,8 @@ function start(root) {
         if (held.index === cards.length - 1) {
             sent.then((payload) => completeReview(payload));
         }
+
+        return sent;
     }
 
     function undoPending() {
@@ -242,6 +320,12 @@ function start(root) {
         completion.hidden = viewing !== cards.length;
 
         updateChrome();
+
+        // Mix has no end: reaching the last card fetches the next batch at
+        // once rather than waiting out the undo window on the last decision.
+        if (viewing === cards.length && root.dataset.endlessUrl) {
+            commitThenGo(root.dataset.endlessUrl);
+        }
     }
 
     /**
@@ -340,6 +424,14 @@ function start(root) {
     }
 
     async function postCompletion() {
+        // Practice and Mix have no completion endpoint (data-complete-url is
+        // absent), so the completion screen shows locally only (R-302). For Mix,
+        // data-endless-url triggers a reload instead. Review does have one and
+        // calls it here.
+        if (!root.dataset.completeUrl) {
+            return null;
+        }
+
         try {
             const response = await fetch(root.dataset.completeUrl, {
                 method: 'POST',
@@ -553,6 +645,8 @@ function bindMastery(card, onFeedback) {
     const reveal = card.querySelector('[data-mastery-reveal]');
     const answer = card.querySelector('[data-mastery-answer]');
     const choices = card.querySelector('[data-mastery-feedback]');
+    const passageToggle = card.querySelector('[data-mastery-passage-toggle]');
+    const passageBlock = card.querySelector('[data-mastery-passage]');
 
     if (reveal === null || answer === null || choices === null) {
         return;
@@ -563,7 +657,23 @@ function bindMastery(card, onFeedback) {
         choices.hidden = false;
         reveal.setAttribute('aria-expanded', 'true');
         reveal.hidden = true;
+
+        // For cloze cards, reveal the passage toggle when the answer is shown
+        if (passageToggle !== null && passageToggle.hidden) {
+            passageToggle.hidden = false;
+        }
     });
+
+    if (passageToggle !== null && passageBlock !== null) {
+        passageToggle.addEventListener('click', () => {
+            const isExpanded = passageToggle.getAttribute('aria-expanded') === 'true';
+            passageToggle.setAttribute('aria-expanded', String(!isExpanded));
+            passageBlock.hidden = isExpanded;
+            passageToggle.textContent = isExpanded
+                ? passageToggle.dataset.showLabel
+                : passageToggle.dataset.hideLabel;
+        });
+    }
 
     choices.querySelectorAll('[data-mastery-choice]').forEach((button) => {
         button.addEventListener('click', () => onFeedback(button.dataset.masteryChoice));
@@ -587,76 +697,39 @@ function bindExpand(card) {
     });
 }
 
-function jsonHeaders(csrf) {
-    return {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'X-CSRF-TOKEN': csrf,
-        'X-Requested-With': 'XMLHttpRequest',
-    };
-}
-
-async function send(url, body, csrf) {
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: jsonHeaders(csrf),
-            body: JSON.stringify(body),
-        });
-
-        // 4xx other than 409 means the payload is wrong and retrying will not
-        // help; drop it rather than poisoning the queue forever.
-        if (!response.ok && response.status !== 409 && response.status < 500) {
-            return null;
-        }
-
-        if (!response.ok) {
-            enqueue({ url, body });
-
-            return null;
-        }
-
-        return await response.json();
-    } catch {
-        enqueue({ url, body });
-
-        return null;
-    }
-}
-
-function readQueue() {
-    try {
-        return JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]');
-    } catch {
-        return [];
-    }
-}
-
-function enqueue(entry) {
-    const queue = readQueue();
-    queue.push(entry);
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-}
-
 /**
- * Replay whatever did not get through. Safe to run at any time because the
- * endpoint is idempotent: a card that was already dealt with keeps its first
- * action and reports current state.
+ * Cards decided on this device for one review, as { itemId: action }.
+ *
+ * Keys of other reviews are dropped on the way, so storage does not grow by a
+ * key every day. Storage can be full, blocked or corrupt; none of that may
+ * stop the review, so it reads as "nothing recorded".
  */
-async function flushQueue(csrf) {
-    const queue = readQueue();
+function readActed(reviewId) {
+    try {
+        const own = ACTED_KEY_PREFIX + reviewId;
 
-    if (queue.length === 0) {
-        return;
-    }
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
 
-    localStorage.removeItem(QUEUE_KEY);
+            if (key !== null && key.startsWith(ACTED_KEY_PREFIX) && key !== own) {
+                localStorage.removeItem(key);
+            }
+        }
 
-    for (const entry of queue) {
-        await send(entry.url, entry.body, csrf);
+        const parsed = JSON.parse(localStorage.getItem(own) ?? '{}');
+
+        return parsed !== null && typeof parsed === 'object' ? parsed : {};
+    } catch {
+        return {};
     }
 }
 
-window.addEventListener('online', () => {
-    flushQueue(root?.dataset.csrf);
-});
+function recordActed(reviewId, itemId, action) {
+    try {
+        const acted = readActed(reviewId);
+        acted[itemId] = action;
+        localStorage.setItem(ACTED_KEY_PREFIX + reviewId, JSON.stringify(acted));
+    } catch {
+        // Not remembering costs a repeated question offline, nothing more.
+    }
+}

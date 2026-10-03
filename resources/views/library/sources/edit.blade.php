@@ -15,4 +15,15 @@
 
         <x-button type="submit">{{ __('actions.save') }}</x-button>
     </form>
+
+    <form method="POST" action="{{ route('sources.destroy', $source) }}"
+          data-confirm="{{ __('library.source.delete_confirm') }}"
+          class="mt-6 flex flex-col gap-5">
+        @csrf
+        @method('DELETE')
+
+        <x-button type="submit" variant="ghost" style="color: var(--color-critical);">
+            {{ __('actions.delete') }}
+        </x-button>
+    </form>
 </x-layouts.app>

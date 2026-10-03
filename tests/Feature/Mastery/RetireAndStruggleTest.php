@@ -25,7 +25,7 @@ final class RetireAndStruggleTest extends TestCase
             'type' => MasteryCard::TYPE_QA,
             'question' => 'What stands in the way?',
             'answer' => 'It becomes the way.',
-        ])->assertRedirect(route('mastery.index'));
+        ])->assertRedirect(route('sources.show', $highlight->source));
 
         $card = MasteryCard::query()->sole();
 

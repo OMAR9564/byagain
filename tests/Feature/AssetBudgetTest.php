@@ -113,6 +113,35 @@ final class AssetBudgetTest extends TestCase
     }
 
     #[Test]
+    public function the_copy_module_stays_on_the_export_screen(): void
+    {
+        $manifest = $this->manifest();
+
+        // Its own entry point, so it is fetched by the export screen that
+        // needs it and never by the shell or review (SC-006, R-308).
+        $this->assertArrayHasKey('resources/js/copy.js', $manifest);
+
+        $this->assertNotSame(
+            $manifest['resources/js/copy.js']['file'],
+            $manifest['resources/js/app.js']['file'],
+        );
+
+        // And nothing pulls it in as a side effect: the shell and review must
+        // not list it among their imports.
+        foreach (['resources/js/app.js', 'resources/js/review.js'] as $entry) {
+            $this->assertNotContains(
+                'resources/js/copy.js',
+                $manifest[$entry]['imports'] ?? [],
+                "{$entry} must not import the copy module.",
+            );
+        }
+
+        $export = (string) file_get_contents(resource_path('views/library/sources/export.blade.php'));
+
+        $this->assertStringContainsString('copy.js', $export);
+    }
+
+    #[Test]
     public function the_build_output_stays_in_the_repository(): void
     {
         $ignore = (string) file_get_contents(base_path('.gitignore'));

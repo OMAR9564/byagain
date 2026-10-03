@@ -70,6 +70,24 @@ final class IdorTest extends TestCase
     }
 
     #[Test]
+    public function the_practice_action_refuses_another_readers_highlight(): void
+    {
+        [$intruder, $records] = $this->twoAccounts();
+
+        // Attacker uses their own source with another reader's highlight
+        $attackerSource = Source::factory()->for($intruder)->create();
+
+        $this->actingAs($intruder)
+            ->postJson("/library/sources/{$attackerSource->id}/practice/{$records['highlight']}", ['action' => 'keep'])
+            ->assertNotFound();
+
+        // Attacker uses another reader's source with another reader's highlight
+        $this->actingAs($intruder)
+            ->postJson("/library/sources/{$records['source']}/practice/{$records['highlight']}", ['action' => 'keep'])
+            ->assertNotFound();
+    }
+
+    #[Test]
     public function a_reader_cannot_move_their_highlight_into_another_library(): void
     {
         $mine = User::factory()->create();

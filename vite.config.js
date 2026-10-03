@@ -22,6 +22,9 @@ export default defineConfig({
                 'resources/js/editor.js',
                 'resources/js/push.js',
 
+                // Loaded only by the export screen
+                'resources/js/copy.js',
+
                 'resources/css/admin.css',
             ],
             refresh: true,

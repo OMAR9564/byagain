@@ -54,7 +54,7 @@ final class ReviewNudgeTest extends TestCase
     public function an_unfinished_review_earns_exactly_one_nudge(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         $this->subscriber();
 
@@ -75,7 +75,7 @@ final class ReviewNudgeTest extends TestCase
     public function overlapping_sweeps_still_produce_one(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         $this->subscriber();
 
@@ -96,7 +96,7 @@ final class ReviewNudgeTest extends TestCase
     public function a_finished_review_earns_none(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         $this->subscriber();
 
@@ -112,14 +112,14 @@ final class ReviewNudgeTest extends TestCase
         // Not even a skipped row: the decision was made before a slot was
         // claimed, so there is nothing to explain (FR-142).
         $this->assertDatabaseCount('push_deliveries', 0);
-        Queue::assertNothingPushed();
+        Queue::assertNotPushed(SendReviewNudgePush::class);
     }
 
     #[Test]
     public function a_reader_who_did_not_ask_for_this_gets_none(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         $this->subscriber(['push_enabled' => false]);
 
@@ -133,7 +133,7 @@ final class ReviewNudgeTest extends TestCase
     public function no_morning_email_means_no_nudge(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         $this->subscriber();
 
@@ -149,7 +149,7 @@ final class ReviewNudgeTest extends TestCase
     public function a_reader_with_no_device_gets_none(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         $user = $this->subscriber();
         $user->pushSubscriptions()->delete();
@@ -164,6 +164,11 @@ final class ReviewNudgeTest extends TestCase
     public function finishing_between_the_sweep_and_the_worker_stops_the_send(): void
     {
         Mail::fake();
+
+        // Only the nudge is held back, standing in for the gap before a worker
+        // picks it up. The email job still runs, since a nudge needs an email
+        // that actually went out (FR-144).
+        Queue::fake([SendReviewNudgePush::class]);
 
         $this->subscriber();
 

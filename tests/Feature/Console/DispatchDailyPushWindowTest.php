@@ -50,7 +50,7 @@ final class DispatchDailyPushWindowTest extends TestCase
     public function the_window_opens_an_hour_after_the_email_and_not_before(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         $this->subscriber();
 
@@ -69,7 +69,7 @@ final class DispatchDailyPushWindowTest extends TestCase
     public function the_window_is_as_wide_as_the_sweep_and_no_wider(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         $this->subscriber();
 
@@ -85,7 +85,7 @@ final class DispatchDailyPushWindowTest extends TestCase
     public function a_window_past_midnight_is_filed_against_the_day_it_belongs_to(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         // 23:30 plus an hour lands at 00:30 the next calendar day.
         $this->subscriber(['daily_email_at' => '23:30:00']);
@@ -106,7 +106,7 @@ final class DispatchDailyPushWindowTest extends TestCase
     public function a_reader_in_another_timezone_is_nudged_on_their_own_clock(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         // 08:00 in Istanbul is 05:00 UTC; the nudge window is 06:00 UTC.
         $this->subscriber(['timezone' => 'Europe/Istanbul']);
@@ -127,7 +127,7 @@ final class DispatchDailyPushWindowTest extends TestCase
     public function a_dry_run_writes_nothing_and_queues_nothing(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         $this->subscriber();
 
@@ -144,7 +144,7 @@ final class DispatchDailyPushWindowTest extends TestCase
     public function the_report_counts_what_it_queued(): void
     {
         Mail::fake();
-        Queue::fake();
+        Queue::fake([SendReviewNudgePush::class]);
 
         $this->subscriber();
 

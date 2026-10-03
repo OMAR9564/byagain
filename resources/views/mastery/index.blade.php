@@ -19,14 +19,25 @@
                     {{ __('actions.edit') }}
                 </x-button>
 
-                @if ($card->status !== \App\Models\MasteryCard::STATUS_RETIRED)
-                    <form method="POST" action="{{ route('mastery.retire', $card) }}" class="ml-auto">
+                <div class="ml-auto flex items-center gap-2">
+                    @if ($card->status !== \App\Models\MasteryCard::STATUS_RETIRED)
+                        <form method="POST" action="{{ route('mastery.retire', $card) }}">
+                            @csrf
+                            <x-button type="submit" variant="ghost" class="!px-3 text-sm">
+                                {{ __('mastery.feedback.learned') }}
+                            </x-button>
+                        </form>
+                    @endif
+
+                    <form method="POST" action="{{ route('mastery.destroy', $card) }}"
+                          data-confirm="{{ __('mastery.delete_confirm') }}">
                         @csrf
-                        <x-button type="submit" variant="ghost" class="!px-3 text-sm">
-                            {{ __('mastery.feedback.learned') }}
+                        @method('DELETE')
+                        <x-button type="submit" variant="ghost" class="!px-3 text-sm" style="color: var(--color-critical);">
+                            {{ __('actions.delete') }}
                         </x-button>
                     </form>
-                @endif
+                </div>
             </div>
         </x-card>
     @empty

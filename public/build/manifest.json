@@ -1,6 +1,10 @@
 {
+  "_queue-0IDK7RF8.js": {
+    "file": "assets/queue-0IDK7RF8.js",
+    "name": "queue"
+  },
   "resources/css/admin.css": {
-    "file": "assets/admin-CGpIe54T.css",
+    "file": "assets/admin-BjSnbsH6.css",
     "name": "admin",
     "names": [
       "admin.css"
@@ -9,7 +13,7 @@
     "isEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-C4_TEAvB.css",
+    "file": "assets/app-DhEPaW4V.css",
     "name": "app",
     "names": [
       "app.css"
@@ -18,13 +22,22 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-CDd8B2Rf.js",
+    "file": "assets/app-CpJPg-Hn.js",
     "name": "app",
     "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "_queue-0IDK7RF8.js"
+    ]
+  },
+  "resources/js/copy.js": {
+    "file": "assets/copy-CBfw2MM0.js",
+    "name": "copy",
+    "src": "resources/js/copy.js",
     "isEntry": true
   },
   "resources/js/editor.js": {
-    "file": "assets/editor-eppIzNxU.js",
+    "file": "assets/editor-Cfy4TH8P.js",
     "name": "editor",
     "src": "resources/js/editor.js",
     "isEntry": true
@@ -36,9 +49,12 @@
     "isEntry": true
   },
   "resources/js/review.js": {
-    "file": "assets/review-DOFb9m7g.js",
+    "file": "assets/review-BioPFSH2.js",
     "name": "review",
     "src": "resources/js/review.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_queue-0IDK7RF8.js"
+    ]
   }
 }

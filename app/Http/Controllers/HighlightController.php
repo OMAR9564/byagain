@@ -9,34 +9,54 @@ use App\Http\Requests\StoreHighlightRequest;
 use App\Http\Requests\UpdateHighlightRequest;
 use App\Models\Highlight;
 use App\Models\Source;
+use App\Services\Content\ContentDeleter;
 use App\Services\Content\HighlightWriter;
+use App\Services\Content\PassageWithCards;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 final class HighlightController extends Controller
 {
-    public function __construct(private readonly HighlightWriter $writer) {}
+    public function __construct(
+        private readonly HighlightWriter $highlightWriter,
+        private readonly PassageWithCards $passages,
+        private readonly ContentDeleter $deleter,
+    ) {}
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $sources = Source::query()
             ->where('is_archived', false)
             ->orderBy('title')
             ->get();
 
-        return view('editor.create', ['sources' => $sources]);
+        // A ?source= that is not one of this reader's non-archived sources is
+        // silently ignored (FR-215).
+        $sourceId = $request->integer('source');
+        $selectedSourceId = $sourceId > 0
+            ? Source::query()->where('is_archived', false)->whereKey($sourceId)->value('id')
+            : null;
+
+        return view('editor.create', [
+            'sources' => $sources,
+            'selectedSourceId' => $selectedSourceId,
+            'savedSource' => $sources->firstWhere('id', session('saved_source_id')),
+        ]);
     }
 
     public function store(StoreHighlightRequest $request): RedirectResponse
     {
-        // Rendering, cleaning and the derived columns all live in the writer,
-        // so there is exactly one path by which content_html comes into being.
-        $highlight = $this->writer->create($request->validated());
+        [$highlight, $cardCount] = $this->passages->create($request->validated());
 
+        // After saving, stay on the form with the chosen source selected and
+        // show a link to the source's page (FR-212, FR-215). The user can add
+        // another passage from the same source without re-selecting it.
         return redirect()
-            ->route('sources.show', $highlight->source_id)
-            ->with('status', __('settings.saved'));
+            ->route('highlights.create', ['source' => $highlight->source_id])
+            ->with('status', $this->statusFor($cardCount))
+            ->with('saved_source_id', $highlight->source_id);
     }
 
     /**
@@ -52,7 +72,7 @@ final class HighlightController extends Controller
         return response()->json([
             // Empty in, empty out: the editor asks for a preview of whatever
             // is in the field, including nothing.
-            'html' => $this->writer->preview((string) $request->input('content_md', '')),
+            'html' => $this->highlightWriter->preview((string) $request->input('content_md', '')),
         ]);
     }
 
@@ -68,11 +88,11 @@ final class HighlightController extends Controller
 
     public function update(UpdateHighlightRequest $request, Highlight $highlight): RedirectResponse
     {
-        $this->writer->update($highlight, $request->validated());
+        $cardCount = $this->passages->update($highlight, $request->validated());
 
         return redirect()
             ->route('sources.show', $highlight->source_id)
-            ->with('status', __('settings.saved'));
+            ->with('status', $this->statusFor($cardCount));
     }
 
     /**
@@ -80,15 +100,32 @@ final class HighlightController extends Controller
      */
     public function discard(Highlight $highlight): RedirectResponse
     {
-        $this->writer->discard($highlight);
+        $this->highlightWriter->discard($highlight);
 
         return back()->with('status', __('settings.saved'));
     }
 
     public function favorite(Highlight $highlight): RedirectResponse
     {
-        $this->writer->toggleFavorite($highlight);
+        $this->highlightWriter->toggleFavorite($highlight);
 
         return back();
+    }
+
+    public function destroy(Highlight $highlight): RedirectResponse
+    {
+        $sourceId = $highlight->source_id;
+        $this->deleter->deleteHighlight($highlight);
+
+        return redirect()
+            ->route('sources.show', $sourceId)
+            ->with('status', __('library.highlight.deleted'));
+    }
+
+    private function statusFor(int $cardCount): string
+    {
+        return $cardCount > 0
+            ? trans_choice('editor.saved_with_cards', $cardCount)
+            : __('settings.saved');
     }
 }
